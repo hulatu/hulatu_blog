@@ -112,7 +112,7 @@ hugo server -D          # -D 连草稿一起显示，改文件自动刷新
 > ⚠️ `hugo server` 开着会持续覆盖 `public/`。想在不打扰 server 的情况下验收，
 > 构建到临时目录：`hugo --gc --minify --cleanDestinationDir --destination /tmp/hb-check`。
 
-**3. 写一篇** —— 见 [✏️ 写与发](#-写与发)。
+**3. 写一篇** —— 见 [📝 写与发](#-写与发)。
 
 ## 🗂 仓库地图
 
