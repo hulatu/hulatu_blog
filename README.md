@@ -1,274 +1,308 @@
-# 我的博客（Hugo）
+<div align="center">
 
-`hulatu.com` 的源码：一个基于 [Hugo](https://gohugo.io/) 的中文个人博客，
-主题是上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo)（`style.html` 有两处登记改动：
-正文行高 1.6→1.8、删除未启用的 upvote CSS；其余 26 个文件逐字节未改）。
-**单站单仓库** —— 2026-10-12 原先的四个独立子站（`run.` / `shot.` / `share.` / `profile.hulatu.com`）
-**全部下线**：跑步页并入本站 `/run/`，个人主页（导航里的 `Hub`）并入 `/about/`，
-`shot.` / `share.` 本来就是空壳。仓库里的 `sites/` 目录已整体删除。
+# ✍️ 胡拉图说
 
-> **这份 README 只讲「怎么跑起来」。** 想改站上的具体东西（版式、缓存、脚本、部署、常见故障），看
-> [MAINTENANCE.md](MAINTENANCE.md)；想动视觉，看 [DESIGN.md](DESIGN.md)（那份列了站点层全部 34 个文件的偏离）。
-> 两份冲突时以 MAINTENANCE.md 为准。
+**一个普通研究生的个人博客。**
+
+记录思考、分享日常、观察生活 —— 内容包含但不限于运动、健康、成长、科研与工具折腾。
+
+<br>
+
+[![内容](https://img.shields.io/static/v1?label=%E5%86%85%E5%AE%B9&message=137%20%E7%AF%87&color=1b1917&style=flat-square)](https://hulatu.com/archive/)
+[![周刊](https://img.shields.io/static/v1?label=%E5%91%A8%E5%88%8A&message=28%20%E6%9C%9F&color=c0392b&style=flat-square)](https://hulatu.com/weekly/)
+[![Hugo](https://img.shields.io/static/v1?label=Hugo&message=0.167&color=ff4088&style=flat-square&logo=hugo&logoColor=white)](https://gohugo.io/)
+[![部署](https://img.shields.io/static/v1?label=%E9%83%A8%E7%BD%B2&message=Cloudflare%20Pages&color=f38020&style=flat-square&logo=cloudflare&logoColor=white)](#-发布)
+[![RSS](https://img.shields.io/static/v1?label=%E8%AE%A2%E9%98%85&message=RSS%20%E5%85%A8%E6%96%87&color=e8892e&style=flat-square&logo=rss&logoColor=white)](https://hulatu.com/index.xml)
+[![许可](https://img.shields.io/static/v1?label=%E5%86%85%E5%AE%B9&message=CC%20BY-NC-SA%204.0&color=2f7d5d&style=flat-square)](#-许可)
+
+<br>
+
+**[🌐 hulatu.com](https://hulatu.com/)** ・ **[📮 订阅](https://hulatu.com/index.xml)** ・ **[📚 精选](https://hulatu.com/featured/)**
+
+</div>
+
+---
+
+> **这份 README 只讲「怎么跑起来」和「想改什么去哪改」。**
 >
-> ⚠️ 2026-10-10 晚整站从**自建主题**迁移到了上游 hugo-bearneo。这份 README 是那天同步重写的。
->
-> ⚠️ 2026-10-14 做过一轮「加载速率 / 过时写法」审计并全部实施（新增 `partials/seo_tags.html`、
-> `custom_head.html` 多出第 26 段、图片放大换成不重复 `<img>` 的方案）。首页全页 gzip
-> 5941 → 5082 B，全站 `<img>` 节点 644 → 323。逐条清单与体积回归见 [DESIGN.md](DESIGN.md) 第 9 节。
->
-> ⚠️ 同日晚些：周刊列表页的计数行加了 RSS 订阅入口（`list.html`，**普通文字链接、
-> 不加样式**，其余页 0 字节）。
->
-> ⚠️ 2026-10-15：**「浏览器直接打开 RSS」这一页换了实现方式**。Chromium 正在移除 XSLT
-> （打开 `/index.xml` 会弹「This site uses XSLT…」横幅），所以 `static/rss.xsl` 与 feed 顶部
-> 那行 `<?xml-stylesheet?>` 整体撤掉，改由 `functions/_middleware.js` 做内容协商：
-> 浏览器导航 → 站内 HTML 页 `/feed/` 或 `/feed/weekly/`，订阅器 → 原样 XML。
-> **订阅地址一个字没变**，导航最右的 `RSS` 与页脚 `Subscribe via RSS` 仍指 `/index.xml`。
-> 新增 2 个内容页（`content/feed/`）、3 个模板（`layouts/feed/*` + `partials/feed-view.html`）、
-> `custom_head.html` 第 28 段（只在那两页输出）。全站产物 HTML 332 → 334。
+> 更深入的两份：**[MAINTENANCE.md](MAINTENANCE.md)**（文件地图、坑、验收清单）、
+> **[DESIGN.md](DESIGN.md)**（视觉规范与站点层每个文件的偏离）。
+> **三份冲突时以 MAINTENANCE.md 为准。**
 
-## 功能特点
+## 📑 目录
 
-- **导航栏**：6 项英文标签，**完全由 `hugo.toml` 的 `[[menu.main]]` 驱动**，模板里不写死任何链接：
-  `Home` / `About` / `Links`(→`/roll/` 收藏与友链) / `Weekly`(→`/weekly/`) / `Posts`(→`/archive/` 归档) / `RSS`(→`/index.xml` 全站订阅源)
-  ⚠️ 2026-10-12 **撤掉了原来的 `Hub`**（曾指向 `https://profile.hulatu.com/` 个人主页）——
-  那个子站当晚被**整体删除**，内容并入 `/about/`（已去掉「花园」入口）。
-  ⚠️ 2026-11-03：关于页的「内容平台」一节已撤，平台入口只保留在首页那一行。
-  同日稍晚 `run` / `shot` / `share` 三个子站也一并下线、`sites/` 目录从仓库删除，
-  **所以现在全站只有主站一份导航表**，不再有「子站导航要同步改」这回事。
-- **首页**：逐条照 [yinji.org](https://yinji.org/) 的 Bear Neo 版式 —— `Hi!`（**h1**，2026-10-25 从 h2 升上来）+
-  一句题记 +
-  一段简介 + 一句「…可以选择 **[支持]** 我」（链到 `/donate/`）+ 一行**四个平台**的入口链接
-  （公众号 / 少数派 / 知乎 / 即刻），
-  虚线 `<hr>` 之后是 `<h2>Recent Posts:</h2>`（2026-10-25 从 h3 升到 h2，与 h1 不跳级）和**最近 5 篇**
-  （日期在左、标题在右，
-  **与标题左对齐**，照 yinji），**不分页**、**列表后面没有任何尾巴**。文案全在 `content/_index.md`
-- **支持页 `/donate/`**：微信 + 支付宝两个赞赏码并排居中（窄屏落成一列）。
-  收款码是站内静态资源，不走图床。**换码后记得去 Cloudflare Purge `/images/donate/*`**（30 天缓存）
-- **关于页 `/about/`**：**没有页面标题、没有头像**（标题只留在 `<title>` 和导航高亮里，
-  照 yinji）。页头那张头像更早就撤了，所以**全站一张头像都没有**
-- **文章页**：**面包屑**（`首页 / 文章 / 分类`；周刊是 `首页 / 周刊`。137 篇都有，
-  另带完整的 `BreadcrumbList` JSON-LD）—— **分类的入口就在这一段的第三段**、
-  右侧固定目录（**>1200px 显示**，平时完全隐形、悬停才显形；**手机端没有目录**）、
-  标签行（**只有标签、没有分类行**）、文末**「系列坐标带」**（「系列」链回 `/series/`）+
-  **相关文章** + **「上一篇 / 下一篇」**（2026-11-03 起只有非系列文章显示）+
-  评论区、CSS-only 的图片放大（**零 JS**：checkbox + `--zoom-src` 背景图，overlay 不重复一个 `<img>`，所以每张图在 DOM 里只占 1 个节点，且放大时内联图不离流、零回流）。
-  **含代码的文章有跟随深浅色的语法配色**（2026-10-11 修 —— 改之前代码块里的
-  普通标识符/字符串在浅色底上对比度只有 1:1，等于看不见）。
-  **没有**阅读进度条、回到顶部（长文页的返回顶部除外）、代码块红绿灯 —— 都删了
-- **归档 `/archive/`**：`<h1>归档</h1>` + 搜索框 + 「共 137 篇。」+ **「系列」一行入口**
-  （3 组 · 23 篇 → `/series/`）+ 底部标签（出现 ≥3 篇的 32 个常显，其余 187 个收进「其余标签」折叠）
-  + 按年份分组的全部文章（含周刊）
-- **周更栏目**：周刊独立成栏（`/weekly/`），正文走 `/posts/年/月/日/slug/`，另有单独的 RSS
-- **链接页 `/roll/`（导航里那项 `Links`）**：全站唯一的链接清单，照 [yinji.org/roll](https://yinji.org/roll)
-  做成**一条平铺的 13 项列表**（前 3 条朋友、后 10 条聚合站/目录站，**没有小标题、也没有页面标题**），
-  两组之间是一条**全宽虚线 `<hr>`**（与首页 `Hi!` / `Recent Posts:` 之间那条同源）。
-  条目写成 `名称：一句话点评`，**点评目前留空待填**。
-  旧的 `/links/` 友链页已删除，`/links/` 与更早的 `/friends/` 都 301 到 `/roll/`
-- **深浅色**：**完全跟随系统**，没有切换按钮（上游如此）
-- **搜索**：只在 `/archive/` 顶部；标题 + 标签 + 正文（懒加载 `/index.json`，两级加载）。
-  词条页与 `/weekly/` 不再挂搜索框（2026-11-03）
-- **评论**：giscus（GitHub Discussions），只挂长文页、默认收起。样式极简 —— 没有任何外框，
-  只有一行加粗的「评论」+ 右边一个**实心三角 ▼**（展开翻成 ▲），点一下展开
-- **404 页**：两段结构（水印 `404` + `<h1>这一页不在账上</h1>` + 三个动作 + 「逛逛别处」两列栏目）。
-  「随便看一篇」是构建时抽签，每次发布换一篇
-- **标题锚点**：**只在文章页** —— h2/h3 悬停显示一个可点的 `#`，用来复制小节直链。
-  ⚠️ 非文章页（`/about/` `/privacy/` `/` …）**模板层就不输出它**，所以那些页面没有 `#`
-- **返回顶部**：只挂长文页。**纯 CSS 滚动驱动动画，零 JS**（⚠️ 同批做过的阅读进度条已按用户要求删除）
-- **订阅**：RSS 2.0 全文输出，主源 `/index.xml` + 周刊专线 `/weekly/index.xml`，每源最多 20 条。
-  **两个源都只收文章页**（`/about/` `/roll/` `/privacy/` `/donate/` `/archive/` 一条都不进）。
-  feed 本身是**纯 XML**（顶部没有 `<?xml-stylesheet?>`）；浏览器直接打开 feed 时，由
-  `functions/_middleware.js`（Cloudflare Pages Functions）做内容协商，改写到站内 HTML 页
-  `/feed/` 与 `/feed/weekly/`（标题 + 简介 + 订阅地址 + 日期/标题/摘要列表），
-  **订阅器不受影响**。⚠️ 2026-10-15 之前用的是 `static/rss.xsl`，因 Chromium 移除 XSLT 而撤掉
-- **SEO**：canonical、Open Graph、**JSON-LD（334 页全有）**、sitemap、robots、旧链接 301。
-  站点的 SEO 头在 `layouts/partials/seo_tags.html`（2026-10-14 新增，整份覆盖上游同名 partial）：
-  上游那份还带着 `<meta name=keywords>`（Google 2009 年起就不读）和一套没有 `itemscope`
-  祖先、**实际全不生效**的 microdata `itemprop`，两者都已删，改按页型输出 JSON-LD
-  （首页 `WebSite` / 文章页 `BlogPosting` / 其他独立页与 404 `WebPage` / section 与词条 `CollectionPage`）。
-  `noindex, follow` 覆盖 **225 页**（219 个标签词条 + `/privacy/` + `/posts/` + `/donate/` + 404 + `/feed/` 那两页）；分类词条页 2026-10-26 起可索引，不在其中。
-  ⚠️ 每页 `og:image` 目前都是同一张 `share.webp`（按 slug 分图的 125 张**已于 2026-10-11 清理删除**，见 DESIGN.md 第 8 节）；宽高走 `hugo.toml` 的 `ogImageWidth` / `ogImageHeight`
-- **子站**：⚠️ **2026-10-12 起本站是单站单仓库，`sites/` 目录已删除。**
-  原先的四个独立子站全部下线：`profile`（个人主页 / `Hub`）内容并入 `/about/`、
-  `run` 跑步页并入 `/run/`、`shot` / `share` 是空壳直接删除。
-  一并删掉的还有 `scripts/build-subdomains.sh`（子站构建）与那份 `sites/README.md`
-  （子站搭建细则 —— **没有迁移到别处**，需要时 `git show <commit>:sites/README.md`）。
-  要恢复任意一个子站：`git log --all -- sites/` 定位删除提交后取回。
+| 想做什么 | 看这里 |
+| --- | --- |
+| 了解这是个什么站 | [🌱 这是个什么站](#-这是个什么站) |
+| 在本机跑起来 | [🚀 本地跑起来](#-本地跑起来) |
+| 找文件 | [🗂 仓库地图](#-仓库地图) |
+| 改点什么 | [🎛 想改什么 去哪改](#-想改什么-去哪改) |
+| 发一篇文章 | [✏️ 写与发](#-写与发) |
+| 部署 / 订阅 / 评论 | [🚢 发布](#-发布) ・ [📡 订阅与评论](#-订阅与评论) |
+| 看现在的家底 | [🧭 站点现状](#-站点现状) |
+| 这里为什么是这样 | [📜 变更时间线](#-变更时间线) |
 
-## 目录结构
+## 🌱 这是个什么站
+
+| | |
+| --- | --- |
+| 🌐 **线上地址** | <https://hulatu.com/> |
+| 🧱 **框架** | [Hugo](https://gohugo.io/) `0.167.0` extended |
+| 🎨 **主题** | 上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo) 的副本（`themes/` 里 **27 个文件逐字节未改**，只有 `style.html` 两处登记改动：正文行高 1.6→1.8、删掉未启用的 upvote CSS） |
+| ☁️ **托管** | Cloudflare Pages（Git 集成，push 即自动构建） |
+| 💬 **评论** | giscus（GitHub Discussions，只挂长文页） |
+| 📊 **统计** | GoatCounter（无 Cookie） |
+| 📡 **订阅** | RSS 2.0 全文输出 |
+| 🏗 **形态** | **单站单仓库** —— 2026-10-12 起原先四个子站全部下线，内容并回主站 |
+
+**站点结构**（导航 6 项完全由 `hugo.toml` 的 `[[menu.main]]` 驱动，模板里不写死任何链接）：
+
+| 路径 | 页面 | 说明 |
+| --- | --- | --- |
+| `/` | 首页 | 招呼 + 题记 + 简介 + 支持链接 + 平台入口 + 最近 5 篇 |
+| `/archive/` | 文章 | 全站唯一的搜索框 + 系列入口 + 年份分组 |
+| `/weekly/` | 周刊 | 独立栏目，单独的 RSS |
+| `/series/` | 系列 | 跨文章的系列总览 |
+| `/featured/` | 精选 | 手工挑的几篇 |
+| `/roll/` | 友链 | 全站唯一的链接页（导航里的「友链」） |
+| `/about/` | 关于 | 无标题无头像 |
+| `/run/` | 跑步 | 读 `data/runs.json`，每天自动同步 Garmin |
+| `/donate/` | 支持 | 两个赞赏码 |
+| `/wechat/` | 公众号 | 二维码页 |
+| `/privacy/` | 隐私 | — |
+| `/feed/` | 订阅源浏览器视图 | 内容协商落点，见 [订阅与评论](#-订阅与评论) |
+
+**几条贯穿全站的设计取舍**
+
+| | 做法 | 为什么 |
+| --- | --- | --- |
+| 🌗 深浅色 | 完全跟随系统，**没有切换按钮** | 上游如此，少一个控件少一份状态 |
+| 🔍 搜索 | 只在 `/archive/` 顶部 | 词条页和周刊列表挂搜索框是纯噪音 |
+| 📖 目录 | 只在 **>1200px** 的桌面端，平时隐形、悬停显形 | 手机端折叠目录 2026-11-02 已删除，不恢复 |
+| 🖼 图片放大 | **零 JS**：checkbox + `--zoom-src` 背景图 | 每张图在 DOM 里只占 1 个节点，放大时内联图不离流、零回流 |
+| ⬆️ 返回顶部 | 纯 CSS 滚动驱动动画，零 JS | 只挂长文页 |
+| 🔗 标题锚点 | 只在文章页输出可点的 `#` | 独立页模板层就不输出 |
+| 🎲 404 | 「随便看一篇」构建时抽签，每次发布换一篇 | 死链也能有个去处 |
+| 📰 RSS | 浏览器打开 feed 时内容协商到站内 HTML 页 | Chromium 移除 XSLT，详见时间线 |
+
+## 🚀 本地跑起来
+
+**1. 装 Hugo（Extended，0.167.0+）**
+
+```bash
+brew install hugo                          # macOS
+winget install Hugo.Hugo.Extended          # Windows
+hugo version                               # 只要 extended 就行，版本号见下
+```
+
+> ⚠️ **构建版本钉在 `0.167.0`**：CI（`.github/workflows/build.yml` 的 `hugo-version`，还会
+> `grep -q v0.167.0` 硬校验）和 Cloudflare Pages 的 `HUGO_VERSION` 都是它，`hugo.toml` 的
+> `[module.hugoVersion]` 写的是 `min = "0.167.0"`。
+>
+> 本机 `brew install hugo` 现在给的是 **0.169.0**，跑本地预览没问题（更高版本向后兼容），
+> 但**别把本机版本号抄进 CI 或平台变量**——三处不一致的典型症状是「本地正常、线上构建失败」。
+
+**2. 预览**
+
+```bash
+hugo server -D          # -D 连草稿一起显示，改文件自动刷新
+./deploy.sh             # 干净构建到 public/，检查 livereload 与站内断链
+```
+
+> ⚠️ `hugo server` 开着会持续覆盖 `public/`。想在不打扰 server 的情况下验收，
+> 构建到临时目录：`hugo --gc --minify --cleanDestinationDir --destination /tmp/hb-check`。
+
+**3. 写一篇** —— 见 [✏️ 写与发](#-写与发)。
+
+## 🗂 仓库地图
 
 ```
-blog/
-├── hugo.toml                   # 站点配置（导航、参数、permalinks、输出格式、代码高亮、Hugo 版本约束）
+Blog/
+├── hugo.toml                 # 站点配置：导航 / 参数 / permalinks / 高亮 / 版本约束
 ├── content/
-│   ├── _index.md               # 首页文案（Hi! / 题记 / 简介 / 支持链接 / 四个平台入口链接）
-│   ├── posts/                  # 101 篇文章 + _index.md（noindex，站内没有入口）
-│   ├── weekly/                 # 25 期周刊 + _index.md（单独开了 RSS 输出）
-│   ├── about.md roll.md privacy.md archive.md                   根级独立页
-│   │                           # ⚠️ links.md 2026-10-11 已删：友链并进 roll.md（唯一的链接页）
-│   ├── donate.md               # 支持页（两个赞赏码），2026-10-11 搬回
-│   ├── run.md                  # 跑步数据（layout: "run"），2026-10-12 从子站搬回
-│   ├── feed/                   # 订阅源「浏览器视图」的两个壳（只有 front matter）
-│   │                           #   _index.md → /feed/，weekly.md → /feed/weekly/（都 noindex）
-├── layouts/                    # ★ 站点层覆盖，只有 23 个文件（+ assets/js 2 个 = 站点层合计 25，见 DESIGN.md 第 5 节）
-│   ├── index.html              #   首页（上游只有 {{ .Content }}；简介不包 <content>）
-│   ├── _default/baseof.html    #   LanguageCode → Language.Locale + 补回 robots 分支
-│   ├── _default/single.html    #   去 `if eq .Type "blog"` 门槛 + hideDate/hideTitle + 系列带/上下篇 + 评论区
-│   ├── _default/list.html      #   5 处文案英译中 + 删底部标签墙
-│   ├── _default/rss.xml        #   加 pageLimit 上限；⚠️ 2026-10-15 起不再输出 <?xml-stylesheet?>
-│   ├── _default/archive.html   #   ★ 新增：/archive/ 列表页 + 「系列」入口 + 标签常显/折叠
-│   ├── _default/run.html       #   ★ 新增：/run/ 跑步数据页（读 hugo.Data.runs）
-│   ├── feed/list.html          #   ★ 新增（2026-10-15）：/feed/ 订阅源浏览器视图
-│   ├── feed/single.html        #   ★ 新增（2026-10-15）：/feed/weekly/ 同一个视图
-│   ├── _default/_markup/render-link.html  # ★ 新增：去掉 `</a>` 后面的换行（中文标点前多空格）
-│   └── partials/               #   nav / footer / custom_head / giscus / seo_tags
-│       └── breadcrumbs.html    #   ★ 新增：面包屑 + BreadcrumbList JSON-LD（只给文章页）
-│       └── feed-view.html      #   ★ 新增（2026-10-15）：订阅源浏览器视图的内容（口径同 rss.xml）
-│       └── seo_tags.html       #   ★ 新增（2026-10-14）：SEO 头 —— 覆盖上游同名 partial
-│                               #     （删 keywords / name=title / 微数据，换按页型的 JSON-LD）
-├── assets/js/giscus.js         # 评论区脚本（只在挂评论的页加载）
-├── assets/js/code-copy.js      # 代码块复制按钮（只在含代码块的 5 页加载）
-├── themes/hugo-bearneo/        # ★ 上游主题副本（27 个文件；style.html 有 2 处登记改动），**别随手改**
-├── scripts/                    # 发布前脚本、链接检查、Garmin 同步、图床尺寸采集、仓库清理（12 个，见 MAINTENANCE.md）
+│   ├── _index.md             # 首页文案（招呼、题记、简介、平台入口）
+│   ├── posts/                # 109 篇文章
+│   ├── weekly/               # 28 期周刊（单独开了 RSS 输出）
+│   ├── feed/                 # 订阅源「浏览器视图」的两个壳
+│   ├── about / archive / roll / series / featured / run / donate / wechat / privacy
+│   └── categories/           # 8 个分类
+├── layouts/                  # ★ 站点层覆盖（40 个文件），主题一律不改
+│   ├── index.html            #   首页
+│   ├── _default/             #   baseof / single / list / rss / archive / run / series / featured
+│   ├── feed/                 #   /feed/ 与 /feed/weekly/ 的视图
+│   ├── partials/             #   nav / footer / custom_head / giscus / seo_tags / breadcrumbs …
+│   └── _markup/              #   render-heading（标题锚点）/ render-link / render-image
+├── themes/hugo-bearneo/      # ★ 上游主题副本，**别随手改**
+├── assets/js/                # giscus.js / code-copy.js（只在需要的页加载）
 ├── data/
-│   ├── runs.json               # 跑步数据（主站 `/run/` 页在读）
-│   └── image-dims.json         # 正文图片真实宽高（喂 render-image.html）
-├── static/                     # 原样发布：_headers / _redirects / 图标
-│   └── images/                 # 只剩两个在用：share.webp（全站 og:image）、donate/（2 张赞赏码）
-├── functions/_middleware.js    # ★ Cloudflare Pages Functions（2026-10-15）：订阅源内容协商
-├── archetypes/                 # hugo new 用的模板（posts / weekly）
-├── publish.sh                  # 发布：补锚点/刷 lastmod → 提交 → 推 GitHub
-├── deploy.sh                   # 只在本地干净构建到 public/，不部署
-├── DESIGN.md                   # 设计规范（站点层 25 个文件的偏离 + 已删功能清单）
-└── MAINTENANCE.md              # 维护手册（文件地图、坑、验收清单）
+│   ├── runs.json             # 跑步数据（/run/ 在读）
+│   └── image-dims.json       # 正文图片真实宽高
+├── static/                   # 原样发布：_headers / _redirects / 图标 / images
+├── functions/_middleware.js  # Cloudflare Pages Functions：订阅源内容协商
+├── scripts/                  # 12 个脚本：发布前检查、链接检查、Garmin 同步、图床尺寸 …
+├── archetypes/               # hugo new 的模板（posts / weekly）
+├── publish.sh                # 一键发布：补锚点 → 刷 lastmod → 提交 → 推
+├── deploy.sh                 # 本地干净构建，不部署
+├── DESIGN.md                 # 设计规范
+└── MAINTENANCE.md            # 维护手册（**冲突以它为准**）
 ```
 
-> ⚠️ **2026-10-12 起没有 `sites/` 目录了** —— 原先的四个子站（run / shot / share / profile）
-> 全部下线，源码已从仓库删除。要恢复看 [MAINTENANCE.md](MAINTENANCE.md) 第 1 节的说明。
+## 🎛 想改什么 去哪改
 
-## 本地运行
+| | 想改什么 | 去哪改 |
+| --- | --- | --- |
+| 🏷 | 博客名 / 描述 / 作者 / 邮箱 | `hugo.toml` 顶部与 `[params]` |
+| 🧭 | **导航菜单**（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`（`weight` 控顺序），**不用碰模板** |
+| 🦶 | 页脚 | `hugo.toml` 的 `copyright` / `copyrightNote` / `licenseName` / `licenseURL` / `[params.footer]`；结构在 `partials/footer.html`（四行：Made with → Copyright → 订阅行 → 英文授权行） |
+| 🏠 | 首页文案 | `content/_index.md` |
+| 🔢 | 首页列几篇 | `hugo.toml` 的 `homeRecentCount`（当前 5，设 0 不显示） |
+| 📐 | 首页列表的对齐 | `partials/custom_head.html` 第 04 段（`padding-left: 0` 保证与标题左对齐） |
+| 💰 | 支持页 / 换赞赏码 | `content/donate.md` + `custom_head.html` 第 08 段。⚠️ 换码后去 Cloudflare Purge `/images/donate/*` |
+| 🔗 | 链接页（朋友 / 聚合站 / 点评） | `content/roll.md` —— 全站唯一的链接页，一条平铺 13 项，格式 `名称：一句话点评` |
+| 👤 | 关于页 | `content/about.md`（纯 Markdown，**没有头像**） |
+| 🎨 | **颜色 / 字体 / 宽度 / 圆角** | `themes/hugo-bearneo/layouts/partials/style.html` 的 `:root`（改上游，改完在 DESIGN.md 第 5 节登记） |
+| 📝 | 正文排版（标题间距 / 中文字体） | `layouts/partials/custom_head.html` 第 02 段 |
+| 🍞 | 面包屑 | `layouts/partials/breadcrumbs.html` + `custom_head.html` 第 13 段 |
+| 👁 | 独立页是否显示标题 | front matter 的 `hideTitle: true`（`/roll/` `/about/` 开着） |
+| 📚 | 文末「系列」/「相关文章」/「上一篇 下一篇」 | `_default/single.html` + `custom_head.html` 第 09 / 10 段 |
+| 🗂 | 「系列」入口 / 总览页 | 入口 `_default/archive.html`；总览页 `_default/series.html` + `content/series.md` |
+| 🎲 | 404 页 | `layouts/404.html` + `custom_head.html` 第 15 段 |
+| 🔗 | 标题锚点 / 孤行保护 | `_markup/render-heading.html`（只文章页）+ `partials/orphan-safe.html`（全站） |
+| ⬆️ | 返回顶部 | `partials/back-top.html` + `custom_head.html` 第 16 段 |
+| 📋 | 代码复制按钮 | `assets/js/code-copy.js` + `partials/code-copy.html` + 第 18 段 |
+| 📄 | 分页 | **全站都不分页**（上游不用 `.Paginate`）。旧地址由 `static/_redirects` 301 兜底 |
+| 📖 | 目录 | **>1200px** 桌面端右侧悬浮（`custom_head.html` 第 20 段）；**≤1200px 没有目录** |
+| 🖼 | 图标 | `static/favicon.svg`（全站唯一图标） |
+| 💬 | 评论 | `hugo.toml` 的 `[params.giscus]`；单篇用 `comments: false` 关掉 |
+| 📊 | 统计 | `hugo.toml` 的 `[params.analytics]`（GoatCounter，挂在 `custom_head.html` 末尾） |
+| 🖼 | 分享图 | `hugo.toml` 的 `params.images`（**全站同一张** `share.webp`）+ `ogImageWidth` / `ogImageHeight`（当前 1200 / 630，换图要跟着改） |
+| 🔎 | **SEO 头**（canonical / OG / JSON-LD） | `layouts/partials/seo_tags.html` —— 整份覆盖上游同名 partial：删掉 `keywords` 与不生效的微数据，改按页型输出 JSON-LD |
+| ↩️ | 加 301 / 改缓存头 | `static/_redirects`（首条命中即生效）/ `static/_headers` |
+| ➕ | 加根级独立页 | `content/xxx.md`（`hideDate: true` + `toc: false`；纯工具页再加 `noindex: true`）+ 回 `_headers` 补缓存规则 |
 
-### 1. 装 Hugo（Extended，0.167.0+）
-
-- macOS：`brew install hugo`
-- Windows：`winget install Hugo.Hugo.Extended`
-- Linux：参考[官方安装文档](https://gohugo.io/installation/)
+## ✏️ 写与发
 
 ```bash
-hugo version   # 期望：hugo v0.167.0+extended ...
+hugo new content/posts/文章名.md           # 周刊：hugo new content/weekly/周刊-第N期.md
 ```
 
-版本要在三处一致，否则会出现「本地正常、线上构建失败」：本机、`.github/workflows/build.yml` 的
-`hugo-version`、Cloudflare Pages 唯一项目的环境变量 `HUGO_VERSION`；`hugo.toml` 的
-`[module.hugoVersion]` 是第四处。
+按 `archetypes/posts.md` 的清单填 front matter，把 `draft` 改成 `false` 就发布。
 
-⚠️ **`extended = true` 是历史遗留**：自建主题时代 `head-meta.html` 用 `imageConfig` 读分享图宽高，
-非 extended 版解不了 WebP。迁移到 hugo-bearneo 后全仓库已经**没有任何 `imageConfig` 调用**，
-标准版理论上也能构建 —— 但保持 extended 零成本，**先留着**，别为了顺手删掉去动 CI 和平台配置。
-
-### 2. 预览
-
-```bash
-hugo server -D     # -D 连草稿一起显示，改文件自动刷新
-```
-
-只想构建一份干净的产物看看（不部署）：
-
-```bash
-./deploy.sh        # 干净构建到 public/，检查 livereload 与站内断链，再同步产物
-```
-
-⚠️ `hugo server` 开着会持续覆盖 `public/`。想在不打扰 server 的情况下验收，
-构建到临时目录：`hugo --gc --minify --cleanDestinationDir --destination /tmp/hb-check`。
-
-### 3. 新建一篇文章
-
-```bash
-hugo new content/posts/文章名.md      # 周刊：hugo new content/weekly/周刊-第N期.md
-```
-
-按 `archetypes/posts.md` 里的清单填 front matter，写完把 `draft` 改成 `false` 即可发布。
-`date` 决定 URL（`/posts/年/月/日/slug/`），`slug` 决定 URL 的最后一段。
-
-⚠️ **`series`（系列）字段在用**：文章页文末「系列坐标带」+ `/archive/` 一行入口 + `/series/` 总览页都读它
-（字符串语义，一篇只能属于一个系列）。`issue`（周刊期号）**2026-10-13 已全部移除** ——
-期号徽章早随迁移删除，标题里本来就写着「第 N 期」。
-
-## 常用自定义
-
-| 想改什么 | 去哪改 |
-|---|---|
-| 博客名 / 描述 / 作者 / 邮箱 | `hugo.toml` 顶部与 `[params]` |
-| **导航菜单**（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`（`weight` 控制顺序），**不用碰模板** |
-| 页脚 | `hugo.toml` 的 `copyright` / `copyrightNote` / `licenseName` / `licenseURL` / `[params.footer]` 四个开关；结构在 `layouts/partials/footer.html`（**四行顺序**：Made with → Copyright → 订阅行（末尾接「🚇 开往」友链接力入口）→ 英文授权行） |
-| 首页文案 | `content/_index.md` |
-| 首页列几篇 | `hugo.toml` 的 `homeRecentCount`（当前 5，设 0 就不显示列表） |
-| 首页列表的对齐 | `layouts/partials/custom_head.html` 第 04 段（`padding-left: 0` 保证与标题左对齐） |
-| 支持页 / 换赞赏码 | `content/donate.md` + `custom_head.html` 第 08 段。⚠️ 换码后去 Cloudflare Purge `/images/donate/*` |
-| 链接页（朋友 / 聚合站 / 点评） | `content/roll.md` —— **全站唯一的链接页**，一条平铺 13 项（前 3 朋友、后 10 聚合站，无小标题）。条目写成 `名称：一句话点评`（点评待填） |
-| 关于页介绍块 | `content/about.md`（**纯 Markdown，没有头像**；`custom_head.html` 第 03 段已留空） |
-| **颜色 / 字体 / 宽度 / 圆角** | `themes/hugo-bearneo/layouts/partials/style.html` 的 `:root`（改上游，改完在 DESIGN.md 第 5 节登记） |
-| 正文排版（标题间距 / 中文字体） | `layouts/partials/custom_head.html` 第 02 段 |
-| 代码块配色 | `custom_head.html` 第 12 段（浅/深两套）。⚠️ 前提是 `hugo.toml` 的 `[markup.highlight] noClasses = false` |
-| 面包屑 | `layouts/partials/breadcrumbs.html`（**新增文件**）+ `custom_head.html` 第 13 段。改**分类**那一段看 partial 里 `$catName` 那块（周刊刻意不加） |
-| 独立页是否显示标题 | front matter 的 `hideTitle: true`（`/roll/` `/about/` 开着） |
-| 文末「系列」/「相关文章」/「上一篇 / 下一篇」 | 模板 `layouts/_default/single.html` + `custom_head.html` 第 09 / 10 段。系列文章不渲染全站上下篇 |
-| 「系列」入口 / 总览页 | 入口 `layouts/_default/archive.html`（+ `custom_head.html` 第 09 段）；总览页 `layouts/_default/series.html` + `content/series.md`（+ 第 09b 段） |
-| 404 页 | `layouts/404.html` + `custom_head.html` 第 15 段 |
-| 标题锚点 / 孤行保护 | `_markup/render-heading.html`（只文章页，第 19 段）+ `partials/orphan-safe.html`（全站，第 14 段） |
-| 返回顶部 | `partials/back-top.html` + `custom_head.html` 第 16 段 |
-| 代码复制按钮 | `assets/js/code-copy.js` + `partials/code-copy.html` + 第 18 段 |
-| 分页 | **全站都不分页**（上游不用 `.Paginate`）。旧地址 `/page/*` 和 `/weekly/page/*` 由 `static/_redirects` 301 兜底 |
-| 目录 | **>1200px 桌面端**：右侧悬浮目录（主题 `div.toc`，平时隐形、悬停显形，断点覆盖在 `custom_head.html` 第 20 段）；**≤1200px**：没有目录（手机折叠目录 2026-11-02 已删除，不恢复） |
-| 图标 | `static/favicon.svg`（全站唯一图标；PWA 五件套 2026-10-13 已删） |
-| 评论 | `hugo.toml` 的 `[params.giscus]`；单篇用 `comments: false` 关掉 |
-| 统计 | `hugo.toml` 的 `[params.analytics]`（当前只有 GoatCounter，挂在 `custom_head.html` 末尾） |
-| 分享图 | `hugo.toml` 的 `params.images`（当前是 `images/share.webp`，**全站同一张**）+ `params.ogImageWidth` / `ogImageHeight`（当前 1200 / 630，换图后要跟着改） |
-| 加 301 / 改缓存头 | `static/_redirects`（首条命中即生效）/ `static/_headers` |
-| 加根级独立页 | `content/xxx.md`（记得 `hideDate: true` + `toc: false`；纯工具页再加 `noindex: true`，参考 `content/donate.md`）+ 回 `_headers` 补一条缓存规则 |
-
-## 接入 giscus 评论
-
-giscus 基于 GitHub Discussions，不用自建后端：
-
-1. 仓库设为 **public**
-2. 仓库 **Settings → General → Features** 里开启 **Discussions**
-3. 打开 [giscus.app](https://giscus.app)，填入仓库地址，按提示选分类
-4. 它生成的那段 `<script>` 里，把 `data-repo`、`data-repo-id`、`data-category`、`data-category-id`
-   抄进 `hugo.toml` 的 `[params.giscus]`
-5. 重新构建：文章页正文下方会出现评论区（`repo` 留空则整块不显示；
-   列表页 / 关于 / 现在 / 收藏（链接页）/ 隐私页也不会显示）
-
-⚠️ `mapping = "pathname"` —— **只要 URL 不变，老评论就直接接上**。改 `[permalinks]` 会让评论全部断掉。
-
-## 发布
-
-线上是 **Cloudflare Pages 的 Git 集成**在构建：push 到 GitHub → Pages 项目自动构建发布。
-2026-10-12 起**只有主站一个项目**（四个子站的仓库侧源码已删）。
-本机不装 wrangler，也不手动上传。
-⚠️ 四个子域名（`run.` / `shot.` / `share.` / `profile.`）的 **CNAME 与 Pages 项目要在
-Cloudflare 后台手动清理** —— 仓库侧无法代劳。CNAME 用户已删除，剩下 Pages 项目
-若有残留建议一并删掉（它指向的 `sites/` 目录已不存在，构建只会失败）。见 MAINTENANCE.md 第 8 节第 4 条。
+| 字段 | 作用 |
+| --- | --- |
+| `date` | 决定 URL（`/posts/年/月/日/slug/`） |
+| `slug` | 决定 URL 最后一段 |
+| `series` | **在用**：文章页「系列坐标带」+ `/archive/` 入口 + `/series/` 总览都读它（一篇只能属于一个系列） |
+| `tags` | 标签行 + 归档页标签云 |
+| `categories` | 面包屑第三段（**周刊刻意不加**） |
 
 日常一条命令：
 
 ```bash
-up            # 或 cd ~/Blog && ./publish.sh
+up                          # 或 cd ~/Blog && ./publish.sh
 ```
 
-`publish.sh` 在提交前会自动做两件事（都是失败不阻断发布）：
-给新写的中文标题补 `{#pinyin}` 锚点、刷新改动过文章的 `lastmod`。
-⚠️ 其中**第二件现在已无可见产出**（见 DESIGN.md 第 8 节），但保留调用不影响发布。
-⚠️ 2026-10-12 起不再刷「花园页内容快照」——那个 `sites/profile` 子站已整体删除。
+`publish.sh` 提交前会自动做两件事（失败不阻断发布）：给新写的中文标题补 `{#pinyin}` 锚点、
+刷新改动过文章的 `lastmod`。
 
-CI（`.github/workflows/`）：
+## 📡 订阅与评论
 
-- `build.yml`：push / PR 时用同一个 Hugo 版本**只构建主站**，并检查中文标题锚点，
-  把「本地没事、平台构建失败」挡在推送前。（子站下线后已去掉「构建子站」那一步。）
-- `sync-garmin.yml`：每天 22:00（Asia/Taipei）拉一次跑步数据，写进 `data/runs.json`。
+**RSS** —— 两个源都只收文章页，每源最多 20 条：
 
-## License
+| 源 | 地址 |
+| --- | --- |
+| 全站 | <https://hulatu.com/index.xml> |
+| 周刊专线 | <https://hulatu.com/weekly/index.xml> |
 
-文章内容采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/)（页脚那行由
-`hugo.toml` 的 `copyrightNote` / `licenseName` / `licenseURL` 三个参数拼出），代码部分随意取用。
+feed 本身是**纯 XML**（顶部没有 `<?xml-stylesheet?>`）。浏览器直接打开时，
+`functions/_middleware.js` 做内容协商，改写到站内 HTML 页 `/feed/` 与 `/feed/weekly/`；
+**订阅器不受影响，订阅地址一个字没变**。
+
+**giscus 评论** —— 基于 GitHub Discussions，不用自建后端：
+
+1. 仓库设为 **public**
+2. **Settings → General → Features** 里开启 **Discussions**
+3. 打开 [giscus.app](https://giscus.app)，填仓库地址、选分类
+4. 把生成的 `data-repo` / `data-repo-id` / `data-category` / `data-category-id` 抄进 `hugo.toml` 的 `[params.giscus]`
+5. 重新构建：文章页正文下方出现评论区（`repo` 留空则整块不显示）
+
+> ⚠️ `mapping = "pathname"` —— **只要 URL 不变，老评论就直接接上**。
+> 改 `[permalinks]` 会让评论全部断掉。
+
+## 🚢 发布
+
+线上是 **Cloudflare Pages 的 Git 集成**在构建：push → 自动构建发布。
+本机不装 wrangler，也不手动上传。
+
+**CI**（`.github/workflows/`）：
+
+| 工作流 | 做什么 |
+| --- | --- |
+| `build.yml` | push / PR 时用**同一个 Hugo 版本**构建主站，并检查中文标题锚点 —— 把「本地没事、平台构建失败」挡在推送前 |
+| `sync-garmin.yml` | 每天 22:00（Asia/Taipei）拉一次跑步数据，写进 `data/runs.json` |
+
+## 🧭 站点现状
+
+<details>
+<summary><b>点开看具体数字（截至 2026-11-07，随内容增长会变）</b></summary>
+
+| 项 | 数量 |
+| --- | --- |
+| 文章（`content/posts/`） | 109 篇 |
+| 周刊（`content/weekly/`） | 28 期 |
+| 合计 | **137 篇** —— 周刊也走 `/posts/:year/:month/:day/:slug/`，所以线上 `/posts/` 下共 137 个文章页 |
+| 分类 | 8 个（健康 / 周刊 / 学习科研 / 工具 / 思考 / 记录 / 运动 / 饮食） |
+| 标签词条页 | 219 个 |
+| 系列 | 6 组 |
+| 草稿 | 0 |
+| 产出 HTML | 379 个文件（Hugo 报 384 页，含 XML / JSON 输出） |
+| 首页体积 | 6592 B，gzip 2918 B |
+
+- 每页都有 JSON-LD（首页 `WebSite` / 文章页 `BlogPosting` / 独立页与 404 `WebPage` /
+  section 与词条 `CollectionPage`）。
+- **`noindex, follow`** 覆盖标签词条、`/privacy/`、`/posts/`、`/donate/`、`/wechat/`、404 与
+  `/feed/` 那两页；**分类词条页 2026-10-26 起可索引**。
+- **og:image 全站同一张** `share.webp`（1200×630）。
+
+</details>
+
+## 📜 变更时间线
+
+<details>
+<summary><b>点开看这个站是怎么长成现在这样的</b></summary>
+
+| 日期 | 改了什么 |
+| --- | --- |
+| 2026-10-10 | 整站从**自建主题**迁移到上游 hugo-bearneo；主题文件逐字节未改，站点特有内容全部走 `layouts/` 覆盖 |
+| 2026-10-11 | 周刊回到导航；`links.md` 删除、友链并入 `roll.md`；`/donate/` 搬回；清理 125 张按 slug 分的 og 图，改成全站一张 `share.webp` |
+| 2026-10-12 | **四个子站（run / shot / share / profile）全部下线**，`sites/` 与 `scripts/build-subdomains.sh` 从仓库删除；导航撤掉 `Hub`，内容并入 `/about/` 与 `/run/` |
+| 2026-10-13 | 移除 `issue`（周刊期号）字段；删掉 PWA 五件套图标 |
+| 2026-10-14 | 加载速率审计并全部实施：新增 `partials/seo_tags.html`（删掉 `keywords` 与不生效的微数据，改按页型输出 JSON-LD）、图片放大换成不重复 `<img>` 的方案。首页全页 gzip 5941 → 5082 B，全站 `<img>` 节点 644 → 323 |
+| 2026-10-15 | **浏览器打开 RSS 换了实现**：Chromium 正在移除 XSLT，所以撤掉 `static/rss.xsl` 与 feed 顶部的 `<?xml-stylesheet?>`，改由 `functions/_middleware.js` 内容协商到 `/feed/` 与 `/feed/weekly/` |
+| 2026-10-25 | 首页 `Hi!` 从 h2 升到 h1、`Recent Posts:` 升到 h2（与 h1 不跳级） |
+| 2026-10-26 | 分类词条页开放索引 |
+| 2026-11-02 | 删除手机端折叠目录，不恢复 |
+| 2026-11-03 | 关于页撤掉「内容平台」一节（入口只留首页那一行）；「上一篇 / 下一篇」只给非系列文章；词条页与 `/weekly/` 不再挂搜索框 |
+| 2026-11-05 | 新增 `/featured/` 精选页（`layout: "featured"`，与 `/series/` 同一套做法） |
+| 2026-11-07 | 新增 `/wechat/` 公众号二维码页（`noindex`）；首页平台入口加了 X |
+
+> 更早的历史：`git log --all` 。子站源码没有迁移到别处，需要时 `git show <commit>:sites/README.md` 取回。
+
+</details>
+
+## 📄 许可
+
+文章内容采用 [CC BY-NC-SA 4.0](https://creativecommons.org/licenses/by-nc-sa/4.0/) —— 署名、非商业性使用、相同方式共享。
+页脚那行由 `hugo.toml` 的 `copyrightNote` / `licenseName` / `licenseURL` 三个参数拼出。
+
+代码部分随意取用。
+
+---
+
+<div align="center">
+
+**[🌐 hulatu.com](https://hulatu.com/)** ・ **[📮 订阅](https://hulatu.com/index.xml)**
+
+<sub>Hugo · Cloudflare Pages · 无广告 · 无追踪 Cookie</sub>
+
+</div>
