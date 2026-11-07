@@ -16,7 +16,7 @@ if [[ "${1:-}" == "--dry-run" ]]; then
   DEST="${2:-${BACKUP_DEST:-$HOME/Backups/hulatu-blog}}"
   echo "只检查，不写入。"
   echo "备份目录：$DEST"
-  echo "将包含：content static layouts assets archetypes data scripts .github hugo.toml README.md MAINTENANCE.md"
+  echo "将包含：content static layouts assets archetypes data scripts .github hugo.toml README.md SITE.md MAINTENANCE.md DESIGN.md"
   exit 0
 fi
 
@@ -42,7 +42,9 @@ for item in \
   .github \
   hugo.toml \
   README.md \
-  MAINTENANCE.md; do
+  SITE.md \
+  MAINTENANCE.md \
+  DESIGN.md; do
   if [[ -e "$item" ]]; then
     cp -R "$item" "$SNAPSHOT/$item"
   fi
