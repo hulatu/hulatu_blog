@@ -13,7 +13,7 @@
 [![Hugo](https://img.shields.io/static/v1?label=Hugo&message=0.167&color=ff4088&style=flat-square&logo=hugo&logoColor=white)](https://gohugo.io/)
 [![部署](https://img.shields.io/static/v1?label=%E9%83%A8%E7%BD%B2&message=Cloudflare%20Pages&color=f38020&style=flat-square&logo=cloudflare&logoColor=white)](#-发布)
 [![RSS](https://img.shields.io/static/v1?label=%E8%AE%A2%E9%98%85&message=RSS%20%E5%85%A8%E6%96%87&color=e8892e&style=flat-square&logo=rss&logoColor=white)](https://hulatu.com/index.xml)
-[![许可](https://img.shields.io/static/v1?label=%E5%86%85%E5%AE%B9&message=CC%20BY-NC-SA%204.0&color=2f7d5d&style=flat-square)](#-许可)
+[![许可](https://img.shields.io/static/v1?label=%E8%AE%B8%E5%8F%AF&message=CC%20BY-NC-SA%204.0&color=2f7d5d&style=flat-square)](#-许可)
 
 <br>
 
