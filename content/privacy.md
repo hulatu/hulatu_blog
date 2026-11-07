@@ -34,7 +34,7 @@ draft: false
 
 ### 评论系统 giscus
 
-文章评论使用 giscus，评论内容存储在 GitHub Discussions（仓库 `hulatu/hulatu`）。加载评论时，浏览器会请求 `giscus.app` 与 GitHub 的接口。
+文章评论使用 giscus，评论内容存储在 GitHub Discussions（仓库 `hulatu/hulatu_blog`）。加载评论时，浏览器会请求 `giscus.app` 与 GitHub 的接口。
 
 - 不登录 GitHub 也可以浏览评论；**发表评论或点赞需要 GitHub 账号**，这一过程由 GitHub 处理你的账号信息。
 - giscus 可能在浏览器本地存储（LocalStorage）中保存主题等偏好。

@@ -113,9 +113,11 @@ disableKinds = ["taxonomy"]
   # 上游主题没有评论区，接入点在站点层的 single.html + partials/giscus.html。
   # ⚠️ mapping = "pathname" 意味着「同一个 URL 认作同一条讨论」。
   #    本站 URL 由上面的 [permalinks] 生成，和改版前逐字一致，所以**老评论能直接接上**。
+  # ⚠️ 仓库 2026-11-07 从 hulatu/hulatu 改名成 hulatu/hulatu_blog（hulatu/hulatu 让给
+  #    个人主页 README）。repoId 是节点 ID、改名不变，评论不会丢；这里的 repo 名字要跟着改。
   [params.giscus]
     enabled = true
-    repo = "hulatu/hulatu"
+    repo = "hulatu/hulatu_blog"
     repoId = "R_kgDOTApIwg"
     category = "Announcements"
     categoryId = "DIC_kwDOTApIws4DCXd5"
