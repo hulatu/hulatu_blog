@@ -3207,7 +3207,7 @@
   }
 
   /* ---------------------------------------------------------------
-     41 工具索引页 /tools/（2026-11-08 新增，2026-11-08 精简）
+     41 工具索引页 /tools/（2026-11-08 新增，2026-11-08 精简，同日再精修）
 
          类名 `.tool*` **只出现在 layouts/_default/tools.html 渲染的那一页**
          （正文导语那几段不受影响，它们是普通 <p>）。
@@ -3218,6 +3218,10 @@
          组件，突然出现三张卡片就是新语言。用户 2026-10-11 明确说过
          「印章红不要回来」，强调一律走 `--link-color` / 主文字色。
 
+         ── 每条的形态 ──────────────────────────────────────────────
+         名字在左、GitHub 链接在右，同一行基线对齐；介绍另起一行，
+         次要色、小半号。链接平时是第三级灰，悬停才变链接蓝 ——
+         这一页的重点是「有哪些工具」，GitHub 是出口，不是正文。
          ⚠️ 条目之间用 `border-top` 而不是只靠 margin：视觉边界落在那条线上，
             读者一眼能看出这是三个**并列**的东西。第一条也有线 ——
             它同时充当「导语 / 列表」的分界。
@@ -3231,17 +3235,32 @@
     border-top: 1px solid var(--border-color);
   }
 
+  .tool-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.45rem;
+  }
+
   .tool-name {
-    margin: 0 0 0.5rem;
+    margin: 0;
     font-size: 1.1em;
     line-height: 1.4;
   }
 
   .tool-tagline {
-    margin: 0 0 0.6rem;
+    margin: 0;
+    font-size: 0.95em;
+    color: var(--text-color-secondary);
   }
 
-  .tool-link {
-    margin: 0;
+  .tool-repo {
+    flex-shrink: 0;
     font-size: 0.95rem;
+    color: var(--text-color-tertiary);
+  }
+
+  .tool-repo:hover {
+    color: var(--link-color);
   }
