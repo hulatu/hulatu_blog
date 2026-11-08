@@ -40,6 +40,13 @@
        ⚠️ **别包 `<title>`、别包面包屑、别包 TOC** —— 那些地方要么不是给人扫读的，
           要么容器宽度固定且不允许换行，包了只会让 URL / 标签里多出无用标记。
 
+       ⚠️⚠️ **这个 partial 只有一半，另一半在 CSS 里**：`custom.css` 第 14 段的
+          `span.nowrap { white-space: nowrap }`。类名本身没有样式，
+          **CSS 那条不生效 = 本文件输出全是装饰**（span 在、换行照旧、0 报错）。
+          2026-11-08 之前那条写的是 `content .nowrap`（元素选择器 `content`），
+          只覆盖正文 —— 文章 h1 与首页列表项因此**空转了近两个月**。
+          改动这里之后，务必实测「换行位置有没有变」，不要只看产物里有没有 span。
+
        ── 为什么用 replaceRE 而不是 substr ────────────────────────────
        必须在**转义前**切分（先切、再各自 htmlEscape）。否则标题里的 `&`
        已经变成 `&amp;`，`(..)$` 会切到「;M」这种**半个实体**上，把标记弄坏。
@@ -51,9 +58,29 @@
 {{- $t := . -}}
 {{- $n := countrunes $t -}}
 {{- if gt $n 2 -}}
-  {{- $head := replaceRE `^(?s)(.*)(..)$` `${1}` $t -}}
-  {{- $tail := replaceRE `^(?s)(.*)(..)$` `${2}` $t -}}
-  {{- printf "%s<span class=\"nowrap\">%s</span>" (htmlEscape $head) (htmlEscape $tail) | safeHTML -}}
+  {{- /* ── 例外：末段是「第N期」时整段不可断 ──────────────────────
+         2026-11-08 加。周刊标题从中文数字（第二十八期）改成阿拉伯数字
+         （第28期）之后，通用的「末 2 字」会把它切成「第2」+「8期」，
+         320px 下换行正好落在两个数字中间 —— 读起来像「第2 期」和「8期」
+         两回事。改前断在「第二十 / 八期」，虽然也折行，但不会把数字劈开。
+
+         整段 nowrap 之后断点被推到「第」前面，末行是完整的「第21期」。
+         只命中 `第\d+期$`（实测全站 20 条，全是周刊标题），
+         其余标题走下面的通用分支，**行为零变化**。
+         ⚠️ 用 `findRE … 1` 取最后一段，别用 `strings.TrimSuffix`：
+            后者参数是 (SUFFIX, STRING)，写反了不报错、只是永不命中。 */ -}}
+  {{- $issue := "" -}}
+  {{- with findRE `第[0-9]+期$` $t 1 -}}
+    {{- $issue = index . 0 -}}
+  {{- end -}}
+  {{- if $issue -}}
+    {{- $head := replaceRE `第[0-9]+期$` "" $t -}}
+    {{- printf "%s<span class=\"nowrap\">%s</span>" (htmlEscape $head) (htmlEscape $issue) | safeHTML -}}
+  {{- else -}}
+    {{- $head := replaceRE `^(?s)(.*)(..)$` `${1}` $t -}}
+    {{- $tail := replaceRE `^(?s)(.*)(..)$` `${2}` $t -}}
+    {{- printf "%s<span class=\"nowrap\">%s</span>" (htmlEscape $head) (htmlEscape $tail) | safeHTML -}}
+  {{- end -}}
 {{- else -}}
   {{- $t -}}
 {{- end -}}
