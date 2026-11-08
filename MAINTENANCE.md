@@ -465,7 +465,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 
 | 想做的事 | 去哪儿 |
 | --- | --- |
-| 改导航（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板**（当前 6 项：Home / About / Links→`/roll/` / Weekly→`/weekly/` / Posts→`/archive/` / RSS→`/index.xml`） |
+| 改导航（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板**（当前 **7 项**：首页 `/` / 关于 `/about/` / 友链 `/roll/` / **工具 `/tools/`** / 周刊 `/weekly/` / 文章 `/archive/` / 订阅 `/index.xml`）。⚠️ 7 项在 375–390px 下是**零余量**（刚好一行、差 0px），换字体渲染略宽的设备会折成两行 —— 这是可接受的降级，**别再压 gap 或字号**，实测数据见 DESIGN.md 23.4 |
 | 改首页文案 | `content/_index.md` |
 | 改首页列表条数 | `hugo.toml` 的 `homeRecentCount`（设 0 退回上游原样） |
 | 改首页列表的对齐 / 间距 | `custom_head.html` 第 04 段。⚠️ 列表必须与 `最近更新：` 标题左对齐（`padding-left: 0`），失效时会缩进 40px；几何值（120px / .95rem / 1.2rem / 1.3 / 2rem）逐值照 yinji，改前想清楚 |
@@ -500,6 +500,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改首页那行平台链接 | `content/_index.md`（**地址的真相在 `content/about.md` 的「内容平台」段，两边一起改**） |
 | 改链接页（加朋友 / 加聚合站） | `content/roll.md` —— **全站唯一的链接页**，一条平铺<br>⚠️ 条目格式 `- [名称](地址)：一句话点评`<br>⚠️ `</a>` 和中文冒号之间**不要手写空格**（`render-link.html` 已处理）<br>⚠️ 两组之间那条全宽虚线是手写的裸 `<hr>`，**别删** |
 | 加根级独立页 | `content/xxx.md`（`hideDate` + `toc: false`）+ 回 `static/_headers` 补缓存规则 |
+| 加一个工具 / 改工具页文案 | **`data/tools.yaml`**（模板 `layouts/_default/tools.html` 自动渲染，样式 `custom.css` 第 41 段）。⚠️ 长文本字段**必须写成一行**：用 YAML 的 `>-` 折行会在中文里插空格（「头条 要清洗」），构建不报错、编辑器里也看不出来；⚠️ `install` 用 **jsDelivr 镜像** `cdn.jsdelivr.net/gh/<user>/<repo>@<branch>/<file>.user.js`，别写 `raw.githubusercontent.com`（2026-11-08 实测本机连续超时，国内网络常年不可达）；⚠️ `note` 里是写死的长文地址，文章改 slug / date 时要一起改，**否则静默 404**；⚠️ 站内图片（`/images/…`）不在图床，**没有 srcset**，改完跑一次 `scripts/sync-image-dims.py` 补 width/height |
 | 加 301 | `static/_redirects`（**首条命中即生效**，splat 要排在精确路径之后） |
 | 改响应头 / 缓存 | `static/_headers` |
 | 换 favicon / 站点图标 / 分享图 | **母版是 `~/Documents/生活素材/图片/H_avatar.jpg`**（2026-11-04 起）：先按 DESIGN.md 12.3 第 1–2 步用 potrace 描摹成 `static/favicon.svg`，再跑第 3 步生成 `icon-512/192.png`、`apple-touch-icon.png`、`favicon.ico`、`images/feed-icon.png`，最后**把 `partials/favicon.html` 里的 `$iconV` 加 1**（不加等于没换，浏览器 7 天内不会重抓）。（feed `<image>` 用，路径在 `hugo.toml` 的 `params.feedIcon`，宽高在 `rss.xml` 里写死 144）。⚠️ 光栅图**别手工裁**，会和 SVG 分叉；⚠️ 改完阅读器要手动刷新图标（订阅时抓一次就长期缓存）。分享图是 `static/images/share.webp`（只是**兜底** `og:image`，由 `params.images` 引用；文章页各有一张 `static/images/og/<slug>.png`，由 `scripts/gen-og.js` 生成，`publish.sh` 每次重画）。⚠️ 换兜底图后改 `hugo.toml` 的 `params.ogImageWidth` / `ogImageHeight` 跟上（`seo_tags.html` 读这两个参数输出 og 宽高）。⚠️⚠️ **拼 `favicon.ico` 那句必须带 `-type TrueColorAlpha`**（2026-11-04 修）：少了它每层只剩 3–4 种颜色，抗锯齿全丢，浏览器标签页就是阶梯锯齿 —— 默认浏览器 Helium 走的是 `/favicon.ico` 而不是 SVG，所以这条链路一错，标签页必糊。验收见 DESIGN.md 12.3 |

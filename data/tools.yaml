@@ -1,56 +1,28 @@
 # ============================================================================
-#  /tools/ 工具索引页的数据源（2026-11-08 新增）
+#  /tools/ 工具索引页的数据源（2026-11-08 新增，2026-11-08 精简）
 #
 #  由 layouts/_default/tools.html 渲染成一列条目（模板在那边，样式在
 #  assets/css/custom.css 第 41 段）。
 #  **加第 4 个工具 = 在下面追加一条，不用碰模板、不用碰样式。**
 #
-#  ⚠️ 所有文本字段都走 `{{ . }}` **纯文本输出** —— 写 Markdown 链接不会生效，
-#     要链接只能用下面 demo / install / repo / note 四个字段，由模板生成 <a>。
-#  ⚠️ 四个链接字段的**顺序是固定的**（模板写死）：打开使用 → 安装脚本 → GitHub → 设计笔记。
-#     留空字符串就不输出那一个。
-#  ⚠️ note 指向站内长文，写**绝对路径**（以 / 开头）。那篇文章一旦改 date 或
-#     slug，这个地址就失效，而 **Hugo 构建不会报错** —— 改文章地址后回来核对。
-#     当前指向：content/posts/三个自用小工具.md（slug: three-small-tools）。
-#  ⚠️ 顺序 = 页面上从上到下的顺序。与稿子里的叙事顺序（分发 → 阅读 → 观看）
-#     一致，**不是**仓库创建顺序（Video-Fullscreen 最早，2026-07）。
-#  ⚠️⚠️ detail / tagline **一律写成一行，不要折行**。用 YAML 的 `>-` 折叠长文本
+#  2026-11-08 精简：每条只留 name / tagline / repo —— 这一页只做一件事，
+#  把人引到 GitHub 仓库。演示、安装脚本、设计笔记以前也在这里，现在都
+#  不放了，各仓库自己的 README 里有。
+#
+#  ⚠️ tagline **一律写成一行，不要折行**。用 YAML 的 `>-` 折叠长文本
 #     会把换行变成**空格** —— 英文里无所谓，中文里就是「头条 要清洗」这种
 #     凭空多出来的空格，而构建不报错、编辑器里也看不出来（2026-11-08 实测）。
 #     一行太长就用编辑器的软换行，别真的敲回车。
-#  ⚠️⚠️ install 用 **jsDelivr 镜像**，不要用 raw.githubusercontent.com：
-#     2026-11-08 实测本机对 raw 的请求连续 3 次超时（curl exit 28 / status 000），
-#     同一时刻 jsDelivr 两个脚本都 200；而且 raw 在国内网络本来就常年不可达。
-#     镜像地址格式：https://cdn.jsdelivr.net/gh/<user>/<repo>@<branch>/<file>.user.js
-#     改分支名（main → master）或改文件名时，这里要一起改。
 # ============================================================================
 
 - name: 文章分发台
   tagline: 一篇 Markdown，一次分发到 11 个平台。
-  detail: 公众号要全内联样式的 HTML，少数派要规整的 Markdown，豆瓣、B 站、头条要清洗过的富文本，小红书、推特要按平台语气重写。前三类不调模型、秒出，只有改写那一步动大模型。纯前端，Key 存在自己浏览器里。
-  form: 纯前端 Web 应用
-  stack: TypeScript
-  demo: https://publish.hulatu.com
-  install: ""
   repo: https://github.com/hulatu/Publishing_Platform
-  note: /posts/2026/11/08/three-small-tools/
 
 - name: 少数派阅读增强
   tagline: 把少数派改成只用来读东西的地方。
-  detail: 列表拉宽到 1064px，一屏从 4 篇变 9 篇；文章页清掉广告、关联阅读与打赏卡，约 18% 的高度不再是正文以外的东西。另加阅读进度条、点图放大、代码块复制与已读标记。
-  form: Tampermonkey 脚本
-  stack: JavaScript
-  demo: ""
-  install: https://cdn.jsdelivr.net/gh/hulatu/sspai-tidy@main/sspai-tidy.user.js
   repo: https://github.com/hulatu/sspai-tidy
-  note: /posts/2026/11/08/three-small-tools/
 
 - name: 网页全屏
   tagline: 一个键，把视频铺满窗口。
-  detail: Esc 网页全屏，F2 画中画。六家视频站优先点它们自己的按钮，没有才用 CSS 兜底。光标在输入框里、视频太小、已全屏时一律不接管。
-  form: Tampermonkey 脚本
-  stack: JavaScript
-  demo: ""
-  install: https://cdn.jsdelivr.net/gh/hulatu/Video-Fullscreen@main/Video-Fullscreen.user.js
   repo: https://github.com/hulatu/Video-Fullscreen
-  note: /posts/2026/11/08/three-small-tools/

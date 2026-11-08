@@ -3207,7 +3207,7 @@
   }
 
   /* ---------------------------------------------------------------
-     41 工具索引页 /tools/（2026-11-08 新增）
+     41 工具索引页 /tools/（2026-11-08 新增，2026-11-08 精简）
 
          类名 `.tool*` **只出现在 layouts/_default/tools.html 渲染的那一页**
          （正文导语那几段不受影响，它们是普通 <p>）。
@@ -3222,11 +3222,8 @@
             读者一眼能看出这是三个**并列**的东西。第一条也有线 ——
             它同时充当「导语 / 列表」的分界。
          ⚠️ 不需要给这些规则加 `content` 前缀：`content h2`、`content > p`
-            的特异性是 (0,0,2)，`.tool-name` / `.tool-detail` 是 (0,1,0)，
+            的特异性是 (0,0,2)，`.tool-name` 是 (0,1,0)，
             类选择器本来就赢。
-         ⚠️ 链接行**不用「·」伪元素做分隔**：`::before` 的内容在 `<a>` 里面，
-            悬停时下划线会把那个点一起划上，看起来像「打开使用·」是一个词。
-            用 flex + gap，间距不参与链接的可点击区域。
       --------------------------------------------------------------- */
   .tool {
     margin-top: 2rem;
@@ -3244,25 +3241,7 @@
     margin: 0 0 0.6rem;
   }
 
-  /* ⚠️ 0.94em 是为了拉开和 `.tool-tagline` 的层次：两者颜色已经不同
-     （primary / secondary），但只靠颜色在 18px 字号下几乎分不出主次，
-     实测截图里 tagline 和 detail 读起来像同一段。 */
-  .tool-detail {
-    margin: 0 0 0.7rem;
-    font-size: 0.94em;
-    color: var(--text-color-secondary);
-  }
-
-  .tool-meta {
-    margin: 0 0 0.6rem;
-    font-size: 0.82rem;
-    color: var(--text-color-tertiary);
-  }
-
-  .tool-links {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.4rem 1.1rem;
+  .tool-link {
     margin: 0;
     font-size: 0.95rem;
   }

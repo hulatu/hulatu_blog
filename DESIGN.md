@@ -3015,3 +3015,94 @@ content span.nowrap{white-space:nowrap !important}` 还原旧行为量一次，�
   去掉 `font-weight: bold`，并把 `a.active::before` 与 `a:hover::before` 换回原顺序。
 - 只回退横向溢出修复：删掉第 19 段的 `main { overflow-x: clip }`
   （`content img { box-sizing: border-box }` 可以单独留着，它只影响图片对齐）。
+
+---
+
+## 23. 2026-11-08（下午）：三个自用小工具 → 新增 `/tools/` 索引页
+
+### 23.1 为什么是「索引页 + 长文」两件东西
+
+三个开源工具（文章分发台 / 少数派阅读增强 / 网页全屏）原先只存在于 GitHub 和一篇
+4700 字的草稿里。**作品和文章是两种信息**：
+
+- 长文回答「为什么这么设计」，但它会随日期下沉，三个月后没人找得到；
+- 索引页回答「他做过什么、怎么装」，应该一直在。
+
+所以两件都留：`/tools/` 当常驻索引，长文（`three-small-tools`）当设计笔记，
+每张卡底部一个「设计笔记 →」链过去。
+
+导航加了第 **7** 项「工具」（`weight = 35`，插在「友链」与「周刊」之间）。
+
+### 23.2 三个新文件 + 两处改动
+
+| 文件 | 作用 |
+|---|---|
+| `content/tools.md` | 页面本体。**只有导语**，`layout: "tools"` 指到专用模板 |
+| `layouts/_default/tools.html` | 渲染卡片。数据来自 `hugo.Data.tools` |
+| `data/tools.yaml` | 三条工具数据。**加第 4 个工具只改这里**，模板与样式不动 |
+| `assets/css/custom.css` 第 41 段 | `.tool*` 系列样式 |
+| `hugo.toml` | 导航第 7 项 |
+
+`content/about.md` 的「博客导览」也补了一条入口。
+
+**样式语言刻意与第 09 段（`.post-series`）一致**：`border-top` 分节、无底色、无阴影、
+无圆角。全站没有第二个块状底色的组件，突然出现三张卡片就是新语言。
+
+### 23.3 三个踩到的坑（都不是「写错代码」那种）
+
+**① YAML 的 `>-` 会把中文换行变成空格。**
+`detail: >-` 后面折行写，渲染出来是「豆瓣、B 站、头条 要清洗过的富文本」——
+中文里凭空多一个空格。构建不报错，编辑器里也看不出来，只有读产物才发现。
+⇒ 长文本字段**一律写成一行**，用编辑器软换行，别真的敲回车。
+
+**② `raw.githubusercontent.com` 在本机连续 3 次超时（curl exit 28 / status 000）。**
+同一时刻 `cdn.jsdelivr.net` 两个脚本都 200。而且 raw 在国内网络本来就常年不可达。
+⇒ 页面上两个 `.user.js` 安装链接、以及长文「装法」那两条，**全部改走 jsDelivr**：
+`https://cdn.jsdelivr.net/gh/<user>/<repo>@<branch>/<file>.user.js`
+
+**③ 站内图片拿不到 `width/height` → CLS。**
+`render-image.html` 的尺寸表只对 `https://img.hulatu.com/` 的图生效（那才拼 cdn-cgi
+前缀与 srcset）。这次 7 张截图放在 `static/images/tools/`，而
+`scripts/sync-image-dims.py` 的 `collect_urls` 会 `continue` 掉所有非 `http` 开头的
+URL —— 于是这 7 张既没有尺寸（图片晚到撑开页面），又被 `--check` 误报成
+「仓库里已不再引用」。
+
+⇒ 给脚本加了 `local_path_for()`：`/` 开头的路径直接读 `static/` 下的本地文件头取尺寸，
+不走网络。补完 7 条，`<img>` 现在带 `width=1280 height=800`。
+⚠️ **站内图仍然没有 `srcset`**（那个分支只认图床）。要吃到 400/720/1080 三档和
+边缘转换，得把这批图传到 `img.hulatu.com` —— 目前 1280px / 17–87 KB，可接受。
+
+### 23.4 导航 7 项在窄屏是「零余量」（实测）
+
+| 视口 | 内容宽 | `header nav` 宽 | 行数 | 是否拆词 |
+|---|---|---|---|---|
+| 320px | 280 | 280 | **2 行** | 否 |
+| 375px | 335 | **335** | 1 行 | 否 |
+| 390px | 350 | **350** | 1 行 | 否 |
+| 430px | 390 | 390 | 1 行 | 否 |
+| 1400px | 720 | 720 | 1 行 | 否 |
+
+⚠️ **375 / 390 是「刚好塞满、余量 0」**。这是 `@media (max-width: 400px)` 把
+`column-gap` 从 8px 压到 6px 的结果。换个字体渲染略宽的设备会折成两行 ——
+**这是可接受的降级**（两行、不拆词），不要为了「保险」再去压 gap 或字号。
+
+### 23.5 验收（2026-11-08 实测）
+
+- `hugo --cleanDestinationDir` **0 警告**，393 页（原 391 + `/tools/` + 长文）
+- `/tools/`、长文、`/`、`/about/` × 320/375/390/430/1400：`scrollWidth - clientWidth` **全 0**
+- 长文 7 张图：滚动后 `naturalWidth` 全部正常，`width/height` 全部输出
+- 长文 6 个表格：全在 `.table-wrap` 内；320–430px 下第 4 个（3 列）`scrollWidth 395 >
+  clientWidth`，可横滚，**没有被 `main { overflow-x: clip }` 裁掉**
+- RSS 只收 `posts` / `weekly`，`/tools/` 不进 feed；sitemap 收录 `/tools/`
+- 归档页与首页只出现导航链接，不把 `/tools/` 当文章列进去
+
+### 23.6 想回退怎么办
+
+- **整页回退**：删 `content/tools.md`、`layouts/_default/tools.html`、`data/tools.yaml`、
+  `custom.css` 第 41 段、`hugo.toml` 里 weight=35 那条、`about.md` 里「工具」那行。
+- **只回退导航**：删 `hugo.toml` 那条，`/tools/` 仍然能访问（从 `/about/` 导览进）。
+- **加第 4 个工具**：只改 `data/tools.yaml`，追加一条。字段 `demo` / `install` / `repo` /
+  `note` 留空字符串就不输出那个链接。
+- **长文改地址**：`data/tools.yaml` 里三条 `note` 都写死了
+  `/posts/2026/11/08/three-small-tools/`，改 slug 或 date 时要一起改，**否则静默 404**。
+
