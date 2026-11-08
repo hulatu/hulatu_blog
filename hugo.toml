@@ -187,6 +187,17 @@ disableKinds = ["taxonomy"]
   weight = 30
 
 # 2026-10-11 新增：周刊回到导航，位置在 Posts 左边。
+# 2026-11-08 新增：工具索引页 /tools/（三个自用小工具的常驻落点）。
+# 插在「友链」和「周刊」之间 —— 左边是「外部世界」（友链），右边是「我写的东西」
+# （周刊 / 文章），工具属于后者，所以紧贴「周刊」左侧。
+# ⚠️ 这是导航第 **7** 项。宽度账见 assets/css/custom.css 第 00 段：
+#    7 项时总宽 346.5px、392px 视口内容宽 352px；`@media (max-width: 400px)`
+#    已把间距降到 6px 兜底。375px 会干净地折成两行，不拆词。
+[[menu.main]]
+  name = "工具"
+  url = "/tools/"
+  weight = 35
+
 [[menu.main]]
   name = "周刊"
   url = "/weekly/"

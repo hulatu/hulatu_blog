@@ -134,12 +134,39 @@ def parse_dimensions(b: bytes):
     return None
 
 
+def local_path_for(url: str) -> Path | None:
+    """站内相对路径（`/images/…`）→ 仓库 static/ 下的真实文件；外部 URL 返回 None。
+
+    ⚠️ 只认 `/` 开头。`./x.webp` 这类相对写法本仓没有，不处理（真出现时会落到
+       网络分支，然后因为不是 http 而报错 —— 那时再补）。
+    """
+    if not url.startswith("/"):
+        return None
+    return ROOT / "static" / url.lstrip("/")
+
+
 def probe_dimensions(url: str, want: int = 262144, timeout: int = 30):
     """只下载前 want 字节（够解析头部即可），返回 ((w, h), None) 或 (None, 错误串)。
 
     ⚠️ 图床会限流：连着打几十个请求就会开始回 `SSL: UNEXPECTED_EOF_WHILE_READING`
     （不是格式问题，是连接被掐）。所以这里**带指数退避重试**，并在调用侧加间隔。
+
+    ── 站内相对路径（2026-11-08 新增）─────────────────────────────────
+    以 `/` 开头的是仓库 `static/` 下的文件，**不走网络**，直接读本地前 want 字节。
+    加这条之前它们被 collect_urls 整个跳过，于是 7 张新图既没有 width/height
+    （render-image.html 查不到尺寸就不输出，图片晚到会撑开页面 = CLS），
+    又被 `--check` 判成「仓库里已不再引用」—— 两头都不对。
     """
+    local = local_path_for(url)
+    if local is not None:
+        if not local.exists():
+            return None, f"本地文件不存在：{local.relative_to(ROOT)}"
+        b = local.read_bytes()[:want]
+        got = parse_dimensions(b)
+        if got:
+            return got, None
+        return None, f"无法识别的格式（magic={b[:12]!r}）"
+
     last = None
     for attempt in range(4):
         if attempt:
@@ -168,7 +195,10 @@ def collect_urls() -> list[str]:
             u = m.group("url")
             if u.startswith("//"):
                 u = "https:" + u
-            if not u.startswith("http"):
+            # 站内相对路径（/images/…）也收：它们直接读 static/ 下的文件取尺寸，
+            # 不走网络。2026-11-08 之前这里直接跳过，导致站内图既没有
+            # width/height，又被 --check 误报成「已不再引用」。
+            if not (u.startswith("http") or u.startswith("/")):
                 continue
             if u not in seen:
                 seen.add(u)

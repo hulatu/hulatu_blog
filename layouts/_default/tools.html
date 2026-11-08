@@ -1,0 +1,64 @@
+{{- /* 工具索引页（2026-11-08 新增，站点层）。
+
+       —— 这一页解决什么 ——
+       三个自用工具（文章分发台 / 少数派阅读增强 / 网页全屏）需要有**常驻**的
+       落点。文章会随日期下沉，而「他做过什么、怎么装」这件事应该一直找得到。
+
+       —— 数据从哪来 ——
+       `hugo.Data.tools` 读的是仓库根目录 data/tools.yaml。加第 4 个工具只改那个
+       文件，**这个模板一个字都不用动**。与 /run/ 读 data/runs.json 是同一个做法。
+       ⚠️ 必须写 `hugo.Data` 而不是 `site.Data` —— 后者在 Hugo 0.156 起已弃用，
+          本项目 0.169 构建会吐 WARN（本站的验收标准是 0 警告）。
+       ⚠️ `hugo.Data` 的键**带连字符时必须用 `index hugo.Data "x-y"`**，
+          不能写 `.x-y`。`tools` 没有连字符，所以下面直接 `.tools` 即可。
+
+       —— 为什么不用 single.html 渲染 ——
+       走 single.html 的话，卡片结构只能手写在 Markdown 里（一长串 HTML），
+       加工具要复制粘贴一大块、容易写歪。数据文件 + 模板让「内容」和「结构」分开。
+
+       ⚠️ 挂载条件：content/tools.md 里写了 `layout: "tools"`。
+          删掉那一行就落回 single.html，正文只剩下面那段导语、工具全没了，
+          **而且构建不报错**。
+       ⚠️ 样式在 assets/css/custom.css 第 41 段，类名 `.tool*` **只出现在这一页**。
+          改类名要两处一起改。
+       ⚠️⚠️ Go 模板的 `with` 会**重绑定 `.`** —— 下面每个 `with $t.demo` 里的 `.`
+          是那个字符串，不是工具对象。所以循环开头先把 `.` 存进 `$t`，
+          所有字段一律走 `$t.xxx`。写成 `.repo` 会静默渲染成空。
+       ⚠️ 外链一律 `target="_blank" rel="noopener noreferrer"`：主题的
+          `externalLinksNewTab` 只管 Markdown 里的链接（走 render-link hook），
+          这里是手写的 <a>，不受那个参数影响。
+       ⚠️ `note` 是站内链接，**不加** target：与全站「站内原地跳转」一致。 */ -}}
+{{ define "main" }}
+<content>
+  <h1>{{ partial "orphan-safe.html" .Title }}</h1>
+  {{ .Content }}
+  {{- $tools := hugo.Data.tools }}
+  {{- if $tools }}
+  <div class="tool-list">
+    {{- range $tools }}
+    {{- $t := . }}
+    <article class="tool">
+      <h2 class="tool-name">{{ $t.name }}</h2>
+      <p class="tool-tagline">{{ $t.tagline }}</p>
+      <p class="tool-detail">{{ $t.detail }}</p>
+      <p class="tool-meta">{{ $t.form }} · {{ $t.stack }}</p>
+      <p class="tool-links">
+        {{- with $t.demo }}
+        <a href="{{ . }}" target="_blank" rel="noopener noreferrer">打开使用</a>
+        {{- end }}
+        {{- with $t.install }}
+        <a href="{{ . }}" target="_blank" rel="noopener noreferrer">安装脚本</a>
+        {{- end }}
+        <a href="{{ $t.repo }}" target="_blank" rel="noopener noreferrer">GitHub</a>
+        {{- with $t.note }}
+        <a href="{{ . }}">设计笔记</a>
+        {{- end }}
+      </p>
+    </article>
+    {{- end }}
+  </div>
+  {{- else }}
+  <p>还没有添加工具。</p>
+  {{- end }}
+</content>
+{{ end }}
