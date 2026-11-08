@@ -2958,17 +2958,60 @@ content span.nowrap{white-space:nowrap !important}` 还原旧行为量一次，�
 构建 `hugo --cleanDestinationDir` **0 警告**；全站产物 grep `第[一二三四五六七八九十]+期` = 0；
 无重复 slug、无按文件名生成的 URL。
 
-### 22.5 一个**没修**的既有问题（与新改动无关）
+### 22.5 手机端 3px 横向滚动：**根因不是图片**（当天已修）
 
-`/posts/2026/01/18/newsletter-weekly-5/` 在 390px 下 `scrollWidth = 393 > 390`。
-根因是主题的 `img { border: 1px }` + 本站**没有全局 `box-sizing: border-box`**：
-图片 `width:100%` 的内容盒 350 + 左右边框 2 = 352，比正文宽 2px。
-用旧 CSS 复测同样是 393，**不是这次改出来的**。要修得给正文图加
-`box-sizing: border-box`，会牵动全站图片，单独评估。
+先纠正一次误判。`/posts/2026/01/18/newsletter-weekly-5/` 在 390px 下
+`scrollWidth 393 > 390`，一开始记成「图片边框撑的」——**错了**。
+图片确实超 2px（352 vs 350），但那是**另一件事**，不产生文档级横向滚动。
 
-### 22.6 想回退怎么办
+真正的根因：**标题锚点 `#` 的命中区**。`.heading-anchor::after` 用
+`inset: -14px -26px -14px 0` 向右伸 26px；那个 h3 的 `#` 右缘在 367，
++26 = **393**，与 `scrollWidth` 精确吻合。
+
+定位手法（值得复用）：逐个 `display: none` 隐藏 `main` / `content` 的子元素，
+看 `main.scrollWidth` 什么时候从 373 掉回列宽 350 —— 一次就锁到那个 h3。
+`getBoundingClientRect()` 是查不出来的：`::after` 是伪元素，它的矩形不在任何元素上。
+
+两处修复：
+
+| 规则 | 位置 | 作用 |
+|---|---|---|
+| `main { overflow-x: clip }` | `custom.css` 第 19 段（锚点那段之后） | 在**正文列**这一层裁掉横向溢出。不用 `overflow: hidden`（会造滚动容器、纵向也变 `auto`）；`clip` 可与 `visible` 共存，不产生滚动容器、不影响纵向 |
+| `content img { box-sizing: border-box }` | `custom.css` 第 14 段 | 图片边框不再额外占宽，左右边缘与段落**精确对齐**（实测 Δ = 0.0） |
+
+⚠️ 固定定位的后代不受 `main` 的 clip 影响（`main` 不在它们的包含块链上）——
+`div.toc` 与 `.back-top` 都在 `main` 外面；图片放大层虽然**在** `content` 里，
+但它是 `position: fixed`，实测放大后仍是满屏 `[0,0,1400,900]`、可正常开合。
+
+**验收**：147 个页面（138 篇 + 9 个站级页）× 320px / 390px，
+`scrollWidth − clientWidth` **全部为 0**。
+
+### 22.6 目录显色分工调换（当天，用户要求）
+
+原来：当前节 = 链接蓝 `#0066cc`，悬停项 = 主文字色 `#1a1a1a`。
+现在：**悬停 = 链接蓝，当前节 = 主文字色 + 加粗**。
+
+| 状态 | 文字 | 横条 |
+|---|---|---|
+| 非活动 | `--text-color-tertiary` `#444` | 三级灰 `#6e6e6e` |
+| 当前节 | `--text-color-primary` `#1a1a1a` + `font-weight: bold` | 主文字色 |
+| 悬停 | `--link-color` `#0066cc`（深色 `#6da6ff`） | 链接蓝 |
+
+⚠️ **顺序有讲究**：`a.active` 写在 `a:hover` **前面**，这样「悬停当前节」时
+颜色由 hover 决定（蓝），字重仍是 active 的粗 —— 悬停永远有反馈。
+反过来写会让「悬停当前节」毫无变化，看起来像悬停失效。
+`.toc-nav a.active::before` / `a:hover::before` 同理（hover 在后）。
+
+⚠️ 加粗理论上会让面板变宽（`max-content`）。实测 24 项与 4 项两种目录，
+逐个把某一项设为 active，面板宽度**恒为 200 / 142.4px，差值 0** —— 不需要补偿。
+
+### 22.7 想回退怎么办
 
 - 只回退数字：`git revert` 本次提交，title / 文件名 / 正文引用一起回到中文数字。
   ⚠️ **文件名回退后 URL 仍然不变**（slug 兜着），所以回退不会产生死链。
 - 只回退孤行保护：把 `custom.css` 第 14 段的 `span.nowrap` 改回 `content .nowrap`，
   同时删掉 `orphan-safe.html` 里的「第N期」例外分支（不回退也能用，只是 h1 上不生效）。
+- 只回退目录配色：把第 40 段 `a.active` / `a:hover` 两条的 `color` 互换、
+  去掉 `font-weight: bold`，并把 `a.active::before` 与 `a:hover::before` 换回原顺序。
+- 只回退横向溢出修复：删掉第 19 段的 `main { overflow-x: clip }`
+  （`content img { box-sizing: border-box }` 可以单独留着，它只影响图片对齐）。

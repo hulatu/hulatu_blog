@@ -1286,6 +1286,17 @@
     margin: 1.2rem 0;
   }
 
+  /* 2026-11-08：正文图片补 border-box。
+     主题的 `img` 带 `border: 1px`，而全站**没有**全局 `box-sizing: border-box`；
+     图片被 `max-width: 100%` 收到列宽之后，**边框是额外加的** ——
+     `offsetWidth` = 列宽 + 2，右缘比正文段落多出 2px（实测 390px 下 352 vs 350）。
+     肉眼几乎看不出，但它是「图片与文字的左右边缘对不齐」的唯一来源。
+     ⚠️ 只给 `content img`，不动全站 `img`：`.oa-qr` 那类自己写过 `box-sizing`，
+        全站铺一层容易和别的盒模型假设打架。 */
+  content img {
+    box-sizing: border-box;
+  }
+
   .table-wrap > table {
     margin: 0;
   }
@@ -1678,6 +1689,27 @@
     content: "";
     position: absolute;
     inset: -14px -26px -14px 0;
+  }
+
+  /* ⚠️⚠️ 2026-11-08：`#` 的命中区向右伸出 26px，会让**整页**出现横向滚动。
+     实测 `/posts/2026/01/18/newsletter-weekly-5/` 在 390px 下：
+     那个 h3 的 `#` 右缘在 367，::after 再 +26 = **393** → `html.scrollWidth 393 > 390`，
+     手机上因此能左右拖动 3px。
+     ⚠️ 一度误判成「图片边框撑的」—— 图片确实也超 2px（352 vs 350），
+        但那是**另一回事**（图片溢出不产生文档级横向滚动，只让图比文字多出 2px），
+        见第 14 段新增的 `content img { box-sizing: border-box }`。
+        定位手法：逐个 `display: none` 隐藏 `main` / `content` 的子元素，
+        看 `main.scrollWidth` 什么时候掉回列宽。
+
+     修法：在**正文列**这一层裁掉横向溢出（`main` 是块级、宽 = 正文列）。
+     不用 `overflow: hidden` —— 那会造出滚动容器，且把纵向也变成 `auto`；
+     `clip` 与 `visible` 可以共存，不产生滚动容器、不影响纵向。
+     ⚠️ 固定定位的后代不受影响（`main` 不在它们的包含块链上）：
+        `div.toc` 与 `.back-top` 都在 `main` 外面，图片放大层是 `position: fixed`。
+     代价：标题文字右缘离列边不足 26px 时，`#` 的右侧命中区被裁到列边为止。
+     这是刻意的 —— 那些正是会撑出横向滚动的标题。 */
+  main {
+    overflow-x: clip;
   }
 
   /* 触屏：整块不渲染（既不可见也不可点，见上面那段注释里的取舍）。
@@ -2830,8 +2862,11 @@
              其余三级灰 —— 就是 Medium「当前黑、其余灰」那排线。
            · 展开态：没有卡片 —— 没有底色、没有阴影、没有圆角，列表
              就是一列直接落在页面底色上的文字（ChatGPT 那个大纲的样子）；
-             文字 0.9rem / 行高 1.7（约 24px），非活动项次级灰，
-             当前节本站链接蓝（`--link-color`，不引新颜色）。
+             文字 0.9rem / 行高 1.7（约 24px），非活动项次级灰。
+             **2026-11-08 改了显色分工**（用户要求）：蓝色从「当前节」
+             让给「悬停」—— 悬停项用链接蓝 `--link-color`（与全站链接一致），
+             当前节改用**主文字色 + 加粗**（不再用蓝色，否则两个信号抢一个颜色）。
+             顺序上 hover 规则写在 active 之后，所以「悬停当前节」时是蓝+粗。
              ⚠️ 2026-11-07 修正：横线**不搬家**——展开时它仍然钉在
              右侧同一列（和折叠态完全同一个 x），只让标签从左边长出来。
              所以展开态是「右轨道 + 左标签」，不是「横线当项目符号」。
@@ -2912,12 +2947,15 @@
     margin: 4px 0 4px auto;
   }
 
-  .toc-nav a:hover::before {
-    background-color: var(--text-color-tertiary);
-  }
-
+  /* 2026-11-08：横条跟着文字走 —— 当前节深色、悬停项蓝色。
+     ⚠️ hover 写在 active **后面**，悬停当前节时横条变蓝（与文字同色），
+        否则会出现「文字蓝、横条深灰」的错位。 */
   .toc-nav a.active::before {
     background-color: var(--text-color-primary);
+  }
+
+  .toc-nav a:hover::before {
+    background-color: var(--link-color);
   }
 
   /* ── 展开态：悬停或点按打开；滚动中强制收起；没有卡片 ── */
@@ -2995,13 +3033,22 @@
     padding-left: 14px;
   }
 
-  div.toc:hover:not(.toc-scrolling) .toc-nav a:hover,
-  div.toc.toc-open:not(.toc-scrolling) .toc-nav a:hover {
-    color: var(--text-color-primary);
-  }
-
+  /* 2026-11-08：显色分工调换（用户要求）——
+     蓝色从「当前节」让给「悬停」，当前节改用「主文字色 + 加粗」。
+     ⚠️ 顺序有讲究：**active 必须写在 hover 前面**。这样「悬停当前节」时
+        颜色由 hover 决定（蓝），字重仍是 active 的粗 —— 悬停永远有反馈。
+        反过来写会让「悬停当前节」毫无变化，看起来像悬停失效。
+     ⚠️ 加粗会让这一项变宽，而面板是 `max-content` → 当前节切换时面板宽度
+        会跟着变几 px。实测只在 2–4px 量级，且滚动中面板本来就强制收起
+        （`.toc-scrolling`），肉眼看不出跳变。 */
   div.toc:hover:not(.toc-scrolling) .toc-nav a.active,
   div.toc.toc-open:not(.toc-scrolling) .toc-nav a.active {
+    color: var(--text-color-primary);
+    font-weight: bold;
+  }
+
+  div.toc:hover:not(.toc-scrolling) .toc-nav a:hover,
+  div.toc.toc-open:not(.toc-scrolling) .toc-nav a:hover {
     color: var(--link-color);
   }
 
