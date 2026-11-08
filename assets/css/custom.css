@@ -3219,20 +3219,50 @@
          「印章红不要回来」，强调一律走 `--link-color` / 主文字色。
 
          ── 每条的形态 ──────────────────────────────────────────────
-         名字在左、GitHub 链接在右，同一行基线对齐；介绍另起一行，
-         次要色、小半号。链接平时是第三级灰，悬停才变链接蓝 ——
-         这一页的重点是「有哪些工具」，GitHub 是出口，不是正文。
+         左侧一个 22px 的线性图标（Feather 风格，stroke currentColor），
+         右侧一列：名字在左、GitHub 链接在右，同一行基线对齐；介绍另起
+         一行，次要色、小半号。图标与链接平时都是第三级灰：悬停整条时
+         图标变链接蓝，悬停链接本身时链接变链接蓝 —— 这一页的重点是
+         「有哪些工具」，GitHub 是出口，不是正文。
          ⚠️ 条目之间用 `border-top` 而不是只靠 margin：视觉边界落在那条线上，
             读者一眼能看出这是三个**并列**的东西。第一条也有线 ——
             它同时充当「导语 / 列表」的分界。
          ⚠️ 不需要给这些规则加 `content` 前缀：`content h2`、`content > p`
             的特异性是 (0,0,2)，`.tool-name` 是 (0,1,0)，
             类选择器本来就赢。
+         ⚠️ `.tool` 是 flex：图标与正文是两个子项。`min-width: 0` 不能省 ——
+            没有它，名字太长时 `.tool-body` 不会收缩，GitHub 链接会被挤出
+            视口（flex 子项默认 min-width: auto）。
       --------------------------------------------------------------- */
   .tool {
+    display: flex;
+    gap: 0.9rem;
     margin-top: 2rem;
     padding-top: 1.1rem;
     border-top: 1px solid var(--border-color);
+  }
+
+  .tool-icon {
+    flex-shrink: 0;
+    width: 1.375rem;
+    height: 1.375rem;
+    margin-top: 0.15rem;
+    color: var(--text-color-tertiary);
+  }
+
+  .tool-icon svg {
+    display: block;
+    width: 100%;
+    height: 100%;
+  }
+
+  .tool:hover .tool-icon {
+    color: var(--link-color);
+  }
+
+  .tool-body {
+    flex: 1;
+    min-width: 0;
   }
 
   .tool-head {

@@ -8,6 +8,9 @@
 #  2026-11-08 精简：每条只留 name / tagline / repo —— 这一页只做一件事，
 #  把人引到 GitHub 仓库。演示、安装脚本、设计笔记以前也在这里，现在都
 #  不放了，各仓库自己的 README 里有。
+#  2026-11-08 再加 icon：每条一个 Feather 风格的线性图标名（send /
+#  book-open / maximize-2），由 layouts/_partials/tool-icon.html 渲染成
+#  内联 SVG。加新图标 = 在那个文件里加一个分支，这里只写名字。
 #
 #  ⚠️ tagline **一律写成一行，不要折行**。用 YAML 的 `>-` 折叠长文本
 #     会把换行变成**空格** —— 英文里无所谓，中文里就是「头条 要清洗」这种
@@ -17,12 +20,15 @@
 
 - name: 文章分发台
   tagline: 一篇 Markdown 文章，转换后可分发到多个平台。
+  icon: send
   repo: https://github.com/hulatu/Publishing_Platform
 
 - name: 少数派阅读增强
   tagline: 把少数派改成更适合阅读的地方。
+  icon: book-open
   repo: https://github.com/hulatu/sspai-tidy
 
 - name: 网页全屏
   tagline: 一个键，把视频变成网页全屏。
+  icon: maximize-2
   repo: https://github.com/hulatu/Video-Fullscreen

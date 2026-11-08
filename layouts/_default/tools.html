@@ -1,10 +1,13 @@
 {{- /* 工具索引页（2026-11-08 新增，2026-11-08 精简，同日再精修）。
 
        这一页只做一件事：把人引到 GitHub 仓库。
-       每条 = 一行（名字在左，GitHub 链接在右）+ 一句话介绍。
-       演示、安装脚本、设计笔记都不放，各仓库自己的 README 里有。
+       每条 = 左侧一个线性图标 + 右侧一列（名字在左，GitHub 链接在右，
+       同一行基线对齐）+ 一句话介绍。演示、安装脚本、设计笔记都不放，
+       各仓库自己的 README 里有。
 
        数据在 data/tools.yaml，加第 4 个工具只改那个文件，这个模板不用动。
+       图标名写在同一文件的 icon 字段，由 layouts/_partials/tool-icon.html
+       渲染成内联 SVG。
        ⚠️ 必须写 `hugo.Data` 而不是 `site.Data` —— 后者在 Hugo 0.156 起已弃用，
           本项目 0.169 构建会吐 WARN（本站的验收标准是 0 警告）。
        ⚠️ 挂载条件：content/tools.md 里写了 `layout: "tools"`。
@@ -25,11 +28,14 @@
     {{- range $tools }}
     {{- $t := . }}
     <article class="tool">
-      <div class="tool-head">
-        <h2 class="tool-name">{{ $t.name }}</h2>
-        <a class="tool-repo" href="{{ $t.repo }}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+      <span class="tool-icon">{{ partial "tool-icon.html" $t.icon }}</span>
+      <div class="tool-body">
+        <div class="tool-head">
+          <h2 class="tool-name">{{ $t.name }}</h2>
+          <a class="tool-repo" href="{{ $t.repo }}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+        </div>
+        <p class="tool-tagline">{{ $t.tagline }}</p>
       </div>
-      <p class="tool-tagline">{{ $t.tagline }}</p>
     </article>
     {{- end }}
   </div>

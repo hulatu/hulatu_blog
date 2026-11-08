@@ -1,0 +1,16 @@
+{{- /* 工具图标（2026-11-08 新增）。
+
+       Feather 风格的 24×24 线性 SVG：fill none、stroke currentColor，
+       颜色与大小由调用处的 CSS（.tool-icon）控制，不在这里写死。
+       图标路径对照 Feather 4.29.0 的同名图标逐一核对过（send /
+       book-open / maximize-2），不要凭记忆改路径。
+       加新图标 = 在下面加一个分支，并在 data/tools.yaml 里写 icon 名。
+       未知名字不输出任何内容（不报错，别依赖它来发现拼写错误）。 */ -}}
+{{- $name := . -}}
+{{- if eq $name "send" }}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+{{- else if eq $name "book-open" }}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
+{{- else if eq $name "maximize-2" }}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+{{- end }}
