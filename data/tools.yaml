@@ -16,13 +16,13 @@
 # ============================================================================
 
 - name: 文章分发台
-  tagline: 一篇 Markdown，一次分发到 11 个平台。
+  tagline: 一篇 Markdown 文章，转换后可分发到多个平台。
   repo: https://github.com/hulatu/Publishing_Platform
 
 - name: 少数派阅读增强
-  tagline: 把少数派改成只用来读东西的地方。
+  tagline: 把少数派改成更适合阅读的地方。
   repo: https://github.com/hulatu/sspai-tidy
 
 - name: 网页全屏
-  tagline: 一个键，把视频铺满窗口。
+  tagline: 一个键，把视频变成网页全屏。
   repo: https://github.com/hulatu/Video-Fullscreen
