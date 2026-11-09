@@ -1972,17 +1972,31 @@
         < 680px → **桌面端不再溢出，滚动条直接消失**。flex-grow 会把
         每根柱子撑到约 41px，比原来的 48px 略窄，但 `25-05` 这种标签
         实测约 34px，还留 7px 余量。
-     ② 真的溢出时（手机、或将来月份涨到 18 个以上）滚动条改成 **6px**：
-        `scrollbar-width: thin` 管 Firefox，`::-webkit-scrollbar` 管
-        Chrome/Safari。轨道透明、滑块用 `--border-color` 圆角，
-        只在悬停时加深到 `--text-color-tertiary`。
-     ③ `padding-bottom: 6px` 给滚动条留一条**独立槽**：不加的话
-        滑块会紧贴甚至压住 `25-05` 这行月份标签。
-        `overscroll-behavior-x: contain` 顺手加上 —— 手机上滑到图表
+     ② 真的溢出时（手机、或将来月份涨到 18 个以上）**不再给滚动条**：
+        2026-11-09 全站滚动条统一隐藏（见第 42 段）。这里原来的
+        `scrollbar-width: thin` 与 4 条 `::-webkit-scrollbar*` 规则
+        **已删除** —— 留着会破坏全局隐藏：`.chart` 的类选择器
+        （特异性 0,1,0）会盖掉第 42 段的 `*`（0,0,0），Firefox 下
+        图表里还会冒出细条。
+     ③ `padding-bottom: 6px` 原本是给滚动条留槽。滚动条没了，这 6px
+        退化成纯底部留白（柱子离底 6px），**保留不动** —— 删掉会
+        改变柱子的可用高度，图看起来会变高。
+        `overscroll-behavior-x: contain` 仍然有效 —— 手机上滑到图表
         两端时不会把整个页面带着一起横向抖。
+     ④ 右侧 24px 渐隐遮罩 + 配套的 `padding-right: 24px`（2026-11-09）。
+        ⚠️ 两者是**一个整体**，拆开任何一个都会出问题：
+           · 只有遮罩、没有右内边距 → 滚到最右时最后一根柱子被削掉右半边；
+           · 只有内边距、没有遮罩 → 滚到最右时右边空 24px 白，看不出是末端。
+        加了 `padding-right` 之后，桌面端可用宽 720−24=696，15 根柱子
+        从 44.3px 变成 42.7px，肉眼无差。
 
      ⚠️ 别把 `overflow-x` 改成 `hidden`「眼不见为净」：手机上一屏
         只放得下 8 个月，藏了滚动条就没人知道右边还有 7 个月。
+        ⚠️ 2026-11-09 隐藏滚动条后这条告诫**更成立**：现在连「这里
+        有滚动条」这个提示都没有了，手机上图表看起来就是「只有 8 个月」。
+        ⇒ **2026-11-09 已加右侧渐隐遮罩**（`.chart` 的 `mask-image`，
+          见下面 ④）。纯 CSS 判不出是否真的溢出，所以**无条件加** ——
+          桌面端不溢出时遮罩落在右侧 24px 内边距上，柱子一根都不淡。
      ⚠️ `.month-key` / `.month-value` 的 0.72rem 别再调大 —— 41px 的
         格子刚好装下 5 个字符，调大就会让相邻标签叠在一起。
      ⚠️ 这个块按 `.RelPermalink == "/run/"` 守卫，类名与
@@ -1992,28 +2006,18 @@
     align-items: flex-end;
     gap: 4px;
     height: 200px;
-    padding: 0 0 6px;
+    /* ⚠️ 右内边距 24px 是**渐隐遮罩的配套**，不是随手加的留白：
+       滚到最右时最后一根柱子的右缘距元素右缘正好 24px，
+       落在遮罩渐变的起点上，**不会被削掉**。 */
+    padding: 0 24px 6px 0;
     overflow-x: auto;
     overscroll-behavior-x: contain;
-    scrollbar-width: thin;
-    scrollbar-color: var(--border-color) transparent;
-  }
-
-  .chart::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .chart::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .chart::-webkit-scrollbar-thumb {
-    background: var(--border-color);
-    border-radius: 999px;
-  }
-
-  .chart::-webkit-scrollbar-thumb:hover {
-    background: var(--text-color-tertiary);
+    /* 右侧 24px 渐隐：滚动条隐藏后（第 42 段）用它暗示「右边还有内容」。
+       遮罩只作用于**盒子右缘**，不随内容滚动 —— 滚动时看起来像柱子
+       「淡出到边缘外」，滚到最右时落在上面那 24px 空白上。
+       `-webkit-` 前缀留给老 Safari（15.4 之前的版本仍需要）。 */
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+    mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
   }
 
   .month {
@@ -3293,4 +3297,59 @@
 
   .tool-repo:hover {
     color: var(--link-color);
+  }
+
+  /* ---------------------------------------------------------------
+     42 滚动条：全站不可见，滚动能力保留（2026-11-09）
+
+         用户要求「取消滚动条」——整页竖向 + 页内横向全部去掉。
+
+         ── 两条规则各自管什么 ────────────────────────────────────────
+         ① `* { scrollbar-width: none }`
+            关掉整页竖向滚动条、`.table-wrap` 的横向条、`div.toc`
+            展开态、`.chart` 月度图。Firefox 全版本、Chrome 121+、
+            Safari 18.2+ 认这条。
+            ⚠️⚠️ **必须用 `*`，不能只写 `html`**。规范里 `scrollbar-width`
+               写的是「可继承」，但 **Chrome 实测不继承**（2026-11-09，
+               把 `none` 写在 `html` 上之后，`getComputedStyle('.table-wrap')`
+               的 `scrollbar-width` 仍返回 `auto`）。只写 `html` 的话，
+               Chromium 靠下面那条 `::-webkit-scrollbar` 兜住了看不出问题，
+               **Firefox 却会在表格和图表里继续显示滚动条** ——
+               而 Firefox 不支持 `::-webkit-scrollbar`，没有任何兜底。
+         ② `::-webkit-scrollbar { display: none }`
+            老 WebKit / Blink（Chrome < 121、Safari < 18.2）不认
+            `scrollbar-width`，靠这个伪元素兜底。
+            ⚠️ 同样**必须写成全局通配**：伪元素不参与继承，写在 `html`
+               上管不到子元素的滚动容器。`width/height: 0` 与
+               `display: none` 是同一件事的两种写法，老版本对后者的
+               支持不稳，两个都写。
+
+         ── 滚动能力一个字都没动 ──────────────────────────────────────
+         只隐藏「指示条」，`overflow` 一个都没改。滚轮、触控板、
+         方向键、PageUp/PageDown、`scrollIntoView()` 全部照常工作。
+         想让内容真的锁住才需要 `overflow: hidden` —— 那是另一件事。
+
+         ── 副作用（已确认可接受）────────────────────────────────────
+         · Windows / Linux 的经典滚动条**占位约 15px**，隐藏后内容区
+           变宽 15px，整页右移约 7.5px。macOS 是覆盖式滚动条、本来
+           就不占位，**看不出任何变化**（用户环境即 macOS）。
+         · 失去「当前滚到哪」的视觉提示。这是隐藏滚动条的固有代价。
+           `div.toc` 早就是 `scrollbar-width: none`（theme.css:278），
+           全站现在口径一致。
+         · `.chart` 原本靠 6px 细条暗示「右边还有 7 个月」，该提示
+           随滚动条一起消失。第 34 段末尾写了补偿方案（渐隐遮罩）。
+
+         ── 回退 ─────────────────────────────────────────────────────
+         删掉本段两条规则，滚动条立刻全部回来，不需要动别处。
+         ⚠️ 但 `.chart` 原来的 `scrollbar-width: thin` 已经删了（见第
+            34 段说明），回退时若还想要 6px 细条，得把那几行一起恢复。
+         --------------------------------------------------------------- */
+  * {
+    scrollbar-width: none;
+  }
+
+  ::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+    display: none;
   }

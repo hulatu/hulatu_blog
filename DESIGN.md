@@ -3105,4 +3105,124 @@ URL —— 于是这 7 张既没有尺寸（图片晚到撑开页面），又被
   `note` 留空字符串就不输出那个链接。
 - **长文改地址**：`data/tools.yaml` 里三条 `note` 都写死了
   `/posts/2026/11/08/three-small-tools/`，改 slug 或 date 时要一起改，**否则静默 404**。
+  ⚠️ 2026-11-09：`tools.yaml` 已精简为 `name / tagline / icon / repo` 四个字段，
+  `note` / `demo` / `install` 都不存在了，这一段只在回退到旧结构时才有意义。
+
+---
+
+## 24. 滚动条：全站隐藏（2026-11-09）
+
+### 24.1 改了什么
+
+`assets/css/custom.css` 新增**第 42 段**，两条规则，全文就这么多：
+
+```css
+* {
+  scrollbar-width: none;
+}
+
+::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+```
+
+同时删掉第 34 段 `.chart` 的 `scrollbar-width: thin`、`scrollbar-color`
+与 4 条 `::-webkit-scrollbar*` 规则（否则会破坏全局隐藏，见 24.2）。
+
+**没有动任何 `overflow`**。这是关键区别：隐藏滚动条 ≠ 锁住内容。
+
+### 24.2 为什么是 `*` 而不是 `html`
+
+规范把 `scrollbar-width` 写成可继承，但 **Chrome 实测不继承**。
+
+2026-11-09 的验证过程：先把 `none` 写在 `html` 上，然后用 CDP 读
+`getComputedStyle(document.querySelector('.table-wrap')).scrollbarWidth`，
+返回 **`auto`** —— 不是 `none`。
+
+后果分浏览器：
+
+| 浏览器 | 只写 `html` 的结果 |
+|---|---|
+| Chrome / Edge | 表面上没问题 —— `::-webkit-scrollbar` 那条把子元素兜住了 |
+| Firefox | **表格、图表里继续显示滚动条**，且 Firefox 不支持 `::-webkit-scrollbar`，没有任何兜底 |
+
+所以必须用 `*`（特异性 0,0,0）。代价是：以后任何元素想单独设
+`scrollbar-width: thin` 都会被它盖掉 —— 这正是我们要的，全站一个口径。
+
+⚠️ 反过来，**类选择器会盖掉 `*`**。`.chart { scrollbar-width: thin }`
+（0,1,0）比 `*`（0,0,0）强，留着它 Firefox 下图表里还会冒细条。
+这是删掉那几行的真正原因，不是「清理死代码」。
+
+### 24.3 副作用
+
+1. **Windows / Linux 内容区变宽约 15px**。经典滚动条占位，隐藏后
+   整页右移约 7.5px（正文列居中基准从 `视口−15` 变成 `视口`）。
+   macOS 是覆盖式滚动条、本来不占位，**零变化** —— 当前用户环境即 macOS。
+   实测 `documentElement.offsetWidth - clientWidth = 0`。
+2. **失去「滚到哪」的视觉提示**。这是隐藏滚动条的固有代价。
+   键盘 / 触控板 / 滚轮全部照常。
+3. **`.chart` 的「右边还有内容」提示消失**。第 34 段原本靠 6px 细条暗示
+   手机上还有 7 个月。**已用右侧 24px 渐隐遮罩补回**（2026-11-09，见 24.6）。
+
+### 24.4 实测
+
+CDP 真实测量，4 个页面 × 320 / 375 / 390 / 1400：
+
+| 检查项 | 结果 |
+|---|---|
+| `html` 计算值 | `scrollbar-width: none` |
+| 滚动条占位 | `offsetWidth − clientWidth` = **0px** |
+| 整页竖向可滚 | `scrollTo({top:500,behavior:'instant'})` → `scrollY = 500` |
+| 横向溢出 | `scrollWidth − clientWidth` **全 0** |
+| `.table-wrap` | 320px 下 `sw=395 cw=280`，`scrollLeft` 可到 60 ✓ |
+| `.chart` | 320px 下 `sw=668 cw=280`，`scrollLeft` 可到 40 ✓ |
+| `div.toc` 展开态 | `sbw=none`，长目录仍可滚 |
+| `overflow` 是否被改 | `htmlY=visible`、`mainX=clip`（上一轮的修复仍在） |
+| 右侧 20px 像素 | 平均色 `srgb(253,253,253)` = 页面背景色，**无残留** |
+
+⚠️ 探针坑：本站 `html { scroll-behavior: smooth }`，`window.scrollTo(0,500)`
+后立即读 `scrollY` 会得到 **0**，看起来像「滚动被锁住了」。
+必须用 `scrollTo({top, behavior:'instant'})`。
+
+### 24.5 想回退怎么办
+
+删掉第 42 段两条规则，滚动条立刻全部回来。
+若还想恢复 `.chart` 的 6px 细条，得把第 34 段删掉的那 5 条规则一并写回。
+
+### 24.6 `.chart` 的右侧渐隐遮罩（2026-11-09）
+
+滚动条隐藏后，`/run/` 的月度图表失去了「右边还有 7 个月」的唯一提示。
+补法：
+
+```css
+.chart {
+  padding: 0 24px 6px 0;        /* 原来是 0 0 6px */
+  mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 24px), transparent);
+}
+```
+
+**内边距和遮罩是一个整体，拆开任何一个都会坏**：
+
+| 只做一半 | 后果 |
+|---|---|
+| 只有遮罩、没有 `padding-right` | 滚到最右时**最后一根柱子被削掉右半边** |
+| 只有内边距、没有遮罩 | 滚到最右时右边空 24px 白，看不出是末端 |
+
+原因是遮罩钉在**盒子右缘**、不随内容滚动。加上 24px 右内边距后，
+滚到最右时最后一根柱子的右缘距盒子右缘正好 24px，落在渐变起点上，
+**一点都不会被淡**。实测四个视口下这个距离都是 `24.0px`。
+
+桌面端（不溢出）时遮罩落在内边距上，柱子一根都不淡 ——
+所以可以无条件加，不需要 JS 判断是否溢出。
+
+代价：柱子可用宽从 696px 变成 672px（16 根柱子从 41.25 变成 39.75px），肉眼无差。
+
+⚠️ `clip` 截图坐标系坑：CDP `Page.captureScreenshot` 的 `clip` 是**文档坐标**，
+`getBoundingClientRect()` 是**视口坐标**，直接传会截到页面顶部（空白图）。
+要加 `window.scrollX / scrollY`。
+
+
 
