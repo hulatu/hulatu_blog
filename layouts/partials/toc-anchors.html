@@ -36,4 +36,20 @@
     {{- $html = replace $html (printf `href="#%s"` $id) (printf `href="#%s"` $new) -}}
   {{- end -}}
 {{- end -}}
+{{- /* 目录的可访问名（2026-11-15）
+       主题 toc.html 把 Hugo 生成的 `<nav id="TableOfContents">` 套在一个
+       `role="navigation" aria-label="目录"` 的 aside 里 —— 一个目录因此贡献了
+       **两个**导航地标，里面那个还没名字。读屏用户连听两个「导航」分不清谁是谁。
+
+       改法：地标身份收到底层那个 `<nav>` 上，外层 aside 退回普通容器
+       （类名 `.toc-nav` 不动 —— 主题的 JS `querySelector('.toc-nav')` 和
+       custom.css 的 `.toc-nav a` 都还靠它）。
+
+       ⚠️ 只改属性、不换标签：把 `<nav>` 换成 `<div>` 会丢掉主题那条
+          `nav a { margin-right: 8px }`，目录每一项的行距都会变。
+       ⚠️ 两处都是字符串替换：上游哪天改了这行的写法，替换会**静默失效**，
+          结果只是退回「两个地标」的旧状态，不会产出坏 HTML。
+          所以 aside 那条用 `replaceRE` 放宽到「任意属性」，只认类名。 */ -}}
+{{- $html = replaceRE `<aside class="toc-nav"[^>]*>` `<aside class="toc-nav">` $html -}}
+{{- $html = replace $html `<nav id="TableOfContents">` `<nav id="TableOfContents" aria-label="目录">` -}}
 {{- return $html -}}

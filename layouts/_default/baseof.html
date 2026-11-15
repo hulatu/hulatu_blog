@@ -14,10 +14,11 @@
         **一字未改**，所以行为与迁移前一致。
 
         ⚠️ `.Data.Plural` 在普通页面上取到空值，eq 比较恒为假，无害。
-        ⚠️ 这次**只恢复 meta**（用户 2026-10-11 的决定）：**没有**恢复旧站的
-           `layouts/sitemap.xml`，所以 /privacy/ 与 /posts/ 仍然留在 sitemap 里。
-           爬虫读到 meta 不会收录，但地址仍会先交给它一次。要彻底干净，得再加
-           一份 sitemap 模板把 `not .Params.noindex` 排掉。
+        ⚠️ 2026-11-15 校注：下面这段记录的是 2026-10-11 的状态，**已经过期** ——
+           `layouts/sitemap.xml` 后来加回来了，并且和本文件共用
+           `partials/noindex.html` 同一个判定。实测产物 sitemap 156 条 URL，
+           `/privacy/`、`/posts/`、`/tags/*` 一条都不在里面，
+           「地址仍会先交给爬虫一次」的问题已消失。
 
      除这两处外一字未改。 */ -}}
 <html lang="{{ with .Site.Language.Locale }}{{ . }}{{ else }}en-US{{ end }}">

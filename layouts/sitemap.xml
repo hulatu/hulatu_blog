@@ -16,7 +16,7 @@
       ⚠️ 2026-10-26：**8 个分类词条页 /categories/<词>/ 已放行**（用户决定）。
          它们不再带 noindex，因此会自动出现在本文件里。每个分类页配了
          `content/categories/<词>/_index.md` 提供 title / description。
-         标签词条页仍然 noindex（212 个，74% 只对应 1 篇文章）。
+         标签词条页仍然 noindex（224 个，72% 只对应 1 篇文章）。
 
       ⚠️ 除过滤外**与内置模板逐字一致**：只输出 `<loc>` + `<lastmod>`，
          不带 `changefreq` / `priority`（Hugo 默认也不输出，本站没有配置它们）。
