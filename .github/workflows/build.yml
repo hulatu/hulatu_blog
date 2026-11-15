@@ -14,6 +14,11 @@ name: 构建校验
 #   本机 hugo version ／ 下面 peaceiris/actions-hugo 的 hugo-version ／ Cloudflare 项目的环境变量
 # 还有 hugo.toml 的 [module.hugoVersion]（站点层那个 check-hugo-version.html 已随
 # 2026-10-10 的主题迁移删除，现在版本约束只靠本文件和 hugo.toml）。
+#
+# ⚠️ 2026-11-15：统一到 **0.170.0**，同时**删掉了 `extended: true` 与那条 extended 校验**。
+#    0.170 起 Hugo 取消了 extended 版（LibSass 移除，只剩单一二进制），
+#    `hugo version` 不再带 extended 字样，留着那条 grep 会让升级当天直接红灯。
+#    本站没用过 Sass / imageConfig，extended 一直是零收益的包袱。
 
 on:
   push:
@@ -34,21 +39,16 @@ jobs:
       - name: 检出代码
         uses: actions/checkout@v5
 
-      - name: 安装 Hugo extended
+      - name: 安装 Hugo
         uses: peaceiris/actions-hugo@v3
         with:
-          hugo-version: "0.167.0"
-          extended: true
+          hugo-version: "0.170.0"
 
-      - name: 核对 Hugo 版本与 extended
+      - name: 核对 Hugo 版本
         run: |
           hugo version
-          hugo version | grep -q "v0.167.0" || {
-            echo "::error::Hugo 版本不是 0.167.0，请同步 .github/workflows/build.yml 与 Cloudflare 的 HUGO_VERSION"
-            exit 1
-          }
-          hugo version | grep -q "extended" || {
-            echo "::error::需要 extended 版：与 Cloudflare 项目的 HUGO_VERSION 保持一致（2026-10-10 迁移到 hugo-bearneo 后已无 imageConfig 调用，但先不动平台配置）"
+          hugo version | grep -q "v0.170.0" || {
+            echo "::error::Hugo 版本不是 0.170.0，请同步 .github/workflows/build.yml 与 Cloudflare 的 HUGO_VERSION"
             exit 1
           }
 
@@ -73,6 +73,9 @@ jobs:
             --max-concurrency 12
             'public-linkcheck/**/*.html'
           fail: true
+
+      - name: 检查 HTML 结构（重复 id / 同名 landmark / img 缺 alt / 标题跳级）
+        run: bash scripts/check-html.sh public
 
       - name: 检查中文标题锚点
         run: |

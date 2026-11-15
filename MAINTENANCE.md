@@ -13,14 +13,14 @@
 
 | 项 | 值 |
 | --- | --- |
-| Hugo | `0.167.0+extended`（本机 / GitHub Actions / Cloudflare 三边一致） |
+| Hugo | `0.170.0`（本机 / GitHub Actions / Cloudflare 三边一致；**0.170 起没有 extended 版了**，别再装 `Hugo.Hugo.Extended`） |
 | 主题 | `themes/hugo-bearneo/`，27 个文件；`style.html` 有 **2 处登记改动**（正文行高 1.6→1.8、删除未启用的 upvote CSS），其余逐字节未改（`diff -r` 验过） |
 | 代码高亮 | `[markup.highlight] noClasses = false`（**必须是 false**）+ 站点层第 12 段配色 |
 | 站点层 | **35 个文件** = `layouts/` × 33 + `assets/js/` × 2（另有 `data/inline-links.json` 词表），全站所有自定义都在这里（2026-10-17 新增 `layouts/sitemap.xml`、`layouts/_partials/opengraph.html`、`layouts/_partials/twitter_cards.html`；2026-10-18 新增 `layouts/partials/header.html`；2026-10-25 新增 `layouts/partials/favicon.html`；2026-10-26 新增 `layouts/partials/og-image.html`、`layouts/partials/noindex.html` —— 两个都是**把原本复制在 2–3 处的逻辑收成一份**；同日再新增 `layouts/index.json`、`layouts/partials/search-box.html` 与 `layouts/partials/inline-links.html` + `data/inline-links.json` —— 见第 17 节） |
-| 页面 | **369 页 HTML** + `/index.json`（搜索索引，不是 HTML）。2026-10-28 撤销标签归并后从 256 涨回来（+113 个词条页） |
+| 页面 | **389 页 HTML** + `/index.json`（搜索索引，不是 HTML）。2026-11-15 实测；2026-10-28 撤销标签归并后从 256 涨回来（+113 个词条页） |
 | 内容 | 108 篇文章 + 27 期周刊 = 135 个内容页 + 7 个根级独立页（`about`/`now`/`roll`/`privacy`/`archive`/`donate`/`run`）+ `/feed/` 与 `/feed/weekly/`（订阅源浏览器视图，`noindex`） |
 | 订阅源 | `/index.xml`（文章 20 条）+ `/weekly/index.xml`（周刊 20 条），**都只收文章页**；浏览器直开由 `functions/_middleware.js` 分派到 `/feed/` 那两页，订阅器照旧拿 XML |
-| 站内搜索 | **只保留在 `/archive/`**（2026-11-03 起；词条页 / `weekly` / `posts` 页都不再挂输入框和那段 2.7KB 内联脚本 —— 那些页只有几篇到十几篇，搜索价值低于成本）。索引 `/index.json`（`layouts/index.json` 生成，137 条，**1.05 MB / gzip 447 KB**），前端 `layouts/partials/search-box.html`。**2026-10-26 起标题 + 标签 + 正文都搜**；**2026-11-02 起分两级加载**：聚焦不发请求；输入后先按标题即时筛选，停手 450ms 才后台补全文索引；单字查询不拉全文索引。因为只剩归档页（全集），原先「子集页 0 命中→指路 /archive/」的逻辑已删除。⚠️⚠️ **2026-10-26 傍晚修过一次「搜索完全无效」**：脚本物理位置在 `.blog-posts` **之前**，内联脚本解析到就立即执行，而 `querySelectorAll` 返回**静态** NodeList → `posts` 是空列表、`countEl` 是 `null`，打字毫无反应且**零报错**（回车自然也没反应）。现在整段包进 `boot()`，等 `DOMContentLoaded`。**这类 bug 用 DOM stub 测不出来**（stub 里 DOM 是完整的），必须拿真浏览器加载真页面验 |
+| 站内搜索 | **只保留在 `/archive/`**（2026-11-03 起；词条页 / `weekly` / `posts` 页都不再挂输入框和那段 2.7KB 内联脚本 —— 那些页只有几篇到十几篇，搜索价值低于成本）。索引 `/index.json`（`layouts/index.json` 生成，140 条，**约 512 KB / gzip 约 223 KB**），前端 `layouts/partials/search-box.html`。**2026-10-26 起标题 + 标签 + 正文都搜**；**2026-11-15 起也搜 description / h2·h3 标题 / 粗体 / 「」短语**（索引里的 `k` 数组）；**同日把短暂存在的 ⌘K 浮层面板删掉**，全站唯一的搜索入口就是这个框 —— 面板那两样能力搬了进来：命中高亮（`mark.search-hit`）与键盘导航（输入框 ↓ 进列表、列表 ↑↓ 移动、Esc 回输入框）。任何页面按 ⌘K / `/` 都是跳到 `/archive/#search-input`（`baseof.html` 一段内联脚本）；**2026-11-02 起分两级加载**：聚焦不发请求；输入后先按标题即时筛选，停手 450ms 才后台补全文索引；单字查询不拉全文索引。因为只剩归档页（全集），原先「子集页 0 命中→指路 /archive/」的逻辑已删除。⚠️⚠️ **2026-10-26 傍晚修过一次「搜索完全无效」**：脚本物理位置在 `.blog-posts` **之前**，内联脚本解析到就立即执行，而 `querySelectorAll` 返回**静态** NodeList → `posts` 是空列表、`countEl` 是 `null`，打字毫无反应且**零报错**（回车自然也没反应）。现在整段包进 `boot()`，等 `DOMContentLoaded`。**这类 bug 用 DOM stub 测不出来**（stub 里 DOM 是完整的），必须拿真浏览器加载真页面验 |
 | 词条页 | 标签 **213**（`noindex, follow`；2026-10-26 曾归并成 98，**2026-10-28 已全部还原**）+ 分类 8（2026-10-26 起全部放行，可索引、进 sitemap，各配 `content/categories/<词>/_index.md`）。索引页 `/tags/` `/categories/` 已关 |
 | sitemap | **150 条** = 135 个内容页（108 文章 + 27 周刊）+ 7 个根级/列表页 + 8 个分类页；与 219 个 noindex 页**零交集** |
 | CSS | **全部内联**，无 `/css/` 目录 |
@@ -303,7 +303,7 @@ functions/                ★ Cloudflare Pages Functions（2026-10-15 新增）
 
 data/                     runs.json（/run/ 页在读）+ image-dims.json（喂 render-image.html）
                           ⚠️ 两个都别当孤儿删
-scripts/                  12 个脚本，见第 4 节
+scripts/                  13 个脚本，见第 4 节
 .github/workflows/        build.yml（构建校验）/ sync-garmin.yml（每日同步跑步数据）
 ```
 
@@ -529,6 +529,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | `sync-image-dims.py` | ✅ 在用（HTTP 探测图床图片真实宽高 → `data/image-dims.json`，供 `render-image.html` 消费）。**2026-10-18 起在 `publish.sh` 里自动跑**，只补缺的 |
 | `check-cache.sh` | ✅ 在用（2026-10-25 新增，**手动跑**）。自查线上首页是否被边缘缓存锁住：打 `/` 与 `/?cb=随机` 对比 `cf-cache-status` + 内容指纹，命中就打印后台 Purge / Edge TTL 的操作路径。退出码 0=正常 / 1=被锁 / 2=网络拿不到。⚠️ 不进 `publish.sh` —— 它依赖外网，而发布流程要能离线跑 |
 | `check-links.sh` | ✅ 在用（2026-11-02 新增）：构建后检查站内路径和页内锚点；`deploy.sh` 会调用，CI 也跑同一套 lychee 参数。未安装 lychee 时本地脚本提示并跳过 |
+| `check-html.sh` | ✅ 在用（2026-11-15 新增，**CI 已接入**）：查四类 HTML 结构问题 —— 同页重复 id、同名 landmark（两个 `aria-label="目录"`）、`<img>` 缺 alt、标题跳级。只依赖 python3，不需要 lychee。用法 `bash scripts/check-html.sh public`；不给目录就临时构建一份。退出码 0=干净 / 1=有问题 / 2=环境问题。⚠️ 与 `check-links.sh` 分工不同：那个查「指向的东西存不存在」，这个查「结构本身对不对」，**别合并**（依赖面不一样） |
 | `gen-og.js` | ✅ 在用（2026-10-17 重写，2026-10-18 接入 `publish.sh`）：每篇文章一张 1200×630 分享卡 → `static/images/og/`。⚠️ 依赖 sharp，`publish.sh` 会自己找 `node` 与 `NODE_PATH`；**每次都全量重画**（改过标题的卡片要跟着变） |
 | `new-post.sh` | ✅ 在用（2026-10-18）：`new posts/xxx` 建文件 + 用系统默认应用打开。配套的 `new()` 函数在 `~/.config/zsh/.zshrc`，不在仓库里 |
 | `backup-blog.sh` / `cleanup-junk.sh` / `_frontmatter.py` | ✅ 工具 |

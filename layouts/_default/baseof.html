@@ -101,6 +101,43 @@
          否则 320 多个页面都要为它付一次请求。 */ -}}
   {{- partial "code-copy.html" . -}}
 
+  {{- /* 搜索快捷键（2026-11-15，同日改口径后收敛到这里）
+         **全站只有一个搜索入口：/archive/ 页面顶部那个输入框。**
+         2026-11-15 白天先做过一个独立的 ⌘K 浮层面板，用户当天要求
+         「输入框、搜索框集中到 /archive/ 原有的那个搜索框上」——
+         于是面板（partials/search-panel.html + assets/js/search.js）整块删除，
+         它的能力（正文索引、命中高亮、键盘导航）并进了 search-box.html 的脚本。
+
+         这里只留「把人送到那个框」这一件事：
+           · 已经在 /archive/ → 直接聚焦输入框（不刷新、不留 hash）；
+           · 在别的页面 → 跳到 /archive/#search-input，浏览器会滚过去并聚焦。
+         ⚠️ 跳转会离开当前文章。这是「只有一个搜索框」的必然代价，用户明确选了这条路。
+         ⚠️ `/` 只在没在输入时生效，否则打不出斜杠；不用 `s` 当快捷键 ——
+            中文输入法下 `s` 是打字，会频繁误触。
+         ⚠️ 内联而不是外链 JS：这段不到 500 B，比多发一个请求划算。 */ -}}
+  <script>
+  (function () {
+    var SEARCH_URL = {{ "archive/" | relURL }} + "#search-input";
+    function focusSearch() {
+      var input = document.getElementById("search-input");
+      if (!input) return false;
+      input.focus();
+      input.select();
+      return true;
+    }
+    document.addEventListener("keydown", function (e) {
+      var tag = (e.target && e.target.tagName) || "";
+      var typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
+                   (e.target && e.target.isContentEditable);
+      var isK = (e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K");
+      var isSlash = e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey;
+      if (!isK && !isSlash) return;
+      e.preventDefault();
+      if (!focusSearch()) window.location.href = SEARCH_URL;
+    });
+  })();
+  </script>
+
   <!-- A partial to be overwritten by the user.
   Simply place a custom_body.html into
   your local /layouts/partials-directory -->

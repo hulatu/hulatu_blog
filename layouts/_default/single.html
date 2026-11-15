@@ -114,6 +114,47 @@
        直接消失，不留空行。样式在 custom_head.html 第 39 段。 */ -}}
 {{ if $longForm }}{{ with .Description }}<p class="dek">{{ . }}</p>{{ end }}{{ end }}
 
+{{- /* ---------- 窄屏折叠目录（2026-11-15 恢复）-------------------------------
+       2026-11-02 按用户要求删过一次（「电脑端的侧边目录恢复成之前的样子」，
+       手机折叠目录保持删除）。2026-11-15 用户重新拍板：**≤1200px 时正文顶部
+       这块折叠目录要显现**，与右侧侧栏互补：
+
+         >1200px  → div.toc（右侧浮动，含主题的滚动高亮脚本）
+         ≤1200px  → 这块 <details>（正文顶部，静态列表）
+
+       ⚠️ **DOM 里同时存在两份目录**，靠第 20 / 46 段两个严丝合缝的媒体查询
+          互斥显示。别试图「合成一份」：桌面那份是 position: fixed，
+          要挪到正文顶部得同时改定位、DOM 顺序和主题脚本的作用域。
+       ⚠️ 这份**没有 id、没有 <nav> 外壳、没有脚本** —— 直接从 `.TableOfContents`
+          把 `<nav id="TableOfContents">` 换成 `<div class="toc-mobile-list">`：
+            · 不产生重复 id（两份都带 id 是无效 HTML，且主题脚本只认第一个）；
+            · 不重复注册滚动高亮（那份归桌面侧栏）；
+            · 不需要再处理主题那 130 行 JS。
+          ⚠️ 锚点仍然要过 `toc-anchors.html` —— 正文标题 id 是拼音化的，
+             这里不换就跟桌面那份对不上，点了跳错位置。
+       ⚠️ 空目录的判断用 `in $tocMobile "<ul"`，不抄主题那句
+          `ne .TableOfContents "<nav id=\"TableOfContents\"></nav>"`：
+          后者依赖 Hugo 对空 TOC 的确切写法，前者只认「有没有条目」。
+       ⚠️ 它放在 <content> **外面**：进去就会吃 `content { line-height: 1.6 }`
+          与首元素 margin 归零那两条，折叠块的上下间距会跟着正文变。
+       --------------------------------------------------------------- */ -}}
+{{- if $tocEnabled -}}
+  {{- $tocMobile := .TableOfContents -}}
+  {{- if in $tocMobile "<ul" -}}
+    {{- /* ⚠️ 用 `replaceRE` 而不是 `replace`：只认「带 id=TableOfContents 的 nav」，
+           属性顺序变了也照样命中。写成 `replace `<nav id="TableOfContents">``
+           的话，Hugo 哪天换个属性顺序就会**静默失效** —— 后果是页面上多出一个
+           重复 id 的 <nav>，不报错、只在审计时看得见。 */ -}}
+    {{- $tocMobile = replaceRE `<nav[^>]*\bid="TableOfContents"[^>]*>` `<div class="toc-mobile-list">` $tocMobile -}}
+    {{- $tocMobile = replace $tocMobile `</nav>` `</div>` -}}
+    {{- $tocMobile = partial "toc-anchors.html" (dict "html" $tocMobile "page" .) -}}
+<details class="toc-mobile">
+  <summary>目录</summary>
+  {{ $tocMobile | safeHTML }}
+</details>
+  {{- end -}}
+{{- end }}
+
 {{- /* 表格横向滚动包裹（2026-10-11 从旧「印章」主题取回）
      宽表格在窄屏会**撑破容器**（内容区手机只有 352px），整页跟着横向滚动。
      解法是在 `<table>` 外面套一层 `.table-wrap`，让**只有表格自己**横滚。

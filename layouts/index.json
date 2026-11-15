@@ -34,18 +34,58 @@
        140 篇、正文合计约 37 万字 → **原始 1.03 MB / gzip 442 KB**（2026-10-26 的
        原始版本）。2026-11-06 瘦身后（去围栏代码块 + 正文截断 1000 字），
        2026-11-15 实测：**407 KB / gzip 177 KB**。
+       2026-11-15 晚加 `k`（重点关键词数组）之后：**约 512 KB / gzip 约 223 KB**
+       —— 关键词部分实测 raw +105 KB / gzip +46 KB（3445 条，每篇均 24 条）。
        所以前端**必须懒加载**（只在用户开始输入时 fetch 一次），
-       绝不能在列表页一进来就拉 —— 那等于每页多下 177 KB。
+       绝不能在列表页一进来就拉 —— 那等于每页多下 223 KB。
        缓存头在 `static/_headers` 里给了 `must-revalidate`，一次之后只发条件请求。
        ============================================================ */ -}}
 {{- $items := slice -}}
 {{- range where .Site.RegularPages "Type" "in" (slice "posts" "weekly") -}}
   {{- $body := .Content | replaceRE `(?s)<pre.*?</pre>` " " | plainify | replaceRE `\s+` " " | strings.TrimSpace -}}
   {{- $text := substr $body 0 1000 -}}
+
+  {{- /* ---------- 重点关键词（2026-11-15 新增，2026-11-15 晚加）--------------
+       用户要求「重点索引 description、二级/三级标题、粗体表达、「」表达」。
+       这四类都是**作者主动强调过的东西** —— 比正文里顺嘴提到的词更能代表
+       「这篇在讲什么」。搜「降噪耳机」时，正文里提过一次的文章和标题里
+       就写着的文章，排前者更符合直觉。
+
+       ⚠️ 必须是**数组**，不是拼成一串：前端要靠它把「命中的那一条短语」
+          直接当摘要显示（搜「浏览器」就显示「如何配置一个好用的浏览器」），
+          拼成字符串就只能截一段关键词糊当摘要，读起来是断句。
+          代价实测只多 1.5 KB gzip（数组多的是引号和逗号）。
+       ⚠️ `uniq` 不能省：一篇讲跑步的文章里「跑步」可能在几十处粗体里出现，
+          不去重的话这一个词就能把整篇文章的 quota 吃光。
+       ⚠️ 标题要去掉行尾的 `#` 锚点：render-heading.html 在标题末尾输出了
+          `<a class="heading-anchor">#</a>`，剥完标签会剩下一个孤零零的 `#`。
+       ⚠️ 这里对 `.Content` 做 `findRE` 是**只读**的，不会触发二次渲染；
+          Hugo 会缓存 `.Content` 的结果。
+       ⚠️ 别把 `<h1>` 也收进来：文章页正文里没有 h1（标题在模板里），
+          真出现的话多半是作者手写的，收进来等于重复标题。
+       --------------------------------------------------------------- */ -}}
+  {{- $html := printf "%s" .Content -}}
+  {{- $kw := slice -}}
+  {{- with .Description }}{{ $kw = $kw | append . }}{{ end -}}
+  {{- range findRE `<h[23]\b[^>]*>.*?</h[23]>` $html -}}
+    {{- $h := . | replaceRE `<[^>]*>` "" | replaceRE `#\s*$` "" | strings.TrimSpace -}}
+    {{- with $h }}{{ $kw = $kw | append . }}{{ end -}}
+  {{- end -}}
+  {{- range findRE `<strong\b[^>]*>.*?</strong>` $html -}}
+    {{- $b := . | replaceRE `<[^>]*>` "" | strings.TrimSpace -}}
+    {{- with $b }}{{ $kw = $kw | append . }}{{ end -}}
+  {{- end -}}
+  {{- range findRE `「[^」]{2,24}」` $html -}}
+    {{- $q := . | replaceRE `<[^>]*>` "" | strings.TrimPrefix "「" | strings.TrimSuffix "」" | strings.TrimSpace -}}
+    {{- with $q }}{{ $kw = $kw | append . }}{{ end -}}
+  {{- end -}}
+  {{- $kw = $kw | uniq -}}
+
   {{- $items = $items | append (dict
       "t" .Title
       "u" .RelPermalink
       "g" (.Params.tags | default slice)
-      "d" $text) -}}
+      "d" $text
+      "k" $kw) -}}
 {{- end -}}
 {{- $items | jsonify -}}

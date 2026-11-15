@@ -262,8 +262,11 @@ disableKinds = ["taxonomy"]
 # 只有首页主源和周刊（content/weekly/_index.md 里单独开了 outputs）出 feed。
 [outputs]
   # 2026-10-26：home 加了 "JSON" —— 列表页的搜索框要能搜正文，
-  # 索引由 `layouts/index.json` 生成，产物是 `/index.json`（407 KB / gzip 177 KB，2026-11-15 实测；
-  # 2026-11-06 瘦身前是 1.03 MB / gzip 442 KB。前端只在用户开始输入时懒加载一次）。模板里有详细说明与体积实测。
+  # 索引由 `layouts/index.json` 生成，产物是 `/index.json`（2026-11-15 晚加 `k` 字段后
+  # 预计约 512 KB / gzip 约 223 KB；加之前实测 407 KB / gzip 177 KB，再往前
+  # 2026-11-06 瘦身前是 1.03 MB / gzip 442 KB。前端只在用户开始输入时懒加载一次）。
+  # ⚠️ 512/223 是**离线模拟**算出来的（关键词部分 raw +105 KB / gzip +46 KB），
+  #    真值以构建产物为准：`wc -c public/index.json` + `gzip -9c public/index.json | wc -c`。
   home = ["HTML", "RSS", "JSON"]
   section = ["HTML"]
   taxonomy = ["HTML"]
@@ -323,14 +326,23 @@ disableKinds = ["taxonomy"]
 # 版本约束：本机、GitHub Actions 和 Cloudflare Pages 三边用同一个版本，避免
 # 「本地构建正常、平台构建失败」这种只有上线才发现的问题。
 #
-# ⚠️ `extended = true` 是**历史遗留**：自建主题时代 `head-meta.html` 用 imageConfig
-#    读分享图的宽高，非 extended 版解不了 WebP。2026-10-10 迁移到上游 hugo-bearneo 后，
-#    全仓库（主题 + 站点层 + scripts/）已经**没有任何 imageConfig 调用**，
-#    标准版理论上也能构建。但保持 extended 是零成本的，而且省得去改 Cloudflare 项目 ——
-#    所以**先留着**，别为了「顺手删掉」去动 CI 和平台配置。
+# ── 2026-11-15：统一到 0.170.0，并删掉 `extended = true` ─────────────
+# **Hugo 0.170.0 取消了 extended 版**：LibSass 被移除，只剩单一二进制
+# （除了 Sass 之外的一切都还在）。随之而来三条失效的东西：
+#   · `hugo_extended_*` 归档不再发布（少数别名还留着，只为不砸别人的 CI）；
+#   · `hugo.IsExtended` 永远返回 false；
+#   · 本段这个 `extended = true` 被标为 deprecated 且**不生效**。
+# 本站从来没用过 Sass，也没用过 imageConfig（2026-10-10 迁移到 hugo-bearneo 后
+# 全仓库 0 处调用），所以 extended 对本站一直是**零收益的历史包袱** —— 删掉。
+# ⚠️ 本机 brew 装的就是 0.170，构建产物里 generator 一直写着 0.170.0，
+#    而 CI 钉着 0.167 —— 本地和线上跑在两个版本上跑了至少一个月，这次一并对齐。
+# ⚠️ 升级 0.170 的 breaking change 已逐条核过，**一项都没命中本站**：
+#    strings.Truncate 重写（本站 0 处）、resources.Match 保留大小写（0 处）、
+#    Sass/transpiler（0 处）、hugo.IsExtended（0 处）；
+#    uniq / eq / ne 改成按 instant 比较时间 —— 本站 uniq 只用在字符串切片，
+#    唯一的日期比较在 single.html 里用的是 .Format 之后的字符串。
 # 改这里时记得同步 .github/workflows/build.yml、README / MAINTENANCE 里写的版本号，
-# 以及 Cloudflare 项目的 HUGO_VERSION。
+# 以及 Cloudflare 项目的 HUGO_VERSION（**这一处只能在后台改，脚本管不到**）。
 [module]
   [module.hugoVersion]
-    min = "0.167.0"
-    extended = true
+    min = "0.170.0"

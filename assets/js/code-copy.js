@@ -66,6 +66,25 @@
       var pre = box.querySelector('pre');
       if (!pre) return;
 
+      /* 2026-11-15：插一条头部条（左语言、右复制）。语言取自
+         `<code data-lang="python">`，这是 Chroma 自己写的属性 —— 不用额外配置。
+         ⚠️ 为什么不在 CSS 里用 `::before` + `attr(data-lang)` 画角标：
+            那个属性在 <code> 上，而 `::before` 只能读**自己元素**的属性；
+            画进 <code> 里会挤在第一行代码前面（code 是 block + pre-wrap）。
+         ⚠️ 没有语言（`{{< highlight >}}` 不写 lang）时只放复制按钮，条子照样在 ——
+            靠 CSS 的 `margin-left: auto` 把按钮推到右边，不用另写一套样式。 */
+      var code = box.querySelector('code');
+      var lang = code ? (code.getAttribute('data-lang') || '') : '';
+
+      var head = document.createElement('div');
+      head.className = 'code-head';
+      if (lang) {
+        var badge = document.createElement('span');
+        badge.className = 'code-lang';
+        badge.textContent = lang;
+        head.appendChild(badge);
+      }
+
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.className = 'code-copy';
@@ -92,7 +111,10 @@
         });
       });
 
-      box.appendChild(btn);
+      head.appendChild(btn);
+      /* 插在 <pre> **前面**：CSS 里 `.code-head + pre.chroma` 的相邻选择器
+         靠的就是这个位置，插错了圆角接不上。 */
+      box.insertBefore(head, pre);
     });
   }
 

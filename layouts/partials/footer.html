@@ -150,7 +150,13 @@
 {{ end }}
 
 <!-- 授权声明 + 隐私 + Sitemap（2026-10-11 起全英文，CC 那段带链接；
-     2026-10-12 起分隔符从 `·` 改成 `.`，见文件顶部注释） -->
+     2026-10-12 起分隔符从 `·` 改成 `.`，见文件顶部注释）
+     2026-11-15：行尾补了「🔍 搜索」——全站唯一的搜索入口在 /archive/ 顶部的输入框，
+     这里只是一个指过去的链接（带 `#search-input`，落地即聚焦）。
+     ⚠️ 曾经是 `<button data-search-open>` 打开一个浮层面板（当天下午删掉）：
+        用户要求「搜索集中到 /archive/ 那个框」，面板整块退役，这里改回普通链接。
+     ⚠️ 它挂在这个 hideSitemap 分支里，所以关掉页脚地图时会一起消失 —— 可接受
+     （同属「站点元信息」那一行），但别以为它有自己的开关。 -->
 {{ if ne .Site.Params.Footer.hideSitemap true }}
-{{ with .Site.Params.copyrightNote }}{{ . }} {{ end }}{{ with .Site.Params.licenseName }}<a href="{{ $.Site.Params.licenseURL }}">{{ . }}</a> 协议. {{ end }}<a href="/privacy/">隐私</a>. 🗺️ <a href="/sitemap.xml">网站地图</a>.
+{{ with .Site.Params.copyrightNote }}{{ . }} {{ end }}{{ with .Site.Params.licenseName }}<a href="{{ $.Site.Params.licenseURL }}">{{ . }}</a> 协议. {{ end }}<a href="/privacy/">隐私</a>. 🗺️ <a href="/sitemap.xml">网站地图</a>. 🔍 <a href="{{ "archive/" | relURL }}#search-input" title="站内搜索（⌘K 或 /）">搜索</a>
 {{ end }}

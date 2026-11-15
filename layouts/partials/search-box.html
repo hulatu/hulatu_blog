@@ -41,16 +41,17 @@
        原来只做 `title.includes(term)`。140 篇文章里很多标题是比喻式的
        （「角落里的学生」「过早引用」），搜「降噪耳机」这种正文词一个字
        都出不来。现在额外读 `/index.json`（`layouts/index.json` 生成，
-       含每篇的标题 / 标签 / 正文纯文本）。
+       含每篇的标题 / 标签 / 正文前 1000 字 / 重点关键词）。
 
        ── 三个必须知道的约束 ──────────────────────────────────────────
        ⚠️ **索引分两级加载**：进页面不拉；聚焦输入框也不拉；输入后先按
           标题即时筛选，停手 450ms 才在后台补标题 + 标签 + 正文索引。
           这样「点一下搜索框」不会白付 177 KB，打字时也先得到可用结果，
           不再被全文索引的网络等待卡住。
-          索引 407 KB / gzip 177 KB（140 篇正文；2026-11-06 瘦身前是
-          1.03 MB / 442 KB），
-          在列表页一进来就拉等于每页多下 177 KB —— 那是不能接受的。
+          索引 407 KB / gzip 177 KB（2026-11-15 白天实测，140 篇正文；
+          2026-11-15 晚加 `k` 重点关键词字段后预计约 512 KB / gzip 223 KB；
+          2026-11-06 瘦身前是 1.03 MB / 442 KB），
+          在列表页一进来就拉等于每页多下 200 KB 上下 —— 那是不能接受的。
        ⚠️ **它只过滤「当前这一页已有的条目」**，不会跨页检索。
           这是刻意保持原行为：/archive/ 一页装全部 140 篇，所以在那页
           等于全站检索；/weekly/ 只有 30 条，就只在这 30 条里搜。
@@ -64,6 +65,17 @@
           索引里的 `u` 是 `.RelPermalink`。所以先 `new URL().pathname`
           归一化，并且**预先算一次存进 `paths`**，不要每次按键重算。
           （实测 133 条 `u` 全是纯 ASCII，不会出现「一边编码一边没编码」。）
+
+       ── 2026-11-15：这里是全站**唯一**的搜索入口 ──────────────────────
+       当天白天先做过一个独立的 ⌘K 浮层面板（`<dialog>` + 单独的 JS），用户
+       随后要求「输入框、搜索框集中到 /archive/ 原有的这个搜索框上」——
+       面板整块删除（`partials/search-panel.html` 与 `assets/js/search.js` 都不在了），
+       它的两样东西搬进了本文件：**命中高亮**（`mark.search-hit`）与
+       **键盘导航**（输入框 ↓ 进列表、列表 ↑↓ 移动、Esc 回输入框）。
+       现在全站任何页面按 `⌘K` / `Ctrl+K` / `/`，都是跳到
+       `/archive/#search-input`；页脚与 404 页的「搜索」也是同一个链接。
+       ⚠️ **不要再加第二个搜索 UI**。两个入口必然带来「这边搜得到、那边搜不到」
+          这类无法解释的差异 —— 这是删掉面板的全部理由。
 
        ── 参数 ────────────────────────────────────────────────────────
        `countLabel`：计数行里「共 N ___」的后半句。默认「篇。」，
@@ -108,6 +120,59 @@
     var firstHit = null;  // 当前第一个命中项，回车时跳过去
     var loadTimer = null;
     var indexRequest = null;
+    var marked = [];      // 本轮被高亮过的 <a>；下一轮只清这些（140 条全清太浪费）
+
+    /* ---------- 命中高亮（2026-11-15）----------
+       归档页原来只有「过滤」没有「高亮」；高亮是那个 ⌘K 浮层面板独有的。
+       用户当天要求「搜索集中到归档页这个框」，面板删除，高亮搬进来。
+
+       ⚠️ **只能动文本节点，不能重建 `<a>` 的内容**：列表项标题末尾有一个
+          `<span class="nowrap">`（孤行保护，见 partials/orphan-safe.html），
+          一句 `a.textContent = …` 就会把它抹掉，标题的换行位置跟着变。
+       ⚠️ 每个标题只标**第一处**：同一个词在一行标题里出现三次全标满，看着像报错。 */
+    function clearMarks(root) {
+      var marks = root.querySelectorAll('mark.search-hit');
+      for (var i = marks.length - 1; i >= 0; i--) {
+        var parent = marks[i].parentNode;
+        parent.replaceChild(document.createTextNode(marks[i].textContent), marks[i]);
+        parent.normalize();
+      }
+    }
+
+    function markIn(root, term) {
+      var walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, null);
+      while (walker.nextNode()) {
+        var node = walker.currentNode;
+        var at = node.nodeValue.toLowerCase().indexOf(term);
+        if (at === -1) continue;
+        var after = node.splitText(at);
+        after.splitText(term.length);
+        var mark = document.createElement('mark');
+        mark.className = 'search-hit';
+        mark.textContent = after.nodeValue;
+        after.parentNode.replaceChild(mark, after);
+        return true;
+      }
+      return false;
+    }
+
+    function clearAllMarks() {
+      for (var i = 0; i < marked.length; i++) clearMarks(marked[i]);
+      marked = [];
+    }
+
+    /* 键盘导航用的可见项。⚠️ 判据必须是 `style.display` —— 过滤是直接写内联样式的，
+       `offsetParent` 在这里会受年份 h2 的显隐影响，不可靠。 */
+    function visibleLinks() {
+      var out = [];
+      for (var i = 0; i < posts.length; i++) {
+        if (posts[i].style.display !== 'none') {
+          var a = posts[i].querySelector('a');
+          if (a) out.push(a);
+        }
+      }
+      return out;
+    }
 
     function loadIndex() {
       if (state !== 'idle') return;
@@ -120,7 +185,13 @@
           index = new Map();
           list.forEach(function (it) {
             var tags = (it.g && it.g.length) ? it.g.join(' ') : '';
-            index.set(it.u, (it.t + ' ' + tags + ' ' + it.d).toLowerCase());
+            /* 2026-11-15：`k`（description / h2·h3 / 粗体 / 「」短语）纳入匹配。
+               这已经是全站**唯一**的搜索入口，索引的质量就是搜索的质量。
+               ⚠️ **不分权重**：这里是「在列表里过滤」，要的是可预测的命中集合；
+                  列表本身按日期倒序，按相关度重排会打乱读者对「归档」的心智模型。
+                  （曾经有一套 100/60/30/10 的权重，属于当天已删除的浮层面板。） */
+            var kw = (it.k && it.k.length) ? it.k.join(' ') : '';
+            index.set(it.u, (it.t + ' ' + tags + ' ' + it.d + ' ' + kw).toLowerCase());
           });
           state = 'ready';
           if (lastTerm) apply(lastTerm);
@@ -154,6 +225,7 @@
       var visible = 0;
       var shownYears = {};
       firstHit = null;
+      clearAllMarks();
       for (var i = 0; i < posts.length; i++) {
         var li = posts[i];
         var a = li.querySelector('a');
@@ -167,6 +239,9 @@
         if (hit) {
           visible++;
           if (!firstHit && a) firstHit = a;
+          /* 只在**标题命中**时高亮：正文命中在列表里没有可标的字（列表只有标题 + 日期），
+             那种命中靠「它在结果里」这件事本身表达。 */
+          if (term && a && title.indexOf(term) !== -1 && markIn(a, term)) marked.push(a);
           var t = li.querySelector('time');
           if (t) shownYears[t.getAttribute('datetime').slice(0, 4)] = 1;
         }
@@ -205,7 +280,15 @@
 
     // 回车 = 「带我去第一条」。不阻止默认的话，type=search 在部分浏览器里
     // 会触发一次无声的表单提交式行为（页面不跳但焦点丢失），所以显式接管。
+    // ↓ = 把焦点交给结果列表（2026-11-15 新增，与删除的浮层面板同一套键盘习惯）。
     input.addEventListener('keydown', function (e) {
+      if (e.key === 'ArrowDown') {
+        var links = visibleLinks();
+        if (!links.length) return;
+        e.preventDefault();
+        links[0].focus();
+        return;
+      }
       if (e.key === 'Enter') {
         if (!this.value.trim() || !firstHit) return;
         e.preventDefault();
@@ -226,6 +309,38 @@
         apply('');
       }
     });
+
+    /* 列表里的键盘导航（2026-11-15 新增）。
+       ⚠️ 事件挂在列表容器上做委托，不给每个 <a> 单独绑 —— 140 条 × 每次过滤
+          重新绑一遍是白费；委托一次就够，因为 <a> 是构建期就存在的、不重建。
+       ⚠️ ↑ 在第一条上再按 = 回到输入框，否则焦点会「卡死」在列表头部。 */
+    var list = document.querySelector('.blog-posts');
+    if (list) {
+      list.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') {
+          e.preventDefault();
+          input.focus();
+          return;
+        }
+        if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+        var links = visibleLinks();
+        var at = links.indexOf(document.activeElement);
+        e.preventDefault();
+        var next = links[at + (e.key === 'ArrowDown' ? 1 : -1)];
+        if (next) next.focus();
+        else if (at <= 0) input.focus();
+      });
+    }
+
+    /* 从别的页面「搜索」过来（footer / 404 / ⌘K）时落地即聚焦。
+       浏览器对可聚焦的锚点目标会自己聚焦，但 Safari 不一定 —— 这里补一刀。
+       ⚠️ 用 rAF 等一帧再滚动：此时列表还没渲染完，直接 scrollIntoView 会算错位置。 */
+    if (location.hash === '#search-input') {
+      input.focus();
+      requestAnimationFrame(function () {
+        input.scrollIntoView({ block: 'center' });
+      });
+    }
   }
 
   if (document.readyState === 'loading') {

@@ -1830,6 +1830,20 @@
       "Liberation Mono", "Sarasa Mono SC", "Noto Sans Mono CJK SC", monospace;
   }
 
+  /* 2026-11-15：代码字号降一档（22-b）
+     全站没有任何地方给 `code` 设过 font-size —— 主题只给了 family 和背景，
+     于是行内代码与代码块一直**继承正文的 18px**。与正文同大有两个问题：
+     代码和散文没有层级，而且 18px 的 Menlo 一行只能放约 60 个字符。
+     0.9em ≈ 16.2px，与 `.dek` 同档，正文 18px 仍是最大那一层。
+     ⚠️ 只写 `content code`：404 页那个大号 `404` 是 `.notfound-code`，不是
+        `<code>`，不受影响。写成裸 `code` 也不会有事，但作用域会扩到以后
+        可能新增的界面元素上。
+     ⚠️ 改完 `pre` 的 padding 不受影响（它是 px），`pre code` 的行宽会变宽一点 ——
+        这正是想要的。 */
+  content code {
+    font-size: 0.9em;
+  }
+
   /* ---------------------------------------------------------------
      23 目录链接：把 `transition: all` 收窄成两个具体属性
 
@@ -3356,4 +3370,299 @@
     width: 0;
     height: 0;
     display: none;
+  }
+
+  /* ---------------------------------------------------------------
+     43 中文排版：标点挤压 + 标题断行平衡（2026-11-15）
+
+        两条都是「用原生能力替代手写补丁」，都不引入字体、不引入 JS。
+
+         ── 43-a `text-spacing-trim: trim-both` ──────────────────────────
+         全角标点（「」、，。：；）在字身里占**一个全角**，墨迹却只有半个字宽 ——
+         于是行首的「会缩进半个字、行尾的，会拖出一块空白。trim-both 让浏览器
+         把这两侧的半个字宽都压掉：行首对齐，行尾标点外挂。
+
+         ⚠️ 它和 2026-10-11 删掉的 `text-autospace` **不是一回事**，别把那次的
+            结论套过来：text-autospace 是往中英/中数之间「加」空隙，实测在本机
+            Chromium 上五种取值逐字节相同；text-spacing-trim 是「削」标点两侧的
+            空白 —— 另一个属性、另一套实现。要复核就按第 02 段那次的方法：
+            造一页「行首是「、行尾是，」的文字，量行首第一笔墨迹的起始 x。
+         ⚠️ 不支持它的浏览器直接忽略这一行，回落到今天的样子 —— 没有降级代码。
+         ⚠️ 觉得行尾的标点「荡出去」太野，把 trim-both 改成 trim-start：
+            只压行首、行尾保持原样。**这是唯一的取舍点，改一个词就回退**。
+
+         ── 43-b `text-wrap: balance` / `pretty` ────────────────────────
+         标题用 balance：两行标题不再「一长一短」而是尽量等长。
+         段落用 pretty：避免末行只剩一两个字。
+         与 partials/orphan-safe.html 那套「末 2 字包 span.nowrap」**不冲突、是叠加** ——
+         那个解决「末行只剩 1 个字」，这两个管的是整行的长度分布。
+         老浏览器忽略这两行，退回今天看到的样子（span.nowrap 仍在起作用）。
+
+         ⚠️ balance 只在 ≤6 行内生效（Chromium 的实现上限）。本站标题最长 3 行，
+            碰不到这个上限，所以不用为长标题写例外。
+         ⚠️ 不要给 `.dek` 加 balance：它只有一两行，balance 会让它和标题的
+            「左边对不齐」—— 副标题本来就该是自然折行。
+         --------------------------------------------------------------- */
+  content {
+    text-spacing-trim: trim-both;
+  }
+
+  main h1,
+  content h2,
+  content h3 {
+    text-wrap: balance;
+  }
+
+  content p,
+  content li {
+    text-wrap: pretty;
+  }
+
+  /* ---------------------------------------------------------------
+     44 脚注（2026-11-15）
+
+         全站 2 篇用 Markdown 脚注。语义是完整的（Goldmark 输出
+         `role="doc-endnotes"` / `role="doc-backlink"`），但**一个字样式都没有**：
+         吃浏览器默认的 18px 正文色 + 默认 <ol> 序号 + Goldmark 自己那条 <hr>。
+
+         只做三件事：降到 15px 三级灰、去掉那条重复的 <hr>、给 `:target` 一个
+         高亮 —— 点正文里的上标跳到脚注、再点 ↩ 跳回来时，能看见落在哪一条。
+
+         ⚠️ `.footnotes hr { display: none }` 只删 Goldmark 自己那条。作者手写的
+            <hr>（《跑步重启人生》文末那条 + 「参考资料」）在 .footnotes **外面**，
+            不受影响。
+         ⚠️ 15px + 三级灰的账与第 32/39 段同一套：#6e6e6e 在纸底上 5.01:1，过 AA。
+         ⚠️ 已知不足：Goldmark 给的返回链接文字是「↩︎」，没有可读名字。
+            要补 aria-label 得改脚注渲染（Hugo 没有脚注钩子），代价不值 ——
+            读屏会念「链接，↩」，靠上下文能判断。别为此重写整条渲染管线。
+         ⚠️ `scroll-margin-top` 是给「跳到脚注」那一下留的呼吸位：没有它，
+            <li> 会紧贴视口顶端，`li:target` 的高亮看着像被切掉一条。
+         --------------------------------------------------------------- */
+  .footnotes {
+    margin-top: 2.4em;
+    font-size: 15px;
+    line-height: 1.65;
+    color: var(--text-color-tertiary);
+  }
+
+  .footnotes hr {
+    display: none;
+  }
+
+  .footnotes ol {
+    margin: 0;
+    padding-left: 1.6em;
+  }
+
+  .footnotes li {
+    margin: 0.5em 0;
+    padding: 0.15em 0.45em;
+    border-radius: 3px;
+    scroll-margin-top: 1rem;
+  }
+
+  .footnotes li:target {
+    background-color: var(--bg-color-secondary);
+  }
+
+  .footnote-ref {
+    text-decoration: none;
+    padding: 0 0.1em;
+  }
+
+  .footnote-backref {
+    text-decoration: none;
+  }
+
+  .footnote-backref:hover {
+    text-decoration: underline;
+  }
+
+  /* ---------------------------------------------------------------
+     45 代码块头部条：语言角标 + 复制（2026-11-15）
+
+         改的是 assets/js/code-copy.js：它在 div.highlight 里**插入一条 header**
+         （左边语言、右边复制按钮），把原来浮在代码右上角的按钮移进去。
+         语言取自 `<code data-lang="python">`，Chroma 本来就会写这个属性。
+
+         ── 为什么必须用 JS，不能纯 CSS ────────────────────────────────
+         `data-lang` 挂在 <code> 上，而 `::before` 只读**自己元素**的属性；
+         画在 <code> 里会挤进第一行代码（它是 `display: block; pre-wrap`）。
+         真要用 CSS 就得重写 render-codeblock 钩子、自己调 transform.Highlight ——
+         为一条角标重做整条高亮管线，不值得。
+
+         ⚠️ 没有 JS（禁用脚本）时：没有 header 条，代码块与改动前**逐像素相同**，
+            复制按钮也不存在（本来就要 JS）。这不是降级故障。
+         ⚠️ `.code-head + pre.chroma` 的圆角必须写成 0 0 4px 4px：head 只给上圆角，
+            不给下面那条，代码块的方角会从条子底下露出来。
+         ⚠️ `.code-copy` 在这个容器里改成 `position: static` —— 第 18 段那条
+            absolute 仍然管「没有 header 条的旧结构」，两套不要同时生效。
+         ⚠️ `margin-left: auto` 而不是 `justify-content: space-between`：
+            代码块没有语言（`{{< highlight >}}` 不带 lang）时条子里只有一个按钮，
+            space-between 会把它甩到左边。
+         --------------------------------------------------------------- */
+  .code-head {
+    display: flex;
+    align-items: center;
+    padding: 0 0.55em 0 0.9em;
+    border: 1px solid var(--border-color);
+    border-bottom: 0;
+    border-radius: 4px 4px 0 0;
+    background-color: var(--bg-color-primary);
+    font-family: var(--font-secondary);
+    font-size: 0.75rem;
+    line-height: 2.2;
+    color: var(--text-color-tertiary);
+  }
+
+  .code-head + pre.chroma {
+    border-radius: 0 0 4px 4px;
+  }
+
+  .code-lang {
+    text-transform: lowercase;
+  }
+
+  .code-head .code-copy {
+    position: static;
+    margin-left: auto;
+    opacity: 1;
+    padding: 0 0.4em;
+    background: none;
+    font-size: 0.75rem;
+  }
+
+  /* 触屏上第 18 段让按钮常显；进了 header 条之后本来就常显，这条只是
+     保持两处行为一致，避免以后改第 18 段时这里跟着漂。 */
+  .code-head .code-copy:hover {
+    color: var(--link-color);
+  }
+
+  /* 纸上印一个「复制」按钮没有意义（按钮也点不了），但**语言标签要留下** ——
+     打印出来的代码片段能看出是什么语言，正是这一条的价值。 */
+  @media print {
+    .code-head .code-copy {
+      display: none;
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     46 窄屏折叠目录（2026-11-15 恢复；2026-11-02 删过一次）
+
+         这次恢复的形态与 2026-11-02 删掉的**不是同一个**：
+           · 2026-11-02 删：正文顶部一块折叠区，且桌面侧栏同时被删；
+           · 现在：>1200px 用右侧浮动目录（第 40 段），≤1200px 用正文顶部这块。
+             两种宽度**各有一份，互斥显示**，同一时刻只会看到一份。
+
+         ── 为什么 DOM 里放两份而不是共用一份 ───────────────────────────
+         桌面那份是 `position: fixed` 的侧栏，要让它变成「正文顶部的折叠块」
+         得同时改定位、DOM 顺序，还会牵连主题 toc.html 里那 130 行脚本
+         （它 `querySelector('.toc-nav')` 只认第一个）。分两份的代价只是
+         每页多约 600 B gzip 的列表 HTML，比改一处动全身划算。
+         ⚠️ 这份由 `.TableOfContents` 去掉 `<nav id="TableOfContents">` 外壳生成
+            （见 single.html），所以**没有重复 id**，也不会重复注册滚动高亮脚本。
+         ⚠️ 断点必须与第 20 段那条 `@media (max-width: 1200px) { div.toc { display:none } }`
+            严丝合缝：那边藏、这边显，同一个数值改一处要改两处。
+         --------------------------------------------------------------- */
+  .toc-mobile {
+    display: none;
+  }
+
+  @media (max-width: 1200px) {
+    .toc-mobile {
+      display: block;
+      margin: 0 0 2em;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+
+    .toc-mobile > summary {
+      display: flex;
+      align-items: center;
+      gap: 0.5em;
+      padding: 0.65em 0.9em;
+      font-size: 0.85rem;
+      color: var(--text-color-secondary);
+      cursor: pointer;
+      list-style: none;
+    }
+
+    /* 去掉浏览器默认的三角。Safari 认 ::-webkit-details-marker，Chrome/Firefox
+       认 list-style: none（上面那条）—— 两个都写才干净。 */
+    .toc-mobile > summary::-webkit-details-marker {
+      display: none;
+    }
+
+    .toc-mobile > summary::after {
+      content: "▾";
+      margin-left: auto;
+      font-size: 0.9em;
+      color: var(--text-color-tertiary);
+      transition: transform 0.15s ease;
+    }
+
+    .toc-mobile[open] > summary::after {
+      transform: rotate(180deg);
+    }
+
+    .toc-mobile > summary:hover {
+      color: var(--link-color);
+    }
+
+    .toc-mobile-list {
+      padding: 0.1em 0.9em 0.7em;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .toc-mobile-list ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .toc-mobile-list ul ul {
+      padding-left: 0.9em;
+    }
+
+    .toc-mobile-list li {
+      margin: 0;
+    }
+
+    .toc-mobile-list a {
+      display: block;
+      padding: 0.3em 0;
+      font-size: 0.82rem;
+      line-height: 1.5;
+      color: var(--text-color-tertiary);
+      text-decoration: none;
+    }
+
+    .toc-mobile-list a:hover {
+      color: var(--link-color);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .toc-mobile > summary::after {
+      transition: none;
+    }
+  }
+
+  /* ---------------------------------------------------------------
+     47 搜索：命中高亮（2026-11-15）
+
+         全站唯一的搜索入口是 /archive/ 顶部那个输入框 —— 见
+         partials/search-box.html 文件头。这里只负责把列表标题里命中的那一段标出来。
+
+         ⚠️ 不用黄底：黄底在深色主题下刺眼，也和全站「只有蓝 / 灰」的配色语言冲突。
+            改用链接蓝 + 加粗，两档主题下都成立，而且与「这是一条可点的结果」同义。
+         ⚠️ `.search-hit` 是模板与脚本的契约：search-box.html 里的 markIn()
+            会创建 `<mark class="search-hit">`，改名要两边一起改。
+         ⚠️ 只标标题。列表项里没有正文摘要，正文命中没有可标的字 ——
+            「它在结果里」这件事本身就是反馈。
+         --------------------------------------------------------------- */
+  mark.search-hit {
+    background: none;
+    color: var(--link-color);
+    font-weight: 600;
   }

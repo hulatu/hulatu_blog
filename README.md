@@ -8,9 +8,9 @@
 
 <br>
 
-[![内容](https://img.shields.io/static/v1?label=%E5%86%85%E5%AE%B9&message=137%20%E7%AF%87&color=1b1917&style=flat-square)](https://hulatu.com/archive/)
-[![周刊](https://img.shields.io/static/v1?label=%E5%91%A8%E5%88%8A&message=28%20%E6%9C%9F&color=c0392b&style=flat-square)](https://hulatu.com/weekly/)
-[![Hugo](https://img.shields.io/static/v1?label=Hugo&message=0.167&color=ff4088&style=flat-square&logo=hugo&logoColor=white)](https://gohugo.io/)
+[![内容](https://img.shields.io/static/v1?label=%E5%86%85%E5%AE%B9&message=140%20%E7%AF%87&color=1b1917&style=flat-square)](https://hulatu.com/archive/)
+[![周刊](https://img.shields.io/static/v1?label=%E5%91%A8%E5%88%8A&message=30%20%E6%9C%9F&color=c0392b&style=flat-square)](https://hulatu.com/weekly/)
+[![Hugo](https://img.shields.io/static/v1?label=Hugo&message=0.170&color=ff4088&style=flat-square&logo=hugo&logoColor=white)](https://gohugo.io/)
 [![部署](https://img.shields.io/static/v1?label=%E9%83%A8%E7%BD%B2&message=Cloudflare%20Pages&color=f38020&style=flat-square&logo=cloudflare&logoColor=white)](#-发布)
 [![RSS](https://img.shields.io/static/v1?label=%E8%AE%A2%E9%98%85&message=RSS%20%E5%85%A8%E6%96%87&color=e8892e&style=flat-square&logo=rss&logoColor=white)](https://hulatu.com/index.xml)
 [![许可](https://img.shields.io/static/v1?label=%E8%AE%B8%E5%8F%AF&message=CC%20BY-NC-SA%204.0&color=2f7d5d&style=flat-square)](#-许可)
@@ -47,7 +47,7 @@
 | | |
 | --- | --- |
 | 🌐 **线上地址** | <https://hulatu.com/> |
-| 🧱 **框架** | [Hugo](https://gohugo.io/) `0.167.0` extended |
+| 🧱 **框架** | [Hugo](https://gohugo.io/) `0.170.0`（0.170 起无 extended 版） |
 | 🎨 **主题** | 上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo) 的副本（`themes/` 里 **27 个文件逐字节未改**，只有 `style.html` 两处登记改动：正文行高 1.6→1.8、删掉未启用的 upvote CSS） |
 | ☁️ **托管** | Cloudflare Pages（Git 集成，push 即自动构建） |
 | 💬 **评论** | giscus（GitHub Discussions，只挂长文页） |
@@ -87,20 +87,21 @@
 
 ## 🚀 本地跑起来
 
-**1. 装 Hugo（Extended，0.167.0+）**
+**1. 装 Hugo（0.170.0）**
 
 ```bash
 brew install hugo                          # macOS
-winget install Hugo.Hugo.Extended          # Windows
-hugo version                               # 只要 extended 就行，版本号见下
+winget install Hugo.Hugo                   # Windows（0.170 起没有 Extended 包了）
+hugo version                               # 版本号见下
 ```
 
-> ⚠️ **构建版本钉在 `0.167.0`**：CI（`.github/workflows/build.yml` 的 `hugo-version`，还会
-> `grep -q v0.167.0` 硬校验）和 Cloudflare Pages 的 `HUGO_VERSION` 都是它，`hugo.toml` 的
-> `[module.hugoVersion]` 写的是 `min = "0.167.0"`。
+> ⚠️ **构建版本钉在 `0.170.0`**，四处一致：本机、CI（`.github/workflows/build.yml` 的
+> `hugo-version`，还会 `grep -q v0.170.0` 硬校验）、Cloudflare Pages 的 `HUGO_VERSION`、
+> `hugo.toml` 的 `[module.hugoVersion] min`。
 >
-> 本机 `brew install hugo` 现在给的是 **0.169.0**，跑本地预览没问题（更高版本向后兼容），
-> 但**别把本机版本号抄进 CI 或平台变量**——三处不一致的典型症状是「本地正常、线上构建失败」。
+> 2026-11-15 起**不再需要 extended 版**：Hugo 0.170 移除了 LibSass、取消 Extended 构建，
+> 只剩一个二进制，`hugo version` 也不再带 extended 字样。本站从未用过 Sass，
+> 对构建没有任何影响。升级 0.170 的 breaking change 已逐条核过，一项都没命中本仓库。
 
 **2. 预览**
 
