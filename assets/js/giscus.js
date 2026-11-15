@@ -79,6 +79,7 @@
       stopWatchingFrames();
       box.classList.add("is-open");
       toggle.setAttribute("aria-label", "收起评论");
+      toggle.setAttribute("aria-expanded", "true");
       if (loading) loading.hidden = true;
       return;
     }
@@ -86,6 +87,11 @@
     // 其余都是「收起来」的状态
     box.classList.remove("is-open");
     toggle.setAttribute("aria-label", "展开评论");
+    /* 2026-11-15：aria-expanded 与 aria-label 一起维护。
+       <details> 恒带 open（收起靠 max-height），原生状态永远是「已展开」，
+       所以 summary 带了 role="button"，展开状态只认这里写的这个值。
+       漏写这一段 = 读屏永远认为评论区是开着的。 */
+    toggle.setAttribute("aria-expanded", "false");
 
     if (loading) {
       if (next === "opening") {

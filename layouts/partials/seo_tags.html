@@ -60,7 +60,7 @@
        页型映射（.IsPage = kind page，即文章 + about/now/roll/privacy/
        donate/run/archive 这些根级独立页；section / term / home 为 false）：
          首页 .IsHome        → WebSite（name / url / inLanguage / publisher）
-         文章 + 周刊 (posts / weekly，126 页) → BlogPosting 全套
+         文章 + 周刊 (posts / weekly，140 页) → BlogPosting 全套
          其他根级独立页（about / archive / now / roll / run / privacy / donate）
                               → WebPage **极简**（只有 name / url）
          404 .Kind == "404"  → WebPage（不是 CollectionPage —— 它是 noindex 页）
@@ -92,7 +92,7 @@
        twitter:image **同一张、同一套取值逻辑**（按 slug 找
        images/og/<slug>.png，取不到回落 share.webp）。
 
-       ⚠️ 这里以前用的是 `site.Params.images` 的第一张，于是 133 篇文章的
+       ⚠️ 这里以前用的是 `site.Params.images` 的第一张，于是 140 篇文章的
           JSON-LD `image` 全是同一张 share.webp，而 og:image 早就逐篇不同了。
           后果不是报错，而是**白丢差异化缩略图**：Google 的 Article 富媒体
           结果与 Discover 读的是 JSON-LD，不是 og:image。
@@ -107,7 +107,7 @@
       "publisher" (dict "@type" "Organization" "name" .Site.Title) -}}
 <script type="application/ld+json">{{ $ld | jsonify | safeJS }}</script>
 {{- else if .IsPage -}}
-  {{- /* 文章 / 周刊（posts + weekly，共 126 页）→ BlogPosting 全套；
+  {{- /* 文章 / 周刊（posts + weekly，共 140 页）→ BlogPosting 全套；
         其余**根级独立页**（/about/ /archive/ /privacy/ /donate/ /now/ /roll/ /run/）
         → WebPage 极简三字段（name / url，不硬造 author / image / 日期）。
 

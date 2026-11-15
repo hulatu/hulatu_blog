@@ -21,7 +21,15 @@
        下面这 5 个 id 一个都没动，assets/js/giscus.js 不用改。 */ -}}
 {{- if site.Params.giscus.repo -}}
   <details class="giscus-box" id="giscus-box" open>
-    <summary class="giscus-toggle" id="giscus-toggle" aria-label="展开评论">
+    {{- /* 2026-11-15：`role="button"` + `aria-expanded`。
+           ⚠️ 这里有个**天生矛盾**：`<details>` 恒带 `open`（收起态靠 max-height:0，
+              理由见文件头），所以原生 summary 的无障碍状态**永远是「已展开」** ——
+              收起时读屏会念「展开评论，已展开」。
+           解法是让 summary 不再以 disclosure 的身份出现：`role="button"` 之后
+           展开状态改由它自己的 `aria-expanded` 决定，由 giscus.js 的 setState
+           每次切换时同步写入（`open` 只留给布局用，不再被读出来）。
+           初值 `false` 与 CSS 一致：`.giscus-body` 默认 `max-height:0; visibility:hidden`。 */ -}}
+    <summary class="giscus-toggle" id="giscus-toggle" role="button" aria-expanded="false" aria-label="展开评论">
       <span class="giscus-toggle-text">{{ .title | default "评论" }}</span>
     </summary>
     <p class="giscus-loading" id="giscus-loading" hidden aria-live="polite">正在加载评论…</p>

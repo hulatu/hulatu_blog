@@ -76,10 +76,17 @@
       btn.addEventListener('click', function () {
         copyText(pre.innerText, function () {
           btn.textContent = '已复制';
+          /* 2026-11-15：aria-label 必须跟着文字一起换。
+             按钮上有一个固定的 aria-label「复制这段代码」，它在无障碍树里
+             **覆盖**可见文字 —— 只改 textContent 的话，读屏用户听到的名字
+             从头到尾没变过，「已复制」这个唯一的结果反馈就丢了。
+             （焦点还停在这个按钮上，改名字会被重新播报。） */
+          btn.setAttribute('aria-label', '已复制');
           btn.classList.add('is-done');
           if (timer) clearTimeout(timer);
           timer = setTimeout(function () {
             btn.textContent = '复制';
+            btn.setAttribute('aria-label', '复制这段代码');
             btn.classList.remove('is-done');
           }, 1600);
         });

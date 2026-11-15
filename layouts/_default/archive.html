@@ -32,7 +32,7 @@
   <h1>{{ .Title }}</h1>
   {{ if .Site.Params.postSearch }}
   {{- /* 搜索框与过滤脚本收在 partials/search-box.html（2026-10-26）——
-        这一页装全部 133 篇，所以在这一页搜正文等于**全站检索**。 */ -}}
+        这一页装全部 140 篇，所以在这一页搜正文等于**全站检索**。 */ -}}
   {{ partial "search-box.html" (dict "countLabel" "篇。") }}
   {{ end }}
   {{ if .Site.Params.showPostCount }}

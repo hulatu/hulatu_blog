@@ -20,8 +20,10 @@
 
       ⚠️ 除过滤外**与内置模板逐字一致**：只输出 `<loc>` + `<lastmod>`，
          不带 `changefreq` / `priority`（Hugo 默认也不输出，本站没有配置它们）。
-         改完核对只需要数 `<loc>` 的条数：2026-10-26 应为 **148**
-         （133 篇文章 + 7 个根级/列表页 + 8 个分类页）。
+         改完核对只需要数 `<loc>` 的条数：2026-11-15 实测 **157**
+         （140 篇文章 + 9 个根级/列表页 + 8 个分类页）。
+         ⚠️ 这个数会随发文增长，别把它当固定哨兵 —— 核对的是「有没有混进
+            noindex 页」，不是「必须等于 157」。
 */ -}}
 {{ printf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>" | safeHTML }}
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"

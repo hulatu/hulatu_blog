@@ -1,6 +1,17 @@
 {{- /* ============================================================
        返回顶部（2026-10-11 从旧「印章」主题取回，**纯 CSS、零 JS**）
-       —— 只给「长文页」（文章 + 周刊，125 页）
+       —— 给「长文页」（文章 + 周刊，140 页）与「长列表页」（/archive/ 140 条、
+          /weekly/ 30 条）
+
+       2026-11-15：长列表页也输出。判据加它们的理由只有一个 ——
+       **页面得有「滚过 400px」的长度才谈得上回顶**。/archive/ 在手机上
+       约 8000px（140 条 × 60px），是全站最长的一页，此前一路滚到底之后
+       没有任何回顶入口；而 CSS 早在 2026-11-06 就随「按页守卫退役」
+       全量进了共享文件（第 16 段），所以这里只是补上那个 `<a>`，
+       样式一个字都不用动。
+       ⚠️ 别再退回「只有 $longForm」：列表页和文章页一样会滚到很深，
+          而回顶本身是原生锚点（`<a href="#top">` → baseof 的 `<body id="top">`），
+          不加会显得「文章页有、明明更长的列表页反而没有」。
 
        ── 它为什么不是老版那个「一个 JS 文件」────────────────────────
        旧主题是 `ui.js` 监听 `scroll`、滚过一段距离就加 `.is-visible` 类。
@@ -23,12 +34,18 @@
        配合 `html { scroll-behavior: smooth }`（custom_head.html 第 17 段）就是平滑回顶。
        ⚠️ 别删 baseof.html 上那个 `id="top"` —— 删了按钮就变成「点了没反应」，而且**不报错**。
 
-       ⚠️ 它**总是**在长文页输出，「显不显示」全部交给 CSS ——
-          别改成用 Hugo 判断浏览器（构建期做不到）。
+       ⚠️ 只要上面的判据成立就**总是**输出（不判断浏览器），
+          「显不显示」全部交给 CSS —— 构建期做不到探测浏览器能力。
        ⚠️ 样式在 custom_head.html 第 16 段，改类名要两边一起改。
        ============================================================ */ -}}
 {{- $longForm := and .IsPage (in (slice "posts" "weekly") .Type) -}}
-{{- if $longForm }}
+{{- /* 长列表页：只认这两个精确路径，不用 Section / Kind ——
+       /weekly/ 是 section 页（Kind "section"），/archive/ 是根级独立页
+       （Section 为空、Kind "page"），两者的公共判据只剩 RelPermalink。
+       ⚠️ 词条页（/tags/xxx/，225 个，72% 只有一篇）**不加**：一两条的列表
+          根本滚不过 400px，按钮永远不会出现，白输出一个元素。 */ -}}
+{{- $longList := in (slice "/archive/" "/weekly/") .RelPermalink -}}
+{{- if or $longForm $longList }}
 <a class="back-top" href="#top" aria-label="返回顶部" title="返回顶部">
   <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="12" y1="19" x2="12" y2="5"></line><polyline points="5 12 12 5 19 12"></polyline></svg>
 </a>
