@@ -1,7 +1,7 @@
 ---
 title: 不让 Mac 更新：我写了个脚本，关掉更新提示
 date: 2026-11-16T08:50:00+08:00
-lastmod: 2026-11-16T17:37:05+08:00
+lastmod: 2026-11-16T17:46:42+08:00
 slug: pin-macos
 summary: 让 mac 发现不了更新，我做了一个脚本。
 description: "一个不到 300 行的开源脚本，从多方面屏蔽 macOS 的更新检测。"
@@ -21,6 +21,8 @@ draft: false
 > 所有改动都能使用命令还原。
 >
 > 关于脚本的专业介绍，借助了 Claude 的帮助。
+>
+> 地址：[Pin-MacOS 屏蔽 macOS 更新](https://github.com/hulatu/Pin-MacOS) 。
 
 ## 更新红点
 
@@ -153,7 +155,7 @@ chmod +x extras/clash-verge.sh
 
 ---
 
-代码在 [github.com/hulatu/Pin-MacOS](https://github.com/hulatu/Pin-MacOS)，MIT 协议，不到 300 行。
+代码在 [Pin-MacOS 屏蔽 macOS 更新](https://github.com/hulatu/Pin-MacOS)，MIT 协议，不到 300 行。
 
 除了 `verify` 会调用系统的 `softwareupdate --list`，脚本没有任何网络请求；它做的事就是上面那张表里的四层，没有别的。
 
