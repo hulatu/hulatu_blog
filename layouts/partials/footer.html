@@ -27,6 +27,12 @@
       3. 通过 RSS 订阅，或直接打个招呼。 🚇 开往
       4. 本站内容采用 CC BY-NC-SA 4.0 协议. 隐私. 🗺️ 网站地图。
 
+  2026-11-20：「打个招呼」从一条裸 mailto 链接升级成**悬停浮层**——
+  鼠标悬停 / 键盘聚焦时上方浮出邮箱卡片，点邮箱复制并显示「已复制」。
+  标记在 partials/hello.html，脚本在 partials/hello-script.html，
+  样式在 assets/css/custom.css 第 48 段（三处一起改）。
+  ⚠️ 触发词仍是 mailto：JS 不可用时行为与改前完全一致。
+
   另有一处**新增**（2026-10-11 用户要求）：最后一行补了 `/privacy/` 的链接，
   也就是「Privacy」——它原本在旧自建主题的页脚里（`<a href=/privacy/>隐私</a>`），
   迁移到上游页脚后一度没了入口（导航只有 6 项，没有它）。
@@ -134,7 +140,7 @@
 {{ $friendLinks := safeHTML ` 🚇 <a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>. 🌀 <a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>` }}
 <!-- Enable RSS and email exists -->
 {{ if and ( ne .Site.Params.RSS.enableRSS false ) .Site.Params.Author.email }}
-通过 <a href="/index.xml">RSS</a> 订阅，或直接<a href="mailto:{{ .Site.Params.Author.email }}">打个招呼</a>。{{ $friendLinks }}
+通过 <a href="/index.xml">RSS</a> 订阅，或直接{{ partial "hello.html" (dict "text" "打个招呼" "email" .Site.Params.Author.email) }}。{{ $friendLinks }}
 <br />
 {{ end }}
 <!-- Enable RSS and email does not exists -->
@@ -144,9 +150,13 @@
 {{ end }}
 <!-- Do not enable RSS and email exists -->
 {{ if and ( ne .Site.Params.RSS.enableRSS true ) .Site.Params.Author.email }}
-通过<a href="mailto:{{ .Site.Params.Author.email }}">邮件</a>打个招呼。{{ $friendLinks }}
+通过{{ partial "hello.html" (dict "text" "邮件" "email" .Site.Params.Author.email) }}打个招呼。{{ $friendLinks }}
 <br />
 {{ end }}
+<!-- 「打个招呼」浮层的脚本。只有一个页面只可能命中一个分支，所以脚本
+     放在三个分支之外、只输出一次；没有邮箱时不加载（没有 .hello 可绑）。
+     交互与理由见 partials/hello.html 文件头与 custom.css 第 48 段。 -->
+{{ if .Site.Params.Author.email }}{{ partial "hello-script.html" . }}{{ end }}
 {{ end }}
 
 <!-- 授权声明 + 隐私 + Sitemap（2026-10-11 起全英文，CC 那段带链接；

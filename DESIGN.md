@@ -56,7 +56,7 @@ typography:
   size-primary: "18px"   # ⚠️ 2026-11-06 由 1em（16px）改成 18px，见 custom_head.html 第 39 段
   size-secondary: "0.8em"
   body-line-height: 1.5
-  content-line-height: 1.6       # ⚠️ 2026-11-06 由 1.8 收回 1.6；基准 18px × 1.6 = 28.8px，与 16px × 1.8 的行盒相同
+  content-line-height: 1.8       # ⚠️ 2026-11-20 用户要求恢复 1.8；基准 18px × 1.8 = 32.4px，段间距同步抬到 2em
   note: >
     上游只有 `Verdana, sans-serif`。Verdana 不含汉字，中文一直靠浏览器兜底。
     2026-11-05 起站点层改成系统字体栈（`custom_head.html` 第 01 段），这是**唯一**动过字体的地方。
@@ -73,6 +73,10 @@ typography:
     2026-11-06：`content p` 改成 18px / 28.8px = **1.60**（比值收回 1.6，行盒仍是
     28.8px，2026-10-14 那条关于绝对行距的判据仍然成立）；`header nav a` / `footer` / `body`
     全部仍 **1.50**；首页的 `<content>` 被站点层去掉，整页仍 1.50（见第 4 节）。
+    **2026-11-20：用户明确要求改回 1.8** → 18px × 1.8 = **32.4px**；同时把
+    `content > p` 的段间距从 1.75em 抬到 **2em（36px）**，否则 31.5px 的段距
+    会比 32.4px 的行距还紧，「换段 ≥ 换行」就破了。站点的 `content` 覆盖和
+    主题那份现在都是 1.8；打印仍走 `@media print` 的 1.6。
     体积**零变化** —— 1.6→1.8 字节数相同，加的中文注释被 minify 剥掉：
     8675 / 12610 / 10404 / 9101 / 10509 / 10089 逐值不变。
 
@@ -116,7 +120,7 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 | 改「系列」入口 / 总览页 | 入口：`layouts/_default/archive.html` + `custom_head.html` 第 09 段；总览页：`layouts/_default/series.html` + `content/series.md` + 第 09b 段 |
 | 改链接页（朋友 / 聚合站 / 点评） | `content/roll.md` —— **全站唯一的链接页**，一条平铺 13 项（前 3 朋友、后 10 聚合站，无小标题） |
 | 改导航 | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板** |
-| 改页脚 | `layouts/partials/footer.html` + `hugo.toml` 的 `[params] copyright` / `copyrightNote` / `licenseName` / `licenseURL` |
+| 改页脚 | `layouts/partials/footer.html` + `hugo.toml` 的 `[params] copyright` / `copyrightNote` / `licenseName` / `licenseURL`；「打个招呼」浮层另见 `partials/hello.html` / `partials/hello-script.html` / `custom.css` 第 48 段 |
 | 改评论区 | `layouts/partials/giscus.html` + `assets/js/giscus.js` + `custom_head.html` 第 07 段 |
 | 改订阅源（feed 字段 / 浏览器视图） | ① feed 本身：`layouts/_default/rss.xml`；② 浏览器打开 feed 时那一页：`layouts/partials/feed-view.html` + `content/feed/` + `custom_head.html` 第 28 段；③ 谁来分派：`functions/_middleware.js`（见第 4 节「订阅源」） |
 | 改 robots / `noindex` | `layouts/_default/baseof.html` 的 robots 分支（见第 5 节） |
@@ -236,10 +240,12 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   唯一的阴影是图片放大遮罩上的 `0 8px 32px rgba(0,0,0,.3)`。
 - **`hr` 是虚线**：`hr { border: 0; border-top: 1px dashed }`。
   首页「Hi! 简介」和「Recent Posts:」之间那条分隔就是它，**不用加类名**。
-- **`content` 的 line-height 是 1.6**（⚠️ 2026-11-06 由 1.8 收回，上游是 1.6，见第 5 节），
-  `body` 是 1.5。正文比外壳松，外壳保持上游不动 —— 这个「松紧差」现在是 1.6 / 1.5。
-- **正文段间距 1.75em（31.5px），仍大于行距 28.8px**（2026-10-27 新增，见第 18 节）。
-  上游是浏览器默认 `1em` = 16px，只有行距的 55.6% —— 中文方块字没有 x-height，
+- **`content` 的 line-height 是 1.8**（2026-11-20 用户要求恢复；上游也是 1.8，
+  站点层显式写了一遍），`body` 是 1.5。正文比外壳松，外壳保持上游不动 ——
+  这个「松紧差」现在是 1.8 / 1.5。
+- **正文段间距 2em（36px），仍大于行距 32.4px**（2026-10-27 新增 1.75em，
+  2026-11-20 随行高 1.8 同步抬到 2em，见第 18 节）。
+  上游是浏览器默认 `1em` = 18px，只有行距的 55.6% —— 中文方块字没有 x-height，
   「换段比换行还紧」会让人读不出段落边界。**只加 `margin-bottom`**，
   这样「标题 → 正文」的 18px 不受影响。
   ⚠️ 主题里 `content` 是**唯一**带行高的容器规则，所以 `<content>` 里的
@@ -335,7 +341,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 ## Hi!                       ← content/_index.md 里，h2
 > 总得留下点什么吧。            ← 引用块
 一名不谈地理…的工科研究生。       ← 段落
-如果觉得…可以选择 [支持] 我。      ← 段落，中间夹一个指向 /donate/ 的链接（2026-10-11 新增）
+N 篇文章，N 期周刊，已写 N 天。如果觉得…可以选择 [支持] 我。  ← 同一段、同一个正文样式
 [公众号] / [少数派] / [知乎]    ← 一行链接（Markdown 段落，Goldmark 自动成 <p>）
 / [即刻]                       四个平台，2026-10-11 换掉了原来的 RSS / 周刊 / 关于 / 花园
                                ⚠️ 文档里曾写「五个平台」并多列一个「小红书」—— 产物里**只有 4 个**
@@ -347,6 +353,31 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - **文案全在 `content/_index.md`**，模板只负责分隔线和列表。
 - **列表后面什么都没有** —— 没有「查看全部文章 →」那类尾巴。全站文章入口交给导航的 `Posts`。
 - 条数由 `params.homeRecentCount` 控制（当前 5），设 `0` 就退回上游原样（只剩正文）。
+
+#### 2026-11-20：首页身份条
+
+借花墨（flowersink.com）的「身份感」，但**不做头像、不做全屏 Hero**：在
+「如果觉得…支持一下」前加一句数字，和它**同属一个段落、同一套正文样式**：
+
+```
+113 篇文章，30 期周刊，已写 350 天。如果觉得我的网站不错，可以选择 支持 一下。
+```
+
+- 位置：`content/_index.md` 里写 `{{< home-stats >}}如果觉得…`，shortcode 只输出
+  纯文本 `N 篇文章，N 期周刊，已写 N 天。` —— **没有 span、没有 class、没有 `<br>`**，
+  所以和后面的支持句同属一个 `<p>`，字号/颜色完全一样。
+  标点 2026-11-20 由用户从 `·` 改成中文逗号，照现在的实现走。
+- 数字在构建期算：`layouts/shortcodes/home-stats.html` 取 `site.RegularPages`
+  的 posts / weekly 数量，天数取最早一篇 post/weekly 到 `now` 的整天数（含当天）。
+  天数由 `.github/workflows/daily-rebuild.yml` 每天 00:10（Asia/Taipei）触发一次
+  Cloudflare Pages 重建来前进；文章/周刊数在发布时自然更新。
+  ⚠️ 静态站不每天构建时天数会停在最后一次构建；别为此加前端脚本。
+- 2026-11-20 第二轮：初版是 0.85em 三级灰 + `<br>` 独立一行，用户要求
+  「正常显示、连起来」，于是删掉 `.home-stats` 样式和换行，现在就是普通正文。
+  **别再给它加样式或分割线。**
+- 数量口径与 `/archive/` 一致：113 + 30 = 143 篇（2026-11-20 实测）；
+  hidden 页面被排除。
+
 - `.recent-posts` 的样式在 `custom_head.html` 第 04 段：
   CSS Grid 两列（定宽日期 + 弹性标题），比上游 `ul.blog-posts` 的 `flex: 0 0 80px` 稳。
   ⚠️ 日期颜色用 `var(--text-color-tertiary)` 而不是 yinji 写死的 `#999` ——
@@ -489,7 +520,9 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   （关于页多 X / Telegram，首页多知乎）。用户要求「保留首页那一行，关于页的去除」，
   于是 `## 内容平台` 整节删除 —— X / Telegram / 关于页那份公众号二维码链接也随之消失，
   平台入口**只在首页**。
-- 「联系我」原有 QQ / Gmail / WeChat 三个渠道，**没动**。
+- 「联系我」原有 QQ / Gmail / WeChat 三个渠道。**2026-11-20 起 QQ 与 WeChat
+  分别指向 `/contact/qq/` 与 `/contact/wechat/`**（见下面「联系页」一节），
+  Gmail 仍是 mailto。
 - **「博客导览」里那条「花园」入口已删**（它指向的就是被删掉的子站），导语也跟着去掉
   「以及我另外维护的两个站点」那半句。现在那一节**全是站内链接**。
 - 顺带撤掉了一条跨站外链：`content/privacy.md` 的适用域名列表去掉了 `profile.hulatu.com`
@@ -499,6 +532,34 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 `介绍 → 订阅我 → 联系我 → 博客技术 → 博客导览 → 博客历史`（5 个 h2；TOC 自动生成）。新增小节
 **照常写 `## 标题` 就行** —— 拼音锚点在构建期自动生成（2026-11-04 起，见第 21 节），
 md 里**不要**再手写 `{#pin-yin}`。
+
+### 联系页 `/contact/qq/` 与 `/contact/wechat/`：一页一码（2026-11-20）
+
+关于页「联系我」里的 QQ 与微信，原来各是一条指向图床裸图的链接
+（`img.hulatu.com/post/…webp`），点开是浏览器缩放的图片。用户要求
+「设计成公众号的二维码一样」，当天先做成 `/contact/` 同页双码，
+随后又要求**分开、每页只放一张**，于是定稿为两个独立页：
+
+| 页面 | 内容文件 | 二维码 |
+| --- | --- | --- |
+| `/contact/qq/` | `content/contact-qq.md` | `paIl9a.webp`（954×954） |
+| `/contact/wechat/` | `content/contact-wechat.md` | `qbD1Mk.webp`（762×762） |
+
+- ⚠️ 两个文件都在 content 根目录，用 front matter 的 `url:` 落到 `/contact/` 下面。
+  **不要**改成 `content/contact/` 目录 —— 那会生成一个 `/contact/` 章节页
+  （list.html 会输出标题 + 子页列表），与「每页一张图」的目标不符。
+  现在 `/contact/` 本身是 404，关于页直接链到两个子页。
+- **视觉完全复用 `/wechat/`**：每页就是一个 `.oa-wrap`（256px 居中）：
+  `.oa-qr` + `.oa-tip` + `.oa-profile`。全部样式来自 `custom.css` 第 38 段，
+  **零新增布局样式**（同页双码时期的第 49 段已随改版删除）。
+  改二维码的边框 / 圆角 / 信息条尺寸，`/wechat/` 与这两页会一起变 —— 这是故意的。
+- **信息条**：头像沿用 `/images/wechat/avatar.webp`（站点标识 H，不是真实头像），
+  名字「胡拉图」+「扫码加我好友」，与公众号页同一套语言。
+- **素材仍是图床地址**。`.oa-qr` 固定 256×256 并加了 `object-fit: contain`，
+  非正方形时留白、不拉变形。要本地化就下载到 `static/images/contact/qq.webp` /
+  `wechat.webp`，再改对应 md 里的 `src`。
+- 页面设置与 `/wechat/` 一致：`hideTitle` / `hideDate` / `toc: false` / `noindex: true`。
+  导航里没有这两项，入口只在关于页的「联系我」。
 
 ### 收藏 `/roll/`（2026-10-11 照 yinji 改成平铺）
 
@@ -922,16 +983,25 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   ⚠️ 类名 / ID 是和 `assets/js/giscus.js` 的契约（5 个 id + `.is-open` 类），改名要两边一起改；
   本次改版只动 CSS 与那层没用的 `.giscus-inner` 包装，**JS 一行未改**。
 - `mapping = "pathname"`，所以**只要 URL 不变，老评论直接接上**（本次迁移 URL 未变，已验）。
-- 全站只有两个 JS 文件：`giscus.js`（评论区）+ `code-copy.js`（代码块复制按钮，只含代码的页），都经 Hugo 管道指纹化成 `/js/<名字>.min.<hash>.js`。
+- 全站只有两个 JS 文件：`giscus.js`（评论区）+ `code-copy.js`（代码块复制按钮，只含代码的页），都经 Hugo 管道指纹化成 `/js/<名字>.min.<hash>.js`。页脚「打个招呼」的复制脚本是**内联**的（压缩后不到 1 KB、每页都有，内联比多发一次请求划算），不计入这两个文件。
 
 ### 页脚
 
-照 yinji.org，四行，**全英文**（顺序是 2026-10-11 用户指定的）：
+照 yinji.org，四行。**2026-11-05 起全站改回中文**（下面的英文四行与改动记录保留为历史）：
+
+```
+用 Hugo Bear Neo 制作。
+版权所有 © 2025-2026，hulatu。
+通过 RSS 订阅，或直接打个招呼。 🚇 开往          ← 2026-10-11 从第 1 行挪到第 3 行
+本站内容采用 CC BY-NC-SA 4.0 协议. 隐私. 🗺️ 网站地图.
+```
+
+下面是 2026-10-11 英文时期的原貌，只用于对照历史决定：
 
 ```
 Made with Hugo Bear Neo.
 Copyright © 2025-2026, hulatu.
-Subscribe via RSS or just Say hello. 🚇 开往          ← 2026-10-11 从第 1 行挪到第 3 行
+Subscribe via RSS or just Say hello. 🚇 开往
 This site is licensed under CC BY-NC-SA 4.0. Privacy. 🗺️ Sitemap.
 ```
 
@@ -1010,6 +1080,36 @@ Subscribe via RSS or just Say hello. · 🚇 开往   Subscribe via RSS or just 
 所以 CC 那一段拆成三个参数：`copyrightNote` / `licenseName` / `licenseURL`。
 ⚠️ `Privacy` 挂在 `hideSitemap` 这个开关里面：关掉 Sitemap 会连它一起关
 （它们本来就是同一行「站点元信息」，分开管没有意义）。
+
+#### 2026-11-20：「打个招呼」升级成悬停浮层 + 点击复制
+
+原来那三个字就是一条裸 `mailto:`。现在悬停 / 键盘聚焦 → 上方浮出一颗小胶囊，
+点它复制邮箱，胶囊原地显示「已复制」，1.6 秒后复原：
+
+```
+              ┌───────────────────────┐
+              │ hello@hulatu.com  ⧉   │   ← 点这里复制
+              └───────────────────────┘
+                   打个招呼
+```
+
+同日第三版（最终）：用户要求「只显示邮箱号码、一个复制按钮」，
+于是「● 邮箱」标签、提示行、触屏的「打开邮件」入口和小三角**全部删掉**。
+现在 `.hello-card` 里只有一颗按钮：邮箱文字在左、复制图标在右；
+悬停浮出浅灰底，复制后图标换勾、文字与描边变链接蓝。
+
+- **为什么往上弹**：页脚贴着页面底部，往下会顶出视口，还会临时撑出一条竖向滚动条。
+- **为什么不用 `role="tooltip"`**：卡片里有可点的复制按钮，tooltip 语义要求
+  内容不可交互。这里是普通补充内容，键盘靠 `:focus-within` 进入。
+- **触发词仍然是 `<a href="mailto:">`**：JS 没到 / 被禁用时行为与改前完全一致，
+  复制是渐进增强。桌面端也**不拦截**它的点击；只有 `matchMedia('(hover: hover)')`
+  为假（纯触屏）才改成「点一下开合胶囊」—— 触屏上以复制为主，卡片里不再另放 mailto。
+- **胶囊与触发词之间必须留一块透明桥**（`.hello-card::before`）：没有它，鼠标从词
+  移向胶囊的 8px 空隙里会丢掉 `:hover`，胶囊在指针到达前就收了。
+- **邮箱 / 已复制两个 span 叠在同一个网格格里**：换字时胶囊宽度不跳。
+- 三处契约，改名要同改：`partials/hello.html`（标记）、
+  `partials/hello-script.html`（内联脚本，类 `.hello-copy` / `.is-copied` / `.is-open`）、
+  `assets/css/custom.css` 第 48 段（样式）。
 
 ### 全站装置：skip-link / 打印 / 跨页转场（2026-10-17 新增）
 
@@ -1149,7 +1249,7 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/index.json` | **新增**（2026-10-26）：首页的 JSON 输出视图，产物 `/index.json` —— 133 篇的 `{t,u,g,d}`（标题 / 站内路径 / 标签 / 正文纯文本） | 列表页搜索原来只 `title.includes`，搜正文里的词一条都出不来。⚠️ 文件名**必须**是 `index.json`：home 的输出格式按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`，那份带分页变量、结构也不对。⚠️ 体积 1.03 MB / gzip 442 KB；2026-11-02 起前端先即时筛标题，停手 450ms 后才 fetch 全文索引。见第 16 节 |
 | `layouts/partials/search-box.html` | **新增**（2026-10-26）：归档页搜索框 + 过滤脚本。**2026-11-03 起只在 `/archive/` 使用**（词条页 / `/weekly/` 的搜索与「子集页指路」逻辑已删） | 同一段脚本原本在 `_default/list.html` 与 `_default/archive.html` **各抄一份**，只差计数文案。见第 16 节 |
 | `layouts/partials/inline-links.html` + `data/inline-links.json` | **新增**（2026-10-26）：渲染层正文内链 —— 词表 `{a: 锚点, u: 目标URL}`，在 `single.html` 的 `$content` 管线上把正文文本节点里的锚点词包成 `<a>`。词表 30 条，全部逐字校验过「确实在别的文章正文里出现过」 | 133 篇里 120 篇正文零内链，影响主题相关性；但挨篇插链接要动 120 个用户手写的 `.md`，不动。详见第 17 节 |
-| `layouts/partials/custom_head.html` | 32 段补丁样式 + GoatCounter（03 / 06 / 11 / 24 留空，**27 / 34 / 35 不占号**；08 / 15 / 25 按页输出；09+10 / 12 / 13 / 16 / 18 / 19 / 26 / 28 各只给一类页；01 / 02 / 04 / 05 / 07 / 14 / 17 / 20 / 21 / 22 / 23 / **29 / 30 / 32 / 33** 全站；00b / 00c 挂在 00 段之后）。**第 31 段（手机端折叠目录）2026-11-03 已删除** | 见下。第 29 段（skip-link + 打印）与第 30 段（跨页转场）2026-10-17 新增、全站生效；第 31 段曾在 2026-10-17 增加 +1089 B raw，**2026-11-03 删除后每页省约 1.1KB raw**。**第 32 段（浅色三级文字色）+ 00c（页头站名）是 2026-10-18 新增**，两段合计每页 **+164 B raw / 约 +42 B gzip**。**第 02 段末尾的段间距是 2026-10-27 新增**，每页 **+31 B raw / +9～11 B gzip**。⚠️ **第 35 段（搜索框尺寸）当天加了又撤**，见第 18 节。|
+| `layouts/partials/custom_head.html` | 32 段补丁样式 + GoatCounter（03 / 06 / 11 / 24 留空，**27 / 34 / 35 不占号**；08 / 15 / 25 按页输出；09+10 / 12 / 13 / 16 / 18 / 19 / 26 / 28 各只给一类页；01 / 02 / 04 / 05 / 07 / 14 / 17 / 20 / 21 / 22 / 23 / **29 / 30 / 32 / 33** 全站；00b / 00c 挂在 00 段之后）。**第 31 段（手机端折叠目录）2026-11-03 已删除** | 见下。第 29 段（skip-link + 打印）与第 30 段（跨页转场）2026-10-17 新增、全站生效；第 31 段曾在 2026-10-17 增加 +1089 B raw，**2026-11-03 删除后每页省约 1.1KB raw**。**第 32 段（浅色三级文字色）+ 00c（页头站名）是 2026-10-18 新增**，两段合计每页 **+164 B raw / 约 +42 B gzip**。**第 02 段末尾的段间距是 2026-10-27 新增（1.75em，2026-11-20 随行高 1.8 改为 2em）**，每页 **+29 B raw / +9～11 B gzip**。⚠️ **第 35 段（搜索框尺寸）当天加了又撤**，见第 18 节。|
 | `layouts/404.html` | **新增** | 上游默认只有 `<h1>404</h1>` + 一行颜文字 |
 | `layouts/_default/_markup/render-heading.html` | **新增**：标题末尾的 `#` 锚点 | 上游没有这个钩子（Goldmark 只给 id、不给可点入口） |
 | `layouts/partials/orphan-safe.html` | **新增**：标题末 2 字包 `nowrap` | 中文标题的孤行问题（取回旧主题的做法） |
@@ -2582,25 +2682,28 @@ Hugo 输出与浏览器实际请求都是编码形态，`_redirects` 按这个�
 
 | # | 改了什么 | 落在哪 | 实测效果 |
 | --- | --- | --- | --- |
-| ① | 正文段间距 `1em` → `1.75em` | `custom_head.html` **第 02 段末尾** | 段距 16 → **28px**；段距/行距从 **55.6% → 97.2%** |
+| ① | 正文段间距 `1em` → **`2em`**（2026-10-27 先到 1.75em，2026-11-20 随手行高 1.8 再抬） | `custom_head.html` **第 02 段末尾** | 段距 18 → **36px**；段距/行距从 **55.6% → 111.1%** |
 | ② | ~~搜索框 `174×24` → `100%×44`~~ | ~~`custom_head.html` 新增第 35 段~~ | **当天撤回**，见 18.3。现在是纯 UA 默认 |
 | ③ | HTML 边缘缓存 0 → **300 秒** | `static/_headers` 15 个 HTML 块 | TTFB 2000ms → 约 50ms（边缘命中时） |
 
-### 18.2 为什么段间距是 1.75em，而且只写 margin-bottom
+### 18.2 为什么段间距是 2em，而且只写 margin-bottom
 
-**问题**：正文 `line-height: 28.8px`（16px × 1.8），而 `p` 的边距是浏览器默认 `1em` = 16px
-—— **段间距只有行距的 55.6%**，「换段」比「换行」还紧。中文是方块字、没有 x-height 提供节奏，
-这个问题比英文严重。行高 2026-10-14 从 1.6 抬到 1.8 解决的是「行内太挤」，段落这一层一直没跟上。
+**问题**：正文 `line-height: 32.4px`（18px × 1.8，2026-11-20 起），而 `p` 的边距是浏览器默认
+`1em` = 18px —— **段间距只有行距的 55.6%**，「换段」比「换行」还紧。中文是方块字、没有
+x-height 提供节奏，这个问题比英文严重。行高 2026-10-14 从 1.6 抬到 1.8 解决的是「行内太挤」，
+段落这一层一直没跟上。
 
-**1.75em = 28px** 恰好与行距 28.8px 齐平，是「换段 ≥ 换行」的最小值。1.5em（24px）仍小于行距。
+**2em = 36px** 大于行距 32.4px，保持「换段 ≥ 换行」。2026-10-27 选的 1.75em（31.5px）是按
+28.8px 行盒算的；2026-11-20 行高恢复到 1.8 后，1.75em 反而比行距紧（31.5 < 32.4），
+所以同步抬到 2em。1.9em（34.2px）也够，但只多 1.8px，换段和换行几乎分不出来。
 
 **只写 `margin-bottom` 不写 `margin-top`**：相邻兄弟 margin 折叠取较大者，所以
-段与段 28px（生效）、标题后 16.8px（不变）、首段不受影响。
-写成 `margin: 1.75em 0` 会把「标题 → 正文」的 16.8px 一起改成 28px，节奏就变了。
+段与段 36px（生效）、标题后 16.8px（不变）、首段不受影响。
+写成 `margin: 2em 0` 会把「标题 → 正文」的 16.8px 一起改成 36px，节奏就变了。
 
 ⚠️⚠️ **必须写 `content > p`，不能写 `content p`**：上游有一条 `blockquote p { margin: 0 }`
 （`style.html:217`），与 `content p` **特异性相同**（都是两个元素选择器），
-而本文件在 `style.html` **之后**加载 → 同特异性下后者胜，引用块里的段落会凭空多出 28px。
+而本文件在 `style.html` **之后**加载 → 同特异性下后者胜，引用块里的段落会凭空多出 36px。
 用子选择器就只命中正文的直接段落。实测确认：`content blockquote p` 仍是 `margin: 0`。
 
 ### 18.3 搜索框：加了又撤（同一天）
@@ -2667,7 +2770,7 @@ CDN 缓存 5 分钟。代价是发新文章后最多 5 分钟内部分访客看�
 | 项 | 结果 |
 | --- | --- |
 | 构建 | 0 警告（`--gc --minify --cleanDestinationDir`） |
-| 段间距 | `p` margin-bottom **28px**、实测 gap **28px**、行距 28.8px |
+| 段间距 | `p` margin-bottom **36px**、实测 gap **36px**、行距 **32.4px** |
 | 标题节奏 | `h2` → 首个 `p` 仍是 **16.8px**（未被段间距改坏） |
 | 引用块 | `content blockquote p` 仍 **margin 0**（子选择器未误伤） |
 | 搜索框 | **已恢复原状**：桌面与手机都是 **174×24**、`2px inset` / radius 0 / 白底 / `appearance auto`；`overflowX` **0** |

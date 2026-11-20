@@ -1,0 +1,32 @@
+{{- /* 页脚「打个招呼」的邮箱浮层（2026-11-20）
+       —— 只输出标记，交互脚本在 partials/hello-script.html，样式在
+          assets/css/custom.css 第 48 段。
+
+       给 footer.html 的两个「有邮箱」分支共用。参数：
+           text   触发词（RSS 分支是「打个招呼」，关闭 RSS 的分支是「邮件」）
+           email  .Site.Params.Author.email
+
+       ⚠️ 触发词仍然是 `<a href="mailto:">`：JS 没到 / 被禁用时，点它照旧
+          拉起邮件客户端，不会变成一个没反应的死词。复制是渐进增强。
+       ⚠️ 邮箱按钮是 `<button type="button">`，不是 `<a>` —— 它的动作是
+          「复制」，不是导航；用链接会骗过中键 / 新标签页。
+       ⚠️ 2026-11-20 第三版：用户要求「只显示邮箱号码、一个复制按钮」，
+          卡片里的「邮箱」标签、提示行、触屏的「打开邮件」入口全部删除。
+          现在 `.hello-card` 里只有这一颗按钮，别再往里加装饰元素。 */ -}}
+{{- $email := .email -}}
+{{- $text := .text | default "打个招呼" -}}
+<span class="hello">
+  <a class="hello-link" href="mailto:{{ $email }}">{{ $text }}</a>
+  <span class="hello-card">
+    <button type="button" class="hello-copy" data-email="{{ $email }}" aria-label="复制邮箱地址 {{ $email }}">
+      <span class="hello-text">
+        <span class="hello-addr">{{ $email }}</span>
+        <span class="hello-done">已复制</span>
+      </span>
+      <span class="hello-icons" aria-hidden="true">
+        <svg class="hello-icon hello-icon-copy" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="5.5" y="5.5" width="8" height="8" rx="1.5"></rect><path d="M10.5 5.5v-2A1.5 1.5 0 0 0 9 2H3.5A1.5 1.5 0 0 0 2 3.5V9a1.5 1.5 0 0 0 1.5 1.5h2"></path></svg>
+        <svg class="hello-icon hello-icon-check" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 8.5 3.5 3.5 7-8"></path></svg>
+      </span>
+    </button>
+  </span>
+</span>

@@ -1,0 +1,69 @@
+name: 每日重建（首页天数）
+
+# 目的：让首页身份条的「已写 N 天」每天自动 +1。
+#   · 文章数 / 周刊数在构建时统计，发布时本来就会重建，不需要这个 workflow；
+#   · 天数取构建时刻，不重建就会停在最后一次构建的日期 —— 所以每天触发一次
+#     Cloudflare Pages 的 Deploy Hook，让线上重新跑一遍 Hugo。
+#
+# 为什么不在 Actions 里直接 hugo + 上传：
+#   线上部署是 **Cloudflare Pages 的 Git 集成**（push 即构建），
+#   Deploy Hook 会复用同一条生产构建管线（同一个 HUGO_VERSION、同一个
+#   Functions 目录、同一套环境变量）。在 Actions 里另建一份产物再上传，
+#   等于维护两套部署路径，迟早漂移。这里只负责「按一下重建按钮」。
+#
+# ── 一次性配置（仓库外）────────────────────────────────────────────────
+#   1. Cloudflare Dashboard → Workers & Pages → 本站 Pages 项目 →
+#      Settings → Builds & deployments → Deploy hooks → Add deploy hook。
+#      名称随意（如 daily-rebuild），**Branch 选 `main`**（生产分支）。
+#      建好后复制 Hook URL（形如 https://api.cloudflare.com/client/v4/pages/webhooks/deploy_hooks/…）。
+#   2. GitHub 仓库 → Settings → Secrets and variables → Actions →
+#      New repository secret：
+#          Name:  CLOUDFLARE_DEPLOY_HOOK
+#          Value: 上面那串 Hook URL
+#   3. 回到 Actions →「每日重建（首页天数）」→ Run workflow 手动跑一次，
+#      确认 Cloudflare 里出现一次新的部署。
+#
+# ── 时间 ───────────────────────────────────────────────────────────────
+#   GitHub Actions 的 cron 是 **UTC**。`10 16 * * *` = 次日 00:10（UTC+8）。
+#   为什么不是 00:00：避开整点，给 Cloudflare 的构建排队留一点余量；
+#   构建本身需要几十秒，线上在 00:11–00:12 左右更新。
+#   ⚠️ GitHub 的定时任务在高峰期可能延迟几分钟，这是平台行为，不用改 cron。
+#   ⚠️ 公开仓库连续 60 天没有任何提交时，GitHub 会自动停用 schedule；
+#      到时候在 Actions 页面点一下 Enable 即可（或随便推一次提交）。
+#
+# ── 失败时 ─────────────────────────────────────────────────────────────
+#   · Secret 没配置 → 直接 fail，并在日志里写清楚缺哪个 secret；
+#   · Hook 返回非 2xx → curl -f 让 job 红灯，GitHub 会发失败通知；
+#   · 不要把 Hook URL echo 到日志里（它是带凭据的地址，谁拿到都能触发部署）。
+
+on:
+  schedule:
+    - cron: "10 16 * * *"
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: daily-rebuild
+  cancel-in-progress: false
+
+jobs:
+  rebuild:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: 触发 Cloudflare Pages Deploy Hook
+        env:
+          CLOUDFLARE_DEPLOY_HOOK: ${{ secrets.CLOUDFLARE_DEPLOY_HOOK }}
+        run: |
+          if [ -z "$CLOUDFLARE_DEPLOY_HOOK" ]; then
+            echo "::error::缺少 secrets.CLOUDFLARE_DEPLOY_HOOK —— 请按 workflow 顶部注释里的三步配置。"
+            exit 1
+          fi
+          # --fail: 非 2xx 直接退出；--silent/--show-error: 日志只留错误；
+          # --retry: 网络抖动重试 3 次；响应体不打印，避免任何凭据泄漏。
+          curl --fail --silent --show-error \
+            --retry 3 --retry-delay 5 \
+            -X POST "$CLOUDFLARE_DEPLOY_HOOK" \
+            -o /dev/null
+          echo "已触发 Cloudflare Pages 重建；通常 1–2 分钟内上线。"

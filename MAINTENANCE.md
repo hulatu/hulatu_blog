@@ -127,7 +127,7 @@ gzip 首页 **+28 B**、文章页 **+195 B**、`/archive/` **+387 B**、`/weekly
 
   | 新增 | 规则 | 约 |
   | --- | --- | --- |
-  | 段间距（第 02 段末尾） | `content > p { margin-bottom: 1.75em }` | 31 B |
+  | 段间距（第 02 段末尾） | `content > p { margin-bottom: 2em }`（2026-11-20 由 1.75em 抬到 2em） | 29 B |
 
   逐档实测（新值 → 撤回前的原值，差 31）：12027/3428 → 11996/3419、
   16522/4266 → 16491/4255、18773/4759 → 18742/4749、13756/3782 → 13725/3771、
@@ -246,6 +246,8 @@ layouts/                  ★ 站点层覆盖，33 个文件（另有 data/inlin
                                        改图标只改 SVG 再跑 DESIGN.md 第 12.3 节那几行
   partials/footer.html              版权独立成行 + 订阅行挪到第 3 行
                                     + copyrightNote/licenseName/licenseURL
+                                    + 「打个招呼」浮层（partials/hello.html、
+                                      partials/hello-script.html，样式在 custom.css 第 48 段）
   partials/custom_head.html         33 段补丁样式 + GoatCounter
                                     （03/06/11 刻意留空，24 撤回，**27/34/35 不占号**）
                                     ⚠️ <style> 之前还有两条 theme-color meta，不占段号
@@ -305,6 +307,7 @@ data/                     runs.json（/run/ 页在读）+ image-dims.json（喂 
                           ⚠️ 两个都别当孤儿删
 scripts/                  13 个脚本，见第 4 节
 .github/workflows/        build.yml（构建校验）/ sync-garmin.yml（每日同步跑步数据）
+                          / daily-rebuild.yml（每日触发 CF Pages 重建，更新首页天数）
 ```
 
 > ⚠️ **2026-10-12：四个子站（run / profile / shot / share）全部下线，`sites/` 目录已从仓库整体删除。**
@@ -423,6 +426,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 
 - `.github/workflows/build.yml`：push / PR 时用同一个 Hugo 版本**只构建主站**，并检查中文标题锚点是否补齐。周刊期号检查那一步 2026-10-10 已删（`issue` 字段 2026-10-13 已从全部周刊移除）。
 - `.github/workflows/sync-garmin.yml`：每天 22:00（Asia/Taipei）拉跑步数据写 `data/runs.json`。
+- `.github/workflows/daily-rebuild.yml`：每天 00:10（Asia/Taipei；UTC `10 16 * * *`）POST 一次 Cloudflare Pages Deploy Hook，让首页「已写 N 天」前进。⚠️ 需要仓库 secret `CLOUDFLARE_DEPLOY_HOOK`（CF Pages → Settings → Builds & deployments → Deploy hooks，Branch 选 `main`）；没配时 job 直接 fail。⚠️ 公开仓库连续 60 天无提交会被 GitHub 停用 schedule，届时在 Actions 页面 Enable。
 
 ---
 
@@ -467,20 +471,22 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | --- | --- |
 | 改导航（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板**（当前 **7 项**：首页 `/` / 关于 `/about/` / 友链 `/roll/` / **工具 `/tools/`** / 周刊 `/weekly/` / 文章 `/archive/` / 订阅 `/index.xml`）。⚠️ 7 项在 375–390px 下是**零余量**（刚好一行、差 0px），换字体渲染略宽的设备会折成两行 —— 这是可接受的降级，**别再压 gap 或字号**，实测数据见 DESIGN.md 23.4 |
 | 改首页文案 | `content/_index.md` |
+| 改首页身份条 | `content/_index.md` 的 `{{< home-stats >}}` + `layouts/shortcodes/home-stats.html`。⚠️ shortcode 只输出**纯文本 + 句号**，必须和「支持一下」同段；**不要加 span/class/`<br>`/样式**（用户 2026-11-20 明确要求正常显示、连起来）。天数靠 `.github/workflows/daily-rebuild.yml` 每天触发 CF 重建来前进；文章/周刊数在发布时自然更新 |
 | 改首页列表条数 | `hugo.toml` 的 `homeRecentCount`（设 0 退回上游原样） |
 | 改首页列表的对齐 / 间距 | `custom_head.html` 第 04 段。⚠️ 列表必须与 `最近更新：` 标题左对齐（`padding-left: 0`），失效时会缩进 40px；几何值（120px / .95rem / 1.2rem / 1.3 / 2rem）逐值照 yinji，改前想清楚 |
 | 改关于页 /「内容平台」一节 | `content/about.md`（纯 Markdown，全站没有头像） |
+| 改联系页 / 换 QQ、微信二维码 | `content/contact-qq.md` / `content/contact-wechat.md`（两处 `src` 仍是图床地址）+ `custom.css` 第 38 段（二维码 / 信息条样式）。⚠️ 两个文件用 front matter 的 `url:` 落在 `/contact/qq/`、`/contact/wechat/`；**别改成 `content/contact/` 目录**（会生成一个 `/contact/` 章节列表页）。关于页两个入口分别指过去 |
 | 改支持页 / 换收款码 | `content/donate.md`（结构 + 文案）+ `custom_head.html` 第 08 段（样式）。⚠️ 换码后要去 Cloudflare Purge `/images/donate/*`（30 天缓存） |
-| 改页脚 | `hugo.toml` 的 `copyright` / `copyrightNote` / `licenseName` / `licenseURL` / `[params.footer]` 四个开关。⚠️ 订阅行末尾那个「🚇 开往」**不在配置里**，写在 `layouts/partials/footer.html` 的订阅块里（`safeHTML` 存成变量、三个互斥分支各引用一次） |
+| 改页脚 | `hugo.toml` 的 `copyright` / `copyrightNote` / `licenseName` / `licenseURL` / `[params.footer]` 四个开关。⚠️ 订阅行末尾那两条友链**不在配置里**，写在 `layouts/partials/footer.html` 的订阅块里（`safeHTML` 存成变量、三个互斥分支各引用一次）。⚠️「打个招呼」浮层是另一套三件套：`partials/hello.html`（标记）+ `partials/hello-script.html`（内联脚本）+ `custom.css` 第 48 段，**三处一起改** |
 | 改**站内跳转预渲染** | `custom_head.html` 末尾那个 `<script type="speculationrules">`（2026-10-28）。⚠️ `eagerness` 是 `moderate`，**别改成 `eager`** —— 列表页一屏十几个链接会同时预渲染，把带宽吃光。⚠️ 规则里 `href_matches` 写 `/*` 是相对本文档解析的，只命中同源路径；别换成跨源全通配。⚠️ 模板注释里**绝不能出现星号加斜杠的连续两字符**（那就是注释结束符），我这次就写坏过一次，构建直接报 `comment ends before closing delimiter` |
 | 改**图标 link 的绝对 / 相对** | `layouts/partials/favicon.html`（2026-10-28 起 6 条全用 `relURL`）。⚠️ 别改回 `absURL`：这 6 条只服务当前 HTML 页，绝对地址在镜像域名下会把请求拽回 hulatu.com。**需要绝对地址的是 feed 里的图标**（走 `params.feedIcon`） |
 | 改**图床预连的触发条件** | `custom_head.html` 第 27 行附近，条件是 `and (strings.Contains .Content "img.hulatu.com") (strings.Contains .Content "<img")`。⚠️ **两个条件缺一不可**：只判主机名会误命中 `/`、`/about/`、`/privacy/`（那三页里是 `<a href>` 或纯文本）。⚠️ 验收别数 `rel=preconnect` —— giscus 的预连也长这样（135 个长文页都有），会把结论带偏 |
 | 改**标签（增 / 删 / 合并）** | 标签只来自各篇的 `tags:` 行，模板一处都不用动 —— `/archive/` 底部由 `layouts/_default/archive.html` 从 `site.Taxonomies.tags` 生成：**出现 ≥3 篇的常显（按篇数降序）**，其余收进「其余标签（N）」折叠（按名称）。⚠️ **删/合并标签必须同时处理 `static/_redirects`**：被删掉的 `/tags/<词>/` 会变成 404，得补 301；2026-10-26 归并时就是「改 tags + 补 113 条 301」一起做的，2026-10-28 撤销时也是「还原 tags + 删 113 条 301」一起做的。⚠️ 改完数一遍 `/archive/` 的 `class=tag-index` 里 `<a>` **总数**（常显 + 折叠），应等于 `tags/` 目录数（现在 **219**） |
 | 改颜色 / 字体 / 宽度 / 圆角 | `themes/hugo-bearneo/layouts/partials/style.html` 的 `:root`（改上游，改完在 DESIGN.md 第 5 节登记）。全站只有这一份 —— 改一处即全站生效 |
 | 改正文标题的上下间距 | `custom_head.html` 第 02 段（`text-autospace` 与 `content > :first-child` 两条已删 —— 后者是「首行贴导航栏」的元凶，见 DESIGN.md 第 5 节第 ③ 条） |
-| 改**正文段落间距** | `custom_head.html` 第 02 段末尾的 `content > p { margin-bottom: 1.75em }`（2026-10-27）。⚠️ **必须写 `content > p`**：写成 `content p` 会覆盖上游的 `blockquote p { margin: 0 }`（同特异性、本文件后加载），引用块里凭空多出 28px。⚠️ **只写 `margin-bottom`**：写了 `margin-top` 会把「标题 → 正文」的 16.8px 一起改成 28px |
+| 改**正文段落间距** | `custom_head.html` 第 02 段末尾的 `content > p { margin-bottom: 2em }`（2026-10-27 新增 1.75em，2026-11-20 随行高 1.8 抬到 2em）。⚠️ **必须写 `content > p`**：写成 `content p` 会覆盖上游的 `blockquote p { margin: 0 }`（同特异性、本文件后加载），引用块里凭空多出 36px。⚠️ **只写 `margin-bottom`**：写了 `margin-top` 会把「标题 → 正文」的 16.8px 一起改成 36px |
 | 改**列表页搜索框尺寸** | ⚠️ **2026-10-27 加过又撤了，现在是纯 UA 默认（174×24）**。当时写的第 35 段是 `#search-input{box-sizing:border-box;width:100%;height:44px}`，用户看过效果后要求恢复原样。真要再改，先去 `custom_head.html` 第 35 段位置读那段说明注释（含四条技术事实，其中一条是我上一轮写错又更正过的：`type=search` 的 UA 默认**已经是** border-box，`type=text` 才是 content-box） |
-| 改**正文行高** | `themes/hugo-bearneo/layouts/partials/style.html` 的 `content`（**改上游**，改完在 DESIGN.md 第 5 节登记）。⚠️ 上游 1.6，2026-10-14 已改成 **1.8**；`body` 那条 1.5 **不要动**（页头 / 导航 / 页脚是外壳，不是阅读面）。改完回读：`content p` 应 16px / 28.8px，`header nav a` 仍 24px。⚠️ `<content>` 里的**标题也继承这 1.8** |
+| 改**正文行高** | `themes/hugo-bearneo/layouts/partials/style.html` 的 `content`（**改上游**，改完在 DESIGN.md 第 5 节登记）。⚠️ 上游 1.6，2026-10-14 已改成 **1.8**；站点层 `custom.css` 第 39 段也显式写了 **1.8**（2026-11-20 用户要求恢复，此前一度是 1.6）。`body` 那条 1.5 **不要动**（页头 / 导航 / 页脚是外壳，不是阅读面）。改完回读：`content` 应 18px / **32.4px**，`content > p` 的 `margin-bottom` 应 **36px**，`header nav a` 仍 24px。⚠️ `<content>` 里的**标题也继承这 1.8**；行高改了必须同步复核段间距（2em），否则「换段 ≥ 换行」会破 |
 | 改文末「系列坐标带」/「上一篇 / 下一篇」 | 模板 `layouts/_default/single.html`，样式 `custom_head.html` 第 09 / 10 段（**改类名要两边一起改**） |
 | 改「系列」入口 / 总览页 | 入口：`layouts/_default/archive.html`，样式 `custom_head.html` 第 09 段；总览页：`layouts/_default/series.html` + `content/series.md`，样式第 09b 段（2026-11-03 起「点进去才看」） |
 | 改归档页底部的标签 | 模板 `layouts/_default/archive.html`（`</ul>` 后那段）+ 样式第 09 段的 `.tag-index*`<br>⚠️ 结构：`<section class="tag-index">` → `<h2>标签</h2>` → `.tag-index-top`（≥3 篇，32 个，`sort ... "count" "desc"`）→ `.tag-index-more`（其余 187 个，默认关闭的 `<details>`，按 `name` 排）<br>⚠️ 显示名用 `$pages.Page.Title`（Hugo 会把 `ai` 标题化成 `AI`），别改成 map 的 key，否则会变回小写<br>⚠️ 别写成 `{{ with .Site.Taxonomies.tags }}` 再 `range .Site.…` —— `with` 重绑 `.`，静默 0 迭代、只留一个空块，**构建 0 警告**<br>⚠️ 链接落 `/tags/<slug>/` 词条页；`/tags/` 索引页是关掉的，别改过去（会 404） |
@@ -970,22 +976,25 @@ PY
 
 改完模板还要手工扫一眼这几处（回归面）：
 
-- 首页：`h1#hai` → 引用 → 段落 → **含「支持」链接的段落** → 四个平台链接行 → 虚线 `<hr>` → `<h2 class=recent-posts-head>最近更新：</h2>` → 5 条
-  ⚠️ 简介正文外面不该有 `<content>`（照 yinji 去掉的，行高走 body 的 1.5 —— 2026-10-14 正文行高改成 1.8 后这一层更要紧，留着简介会比正文还松）；列表左边界要和 `Recent Posts:` 标题对齐（实测都 x≈140），缩进 40px 就是 `.recent-posts{padding-left:0}` 被吞了 → 去跑第 4 条哨兵
+- 首页：`h1#hai` → 引用 → 段落 → **身份条 + 含「支持」链接的同一段**（两者直接相连，**没有 `<br>` / 额外 `<p>` / 特殊样式**）→ 四个平台链接行 → 虚线 `<hr>` → `<h2 class=recent-posts-head>最近更新：</h2>` → 5 条
+  ⚠️ 身份条由 `layouts/shortcodes/home-stats.html` 在构建期算（文章数 / 周刊数 / 最早一篇到今天的整天数），数字每天可能变 —— 回归时看**格式**，别把某一组数字写死。它现在就是普通正文（18px / 主文字色），不要再加 `.home-stats` 之类的类或小字灰字。
+  ⚠️ 简介正文外面不该有 `<content>`（照 yinji 去掉的，行高走 body 的 1.5 —— 2026-11-20 正文恢复 1.8 后这一层更要紧，留着简介会比正文还松）；列表左边界要和 `Recent Posts:` 标题对齐（实测都 x≈140），缩进 40px 就是 `.recent-posts{padding-left:0}` 被吞了 → 去跑第 4 条哨兵
 - `/archive/`：搜索框 + 「共 **137** 篇。」+ **「系列」一行入口**（3 组 · 23 篇 → `/series/`）+ 年份分组 + 底部标签（**32 个 ≥3 篇的常显 + 187 个在「其余标签」折叠里**）
 - 导航 6 项；⚠️ 靠第 00 段 `header nav{flex-wrap:wrap;column-gap:8px}` 保证只在项与项之间折
-- 页脚四行，顺序：Made with → Copyright → **订阅行（RSS / Say hello / 🚇 开往 / 🌀 虫洞）** → 英文授权行（+ Privacy + Sitemap）
-  ⚠️ **一个 `·` 都没有**（3 个全换成 `.`）：读作 `Say hello. 🚇 开往. 🌀 虫洞` 与 `…CC BY-NC-SA 4.0. Privacy. 🗺️ Sitemap.`；出现任何一个都是回退
-  哨兵：`<footer>` 里 `<br>` 恰好 **3 个**、`go.html` 恰好 **2 次**（开往 + 虫洞）、`·` **0 次**，且「Say hello」「开往」「虫洞」在**同一个 `<br>` 分段**里
+- 页脚四行，顺序：Made with → Copyright → **订阅行（RSS / 打个招呼 / 🚇 开往 / 🌀 虫洞）** → 中文授权行（+ Privacy + Sitemap）
+  ⚠️ **一个 `·` 都没有**（3 个全换成 `.`）：读作 `打个招呼. 🚇 开往. 🌀 虫洞` 与 `…CC BY-NC-SA 4.0. 隐私. 🗺️ 网站地图.`；出现任何一个都是回退
+  哨兵：`<footer>` 里 `<br>` 恰好 **3 个**、`go.html` 恰好 **2 次**（开往 + 虫洞）、`·` **0 次**，且「打个招呼」「开往」「虫洞」在**同一个 `<br>` 分段**里
+  ⚠️「打个招呼」是悬停胶囊（2026-11-20）：**触发词仍是 `mailto:` 链接**（`.hello-link`），悬停 / 键盘聚焦浮出 `.hello-card`，点 `.hello-copy` 复制并显示「已复制」，1.6 秒复原；触屏（`hover: none`）改为点触发词开合胶囊。**卡片里只有邮箱 + 复制图标** —— 没有「邮箱」标签、提示行、mailto 入口或小三角（用户同日明确要求），别再加回去。三件套：`partials/hello.html` + `partials/hello-script.html` + `custom.css` 第 48 段，改名要三处同改（`.is-copied` / `.is-open` 也是契约）
 - 文章页：`<h1>`、日期行、标签行、**文末系列坐标带（仅 23 篇连载）+ 上一篇/下一篇（126 篇都有）**、TOC、评论区
   ⚠️ **「上一篇」= 更早、「下一篇」= 更晚**；两段相邻时只画一条发丝线；最新一篇没有「下一篇」、最早一篇没有「上一篇」（留不可见空槽，正常）
   ⚠️ 含代码的文章代码块必须「浅灰底 + 深字」（浅色）—— 大片文字发白就是 `noClasses` 被改回 `true`，跑第 5 条 f) 哨兵
 - 文章页顶部面包屑：`首页 / 文章 / 分类`（周刊是 `首页 / 周刊`，**两段** —— 周刊的 `categories` 就是 `["周刊"]`，加了会变「首页 / 周刊 / 周刊」）；⚠️ 面包屑**不该**出现在 `/about/` `/roll/` 或词条页上
 - `/roll/`：**没有页面标题**（只在 `<title>` 与导航高亮），两个 `<ul>`：3 条朋友 + 11 条聚合站，中间一条全宽虚线 `<hr>`；结尾「…更新中」，无日期行 / 评论区 / TOC；正文首行到导航文字下沿约 **28 CSS px**（~12.5px 就是 `content > :first-child` 被加回来了）
-- `/about/`：介绍块纯 Markdown，**没有头像**（全站一张头像都没有），**没有页面标题**，首行间距同 28px
+- `/about/`：介绍块纯 Markdown，**没有头像**（全站一张头像都没有），**没有页面标题**，首行间距同 28px；「联系我」的 QQ / WeChat 指向 `/contact/qq/` / `/contact/wechat/`
+- `/contact/qq/` 与 `/contact/wechat/`：**一页一张二维码**（2026-11-20）。每页一个 `.oa-wrap`（256px 居中）+ `.oa-tip` + `.oa-profile`（头像 H / 胡拉图 / 扫码加我好友），与 `/wechat/` 共用第 38 段样式；**没有**标题 / 日期 / TOC / 评论区；码 256×256、信息条**必须同宽 256**。⚠️ `/contact/` 本身是 404 —— 两个 md 在 content 根目录、靠 `url:` 落到子路径，别再建 `content/contact/` 章节页
 - `/now/`：2026-11-02 已按用户要求删除，旧地址 301 到 `/about/`；⚠️ `/privacy/` 与 `/donate/` **仍保留页面标题**
 - `/donate/`：两个收款码并排居中（窄屏一列），**没有**日期行 / TOC / 评论区（**有标题**）
-- `/privacy/` `/posts/` `/donate/` `/404.html` 与全部词条页：`<meta name=robots content="noindex, follow">`（合计 **219 页**）。⚠️ 2026-10-15 起还要加上 `/feed/` 与 `/feed/weekly/` → **221 页**（那两页的 `noindex` 写在 `content/feed/*.md` 的 front matter 里，别删）
+- `/privacy/` `/posts/` `/donate/` `/contact/qq/` `/contact/wechat/` `/wechat/` `/404.html` 与全部词条页、`/feed/` 两页：`<meta name=robots content="noindex, follow">`（2026-11-20 构建实测合计 **241 页**）。⚠️ `/feed/` 那两页的 `noindex` 写在 `content/feed/*.md` 的 front matter 里，别删
 - `/run/`：`<h1>跑步</h1>` + 导语 + 4 个 `.stats` 格子 + 月度柱状图 + 按年 `<details>` 记录表 + 更新时间行；**没有**面包屑 / TOC / 评论区（走 `layouts/_default/run.html`，不经过 single.html）；数据每天由 CI 的 `sync-garmin.py` 刷新
 
 ---
@@ -1013,6 +1022,10 @@ PY
    还留下 500 B 删不掉的死码，净负收益。
    ⚠️ **per-slug 的 og:image 仍然没做**（DESIGN.md 第 8 节第 1 条），现在改 `seo_tags.html`
    只需加一段，不用再加文件，但图片得先从 git 历史取回 `gen-og.js` 重跑。
+8. **每日重建的部署凭据**（2026-11-20 新增，仓库侧无法代劳）：Cloudflare Pages →
+   Settings → Builds & deployments → Deploy hooks，建一个 **Branch = `main`** 的 hook；
+   把 URL 存成 GitHub 仓库 secret **`CLOUDFLARE_DEPLOY_HOOK`**。不配的话
+   `daily-rebuild.yml` 每天会红灯（线上不受影响，只是首页「已写 N 天」不会前进）。
 
 > 2026-10-11 / 12 清理掉的孤儿资源与失效脚本清单见第 1 节末尾；**它们都在 git 历史里，要恢复就 `git log --diff-filter=D` 取回**，别照着旧待办去找已经不存在的文件。
 

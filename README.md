@@ -241,6 +241,7 @@ feed 本身是**纯 XML**（顶部没有 `<?xml-stylesheet?>`）。浏览器直�
 | --- | --- |
 | `build.yml` | push / PR 时用**同一个 Hugo 版本**构建主站，并检查中文标题锚点 —— 把「本地没事、平台构建失败」挡在推送前 |
 | `sync-garmin.yml` | 每天 22:00（Asia/Taipei）拉一次跑步数据，写进 `data/runs.json` |
+| `daily-rebuild.yml` | 每天 00:10（Asia/Taipei）调用 Cloudflare Pages Deploy Hook，让首页「已写 N 天」每天自动更新。⚠️ 需要仓库 secret `CLOUDFLARE_DEPLOY_HOOK`（配置步骤见文件头注释） |
 
 ## 🧭 站点现状
 

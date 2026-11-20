@@ -41,9 +41,9 @@ draft: false
 
 ## 联系我
 
-- **QQ** — 点开查看二维码 [查看](https://img.hulatu.com/post/paIl9a.webp)
+- **QQ** — 扫描二维码加我好友 [查看](/contact/qq/)
 - **Gmail** — 点击给我发邮件 [写信](mailto:hello@hulatu.com)
-- **WeChat** — 点开查看二维码 [查看](https://img.hulatu.com/post/qbD1Mk.webp)
+- **WeChat** — 扫描二维码加我好友 [查看](/contact/wechat/)
 
 ## 博客导览
 
