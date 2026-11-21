@@ -1,172 +1,44 @@
 {{/*
-  站点层覆盖：themes/hugo-bearneo/layouts/partials/footer.html
+  页脚：两行。第一行订阅 / 问候 / 隐私 / 开往 / 虫洞 / 地图，
+  第二行制作署名 / 版权 / 授权。
 
-  唯一改动 —— 上游把 `copyright` 和 `🗺️ Sitemap` 挤在**同一行**（两者之间只有模板换行，
-  HTML 会折成一个空格），无法配置成两行。这里在版权行之后补一个 `<br />`，
-  并把授权说明拆成独立参数 `copyrightNote`，让页脚成为：
-
-      Copyright © 2025-2026, hulatu.
-      本站内容采用 CC BY-NC-SA 4.0 协议 🗺️ Sitemap.
-
-  ⚠️ `.Site.Params.copyright` 是**文本节点**输出，Go 的 html/template 会转义 `&` ——
-     所以 hugo.toml 里必须写**字面量 ©**，写成 `&copy;` 会变成 `&amp;copy;`，
-     页面上原样显示成 "&copy;" 这六个字符。
-
-  其余三个开关（hideRSSAndEmail / hideMadeWithLine / hideSitemap）与上游一致，
-  但第一行有一处**故意的大写改动**（2026-10-11 用户要求）：
-
-      上游： Subscribe via RSS or just say hello.
-      本站： Subscribe via RSS or just Say hello.
-
-  只有链接文字首字母改了，其余一字未动。
-
-  2026-11-05：用户要求全站英文元素改中文，页脚四行全部改回中文
-  （上面 2026-10-11 的英文要求作废，历史留作记录）：
-      1. 用 Hugo Bear Neo 制作。
-      2. 版权所有 © 2025-2026，hulatu。
-      3. 通过 RSS 订阅，或直接打个招呼。 🚇 开往
-      4. 本站内容采用 CC BY-NC-SA 4.0 协议. 隐私. 🗺️ 网站地图。
-
-  2026-11-20：「打个招呼」从一条裸 mailto 链接升级成**悬停浮层**——
-  鼠标悬停 / 键盘聚焦时上方浮出邮箱卡片，点邮箱复制并显示「已复制」。
-  标记在 partials/hello.html，脚本在 partials/hello-script.html，
-  样式在 assets/css/custom.css 第 48 段（三处一起改）。
-  ⚠️ 触发词仍是 mailto：JS 不可用时行为与改前完全一致。
-
-  另有一处**新增**（2026-10-11 用户要求）：最后一行补了 `/privacy/` 的链接，
-  也就是「Privacy」——它原本在旧自建主题的页脚里（`<a href=/privacy/>隐私</a>`），
-  迁移到上游页脚后一度没了入口（导航只有 6 项，没有它）。
-
-  同一天稍后用户又要求：这一行**整句改成英文**，并且「CC BY-NC-SA 4.0」要带链接。
-  2026-11-05：同一要求反向改回中文，见上面那条新增的注。
-  于是最后一行在那天读作（⚠️ 分隔符后来在 2026-10-12 从 `·` 换成了 `.`，见下）：
-
-      This site is licensed under CC BY-NC-SA 4.0 · Privacy · 🗺️ Sitemap.
-
-  ⚠️ 三个参数都在 hugo.toml 的 [params] 里（copyrightNote / licenseName /
-     licenseURL）。这里走的是 `{{ . }}` 文本输出，Markdown 链接不生效，
-     所以 CC 那一段必须用真的 `<a>`，链接文字取自 licenseName。
-  ⚠️ 隐私链接挂在 hideSitemap 这个开关里面 —— 关掉 Sitemap 会连它一起关。
-     它们本来就是同一行「站点元信息」，分开管没有意义。
-
-  ── 分隔符：全用 `.`，一个 `·` 都不留（2026-10-12 用户要求）────────────
-  用户原话「不要那么多 ·，但是该显示 . 就显示 .」。
-  页脚原本有 **3 个 `·`**（第 3 行 1 个、第 4 行 2 个），现在**全部换成 `.`**：
-
-      改前：Say hello. · 🚇 开往
-      改后：Say hello. 🚇 开往
-
-      改前：This site is licensed under CC BY-NC-SA 4.0 · Privacy · 🗺️ Sitemap.
-      改后：This site is licensed under CC BY-NC-SA 4.0. Privacy. 🗺️ Sitemap.
-
-  ⚠️ 第 3 行那句本来就有句末的 `.`，所以「开往」前面只是把 ` ·` 去掉、**不再补点**，
-     不能写成 `Say hello.. 🚇 开往`。
-  ⚠️ 第 4 行两个 ` · ` 都换成 `. `（点 + 空格）。⚠️ 那两处在模板里分别挂在
-     `{{ with .Site.Params.licenseName }}…{{ end }}` 的**块内**，
-     所以 licenseName 留空时点会跟着一起消失（与改前 `·` 的行为一致）。
-
-  ── 行序（2026-10-11 用户要求「第 1 行放到第 3-4 行之间」）──────────────
-  订阅行原本在最前（上游的顺序），现在挪到版权行之后、授权行之前：
-
-      1. Made with Hugo Bear Neo.
-      2. Copyright © 2025-2026, hulatu.
-      3. Subscribe via RSS or just Say hello. 🚇 开往     ← 订阅行从第 1 行挪来
-      4. This site is licensed under CC BY-NC-SA 4.0. Privacy. 🗺️ Sitemap.
-
-  ⚠️ 第 3 行末尾的「🚇 开往」是 2026-10-12 用户要求加的（开往友链接力入口），
-     **接在订阅行末尾**、不单独占行，所以页脚仍然是 4 行。
-     细节（safeHTML / 三个分支 / 官方对放置位置的要求）见下面那段注释。
-
-  实现上只是**把整块 {{ if ... hideRSSAndEmail ... }} 搬到版权块后面**，
-  每块自带结尾的 `<br />`（只有最后的授权行没有），所以搬完天然就是 4 行。
-  ⚠️ 搬动时**别把 `<br />` 一起搬丢** —— 少一个 `<br />` 会让两行并成一行，
-     而构建 0 警告、页面上只是「看着像少了点什么」。
+  ⚠️ copyright 与 copyrightNote 是文本节点输出，hugo.toml 里必须写**字面量 ©**；
+     写成 &copy; 会原样显示成六个字符。CC 那段走 copyrightNote / licenseName /
+     licenseURL 三个参数，Markdown 链接不生效。
+  ⚠️ 隐私链接挂在 hideSitemap 开关里；关掉 Sitemap 会连它一起关。
+  ⚠️ 分隔符一律用 `.`，不用 `·`；每块自带结尾 <br />，搬动时别丢。
+  ⚠️ 开往 / 虫洞只放页脚，别挪进导航或正文。
+  ⚠️ 「问候」浮层的标记 / 脚本 / 样式分别在 partials/hello.html、
+     partials/hello-script.html、custom.css 第 48 段，三处一起改。
 */}}
-<!-- Made with line -->
-{{ if ne .Site.Params.Footer.hideMadeWithLine true }}用
-<a href="https://github.com/rokcso/hugo-bearneo/">Hugo Bear Neo</a> 制作。
+<!-- 第 1 行：订阅 / 邮件 + 开往 / 虫洞 + 隐私 / 网站地图
+     2026-11-21：按用户要求把「隐私 / 网站地图」从末行挪到这里，
+     并补上 📡（RSS）、✉️（邮件）、🔒（隐私）三个图标。
+     2026-11-21 晚：按用户要求去掉页脚「搜索」入口（全站命令面板 ⌘K / 仍在）。
+     ⚠️ 开往 / 虫洞仍然只在页脚（官方要求的位置，用户明确不要挪进导航/正文）。 -->
+{{ $showRSS := ne .Site.Params.RSS.enableRSS false }}
+{{ $showHello := and (ne .Site.Params.Footer.hideRSSAndEmail true) .Site.Params.Author.email }}
+{{ $showMeta := ne .Site.Params.Footer.hideSitemap true }}
+{{ $showMade := ne .Site.Params.Footer.hideMadeWithLine true }}
+{{ $showCopyright := ne .Site.Params.Footer.hideCopyright true }}
+{{ if or $showRSS $showHello $showMeta }}
+  {{- if and $showRSS $showHello -}}
+通过 <a href="/index.xml">RSS</a> 订阅，或直接 ✉️ {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
+  {{- else if $showRSS -}}
+通过 <a href="/index.xml">RSS</a> 订阅。
+  {{- else if $showHello -}}
+直接 ✉️ {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
+  {{- end }}
+  {{- if $showMeta }} 🔒 <a href="/privacy/">隐私</a>.{{ end }} 🚇 <a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>. 🌀 <a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>.
+  {{- if $showMeta }} 🗺️ <a href="{{ "map/" | relURL }}">地图</a>.{{ end }}
 <br />
 {{ end }}
 
-<!-- 版权行（上游是与 Sitemap 同一行，这里独立成行） -->
-{{ if ne .Site.Params.Footer.hideCopyright true }}
-{{ .Site.Params.copyright }}
-<br />
+<!-- 第 2 行：制作署名 + 版权 + 授权（2026-11-21 合并到同一行） -->
+{{ if or $showMade $showCopyright .Site.Params.licenseName }}
+{{ if $showMade }}基于 <a href="https://github.com/rokcso/hugo-bearneo/">Hugo Bear Neo</a> 制作{{ end }}{{ if and $showMade (or $showCopyright .Site.Params.licenseName) }}，{{ end }}{{ if $showCopyright }}{{ .Site.Params.copyright }}{{ end }}{{ if and $showCopyright .Site.Params.licenseName }}，{{ end }}{{ with .Site.Params.copyrightNote }}{{ . }} {{ end }}{{ with .Site.Params.licenseName }}<a href="{{ $.Site.Params.licenseURL }}">{{ . }}</a> 协议。{{ end }}
 {{ end }}
 
-<!-- 订阅 / 邮件（2026-10-11 由第 1 行挪到此处，即第 3 行）
-     + 开往入口（2026-10-12 用户要求「接在订阅行末尾」） -->
-{{ if ne .Site.Params.Footer.hideRSSAndEmail true }}
-{{/* 两个「友链圈入口」：开往（Travellings）+ 虫洞（十年之约），都在**页脚**，全站出现。
-     链接地址取自官方文档：
-       开往 https://www.travellings.cn/docs/join.html
-       虫洞 https://www.foreverblog.cn/about.html#ab-8
-
-     ── 为什么开往只放页脚（2026-10-12 的决定，别推翻）───────────────
-     官方要求把 https://www.travellings.cn/go.html 放在「打开网站就能看到的地方」，
-     例如顶栏 / 侧栏；页脚在长文页要滚到底才看得到。用户明确选了「只放页脚」，
-     别再自作主张挪进顶部导航 —— 导航已经 8 项、窄屏本来就折行。
-
-     ── 虫洞的位置：2026-11-02 三改后定稿在「全站页脚」──────────────
-     第一版：官方徽章放 /roll/、全站页脚放纯文字。
-     第二轮：用户要求「除了首页页脚，其余页面不要有任何十年之约入口」→ 只留首页。
-     第三轮：用户改口「其他页页脚，也可以显示虫洞」→ **恢复成全站页脚都有**。
-     现在的位置：
-       · 每个页面的页脚 → 开往 + 🌀 虫洞（纯文字，0 字节额外请求）；
-       · /roll/ 的官方徽章**保持撤销**（163×64 动画 WebP 单文件 293 KB / 67 帧，
-         不是页脚，没必要再付一次）；
-       · 收藏页「聚合平台」里那条十年之约文字链接也保持删除（用户第二轮的要求），
-         所以全站对 foreverblog.cn 的入口只有页脚这一处。
-     **别再把虫洞挪进导航、正文或收藏页。**
-
-     ⚠️ 下面三个分支互斥、各自带 `<br />`，所以这里把标记**定义一次、在三处引用**；
-        别把 URL 抄成三份，将来改地址一定会漏一处。
-     ⚠️ 必须 safeHTML：Go 的 html/template 会把 string 里的尖括号转义，
-        直接把变量当字符串输出会在页面上原样打印出标签文本。
-     ⚠️ 这一段挂在 hideRSSAndEmail 里面 —— 关掉订阅行会连它一起关。
-        这是「接在订阅行末尾」的必然结果，不是 bug。
-     ⚠️ rel 用 noopener noreferrer（与站点层 nav.html 对外链的处理一致），
-        不用官方示例里的 noopener。
-     ⚠️ 分隔符用 `. ` 不用 ` · ` —— 2026-10-12 用户要求「不要那么多 ·」，
-        页脚里原有的 3 个 `·` 全换成了 `.`，第 4 行就是这个写法：
-        `Privacy. 🗺️ Sitemap.`。这里沿用，全站读作「…开往. 🌀 虫洞」。
-        （字符串开头是**一个空格**，句号由订阅那句自带，所以这里别再补点，
-          否则会变成 `Say hello.. 🚇 开往`。）
-     ⚠️ 图标用 `🌀`（气旋）不用 `🕳️`（洞）。实测在 12.8px（`--font-size-secondary`
-        = 0.8em）下，`🕳️` 渲染成**一条黑色椭圆**，看着像下划线或污点，不像图标；
-        `🌀` 是彩色螺旋，同尺寸下轮廓最清晰。而且官方徽章本身就是个橙色涡旋，
-        形态一致 —— 别改成 `🕳️`、`🌌`（渲染成深色小方块）或 `⏳`（语义不对）。
-     ⚠️ title 只写用途，不放 `·` 分隔符（同上，用户不喜欢那个字符）。 */}}
-{{ $friendLinks := safeHTML ` 🚇 <a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>. 🌀 <a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>` }}
-<!-- Enable RSS and email exists -->
-{{ if and ( ne .Site.Params.RSS.enableRSS false ) .Site.Params.Author.email }}
-通过 <a href="/index.xml">RSS</a> 订阅，或直接{{ partial "hello.html" (dict "text" "打个招呼" "email" .Site.Params.Author.email) }}。{{ $friendLinks }}
-<br />
-{{ end }}
-<!-- Enable RSS and email does not exists -->
-{{ if and ( ne .Site.Params.RSS.enableRSS false ) (not .Site.Params.Author.email) }}
-通过 <a href="/index.xml">RSS</a> 订阅。{{ $friendLinks }}
-<br />
-{{ end }}
-<!-- Do not enable RSS and email exists -->
-{{ if and ( ne .Site.Params.RSS.enableRSS true ) .Site.Params.Author.email }}
-通过{{ partial "hello.html" (dict "text" "邮件" "email" .Site.Params.Author.email) }}打个招呼。{{ $friendLinks }}
-<br />
-{{ end }}
-<!-- 「打个招呼」浮层的脚本。只有一个页面只可能命中一个分支，所以脚本
-     放在三个分支之外、只输出一次；没有邮箱时不加载（没有 .hello 可绑）。
+<!-- 「打个招呼」浮层的脚本：只在真的渲染了 hello 时加载一次。
      交互与理由见 partials/hello.html 文件头与 custom.css 第 48 段。 -->
-{{ if .Site.Params.Author.email }}{{ partial "hello-script.html" . }}{{ end }}
-{{ end }}
-
-<!-- 授权声明 + 隐私 + Sitemap（2026-10-11 起全英文，CC 那段带链接；
-     2026-10-12 起分隔符从 `·` 改成 `.`，见文件顶部注释）
-     2026-11-15：行尾补了「🔍 搜索」——全站唯一的搜索入口在 /archive/ 顶部的输入框，
-     这里只是一个指过去的链接（带 `#search-input`，落地即聚焦）。
-     ⚠️ 曾经是 `<button data-search-open>` 打开一个浮层面板（当天下午删掉）：
-        用户要求「搜索集中到 /archive/ 那个框」，面板整块退役，这里改回普通链接。
-     ⚠️ 它挂在这个 hideSitemap 分支里，所以关掉页脚地图时会一起消失 —— 可接受
-     （同属「站点元信息」那一行），但别以为它有自己的开关。 -->
-{{ if ne .Site.Params.Footer.hideSitemap true }}
-{{ with .Site.Params.copyrightNote }}{{ . }} {{ end }}{{ with .Site.Params.licenseName }}<a href="{{ $.Site.Params.licenseURL }}">{{ . }}</a> 协议. {{ end }}<a href="/privacy/">隐私</a>. 🗺️ <a href="/sitemap.xml">网站地图</a>. 🔍 <a href="{{ "archive/" | relURL }}#search-input" title="站内搜索（⌘K 或 /）">搜索</a>
-{{ end }}
+{{ if $showHello }}{{ partial "hello-script.html" . }}{{ end }}

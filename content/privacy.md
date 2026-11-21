@@ -13,8 +13,8 @@ draft: false
 ## 本站自身的数据处理
 
 - **访问日志**：托管平台会自动记录访问请求（IP 地址、访问时间、浏览器类型、访问页面等），用于保障服务稳定与安全。这些日志由托管平台 Cloudflare 保存，本站不自行读取或二次利用。
-- **深浅色**：完全跟随操作系统的浅色 / 深色设置，页面上**没有切换开关**，也没有任何偏好被记录。
-- **本地存储**：本站自身**不使用 Cookie，也不写入 LocalStorage**。改版（2026-10-10）去掉了原来的全站搜索面板，它是全站唯一写过 LocalStorage 的地方（键名 `hulatu:search:recent`），现在已经不存在。
+- **深浅色**：默认跟随操作系统的浅色 / 深色设置；导航右侧有 `☾/☀` 按钮，可手动切换。
+- **本地存储**：本站自身**不使用 Cookie**；只在浏览器 LocalStorage 里写一个键 `hl-theme`，用来记住你选的深浅色。它不会上传到服务器，也不会用于统计或广告。全站搜索面板不保存历史记录，也不写 LocalStorage。
 
 ## 第三方服务
 
@@ -28,7 +28,7 @@ draft: false
 
 ### 访问统计
 
-本站使用 GoatCounter 进行隐私友好的轻量访问统计，用于了解文章的浏览情况。它不记录是谁访问的，也不需要登录。
+本站使用 GoatCounter 进行隐私友好的轻量访问统计，用于了解文章的浏览情况。它不记录是谁访问的，也不需要登录，默认不依赖 Cookie。
 
 - GoatCounter：<https://www.goatcounter.com/help/privacy>
 
@@ -37,7 +37,7 @@ draft: false
 文章评论使用 giscus，评论内容存储在 GitHub Discussions（仓库 `hulatu/hulatu_blog`）。加载评论时，浏览器会请求 `giscus.app` 与 GitHub 的接口。
 
 - 不登录 GitHub 也可以浏览评论；**发表评论或点赞需要 GitHub 账号**，这一过程由 GitHub 处理你的账号信息。
-- giscus 可能在浏览器本地存储（LocalStorage）中保存主题等偏好。
+- giscus 可能在浏览器本地存储（LocalStorage）中保存主题等偏好；当你在 giscus 内登录 GitHub 时，GitHub 可能在 `github.com` 域名下设置自己的 Cookie。
 - giscus 项目：<https://giscus.app>
 - GitHub 隐私政策：<https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement>
 
@@ -49,16 +49,9 @@ draft: false
 
 某些文章内容会链接到外部网站（如微信公众号、YouTube、B 站、知乎等）。点击外链跳转后，你的信息由对应网站处理，请参考其各自的隐私政策；本站无法控制这些外部站点。
 
-## Cookie 与本地存储
-
-本站自身不使用 Cookie，也不写入 LocalStorage。深浅色模式完全跟随系统设置，没有手动开关，也没有任何偏好被记录。第三方服务的情况：
-
-- GoatCounter：默认不依赖 Cookie 进行统计。
-- giscus：主要使用 LocalStorage 保存主题；当你在 giscus 内登录 GitHub 时，GitHub 可能在 `github.com` 域名下设置自己的 Cookie。
-
 ## 评论内容的处理
 
-- 你发表的评论会公开显示在对应文章下方，并存储在 GitHub Discussions 中。
+- 你发表的评论会公开显示在对应文章下方。
 - 删除评论需通过 GitHub 账户完成；如需协助删除，可通过文末邮箱联系我。
 
 ## 你的权利

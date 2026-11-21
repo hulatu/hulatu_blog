@@ -1,63 +1,10 @@
-{{- /* 站点层覆盖：themes/hugo-bearneo/layouts/partials/favicon.html
-
-       ══ 为什么覆盖（2026-10-25）════════════════════════════════════════
-
-       上游这个片段只输出一条：
-         <link rel="shortcut icon" href="{{ .Site.Params.favicon | absURL }}">
-       本站的 favicon 参数指向 favicon.svg，于是全站 head 里**只有一条 SVG**。
-       后果不在浏览器（现代浏览器都认 SVG），而在**站外取图的一方**：
-
-         · RSS 阅读器 / 图标聚合服务（Feedly、Inoreader、Follow、
-           DuckDuckGo、Google s2 …）的图标管线基本只吃 PNG / ICO；
-         · 老浏览器与部分系统分享面板只认 /favicon.ico 这个约定路径。
-
-       两样都没有 ⇒ 订阅端拿不到图标，退回自己的兜底（字母头像 / 地球图标），
-       表现就是「订阅里看到的头像和网站不一样」。站内看着一切正常，
-       所以这个问题**只会在站外暴露**，构建 0 警告、本地截图也看不出来。
-
-       ══ 五个文件的用途（都在 static/ 根下）════════════════════════════
-
-         favicon.svg          矢量，浏览器标签页首选（深色下由内部 <style> 反白）
-         icon-512.png         图标服务 / PWA 大图
-         icon-192.png         Android 主屏、部分聚合服务
-         apple-touch-icon.png iOS 主屏（180×180，**白底**）
-         favicon.ico          约定路径兜底（48/32/16 三尺寸）
-
-       ⚠️ 光栅四件套**全部由 static/favicon.svg 生成**，改图标只改 SVG，
-          再按 DESIGN.md 第 12.3 节那组命令重跑一次；直接改 PNG 会让矢量版与
-          光栅版分叉，标签页和订阅端从此长得不一样。
-
-       ⚠️ 拼 favicon.ico 那句必须带 `-type TrueColorAlpha`（2026-11-04 修）。
-          少了它，ImageMagick 会把中间 PNG 的调色板搬进 ICO，每层只剩 3–4 种
-          颜色 —— 抗锯齿全丢，32px 的笔画变成阶梯锯齿，标签页里就是不清晰。
-          Chromium 会把 ICO 的 16/32 两帧直接存进自己的 Favicons 库，所以
-          **这条链路错了，标签页就一定糊**（本站默认浏览器 Helium 走的正是
-          /favicon.ico，不是 SVG）。验收见 DESIGN.md 12.3 那条循环。
-
-       ⚠️ **白底不是随便定的**：这个图标是藏青（#061161）笔画，透明底在深色
-          阅读器 / 深色壁纸上几乎不可见（和没图标一样）。SVG 版靠内部
-          prefers-color-scheme 反白解决，光栅版做不到，只能垫白底。
-
-       ⚠️ 别把 `rel="shortcut icon"` 指回 favicon.svg —— 这个名字是给
-          「只认 .ico 的老客户端」准备的，指回 SVG 等于没兜底。
-
-       ⚠️ 顺序有意义：SVG 在前。Chrome / Firefox 会按 type + sizes 自己挑，
-          但「先声明矢量」能让不支持 SVG 的客户端在解析时直接落到后面的 PNG。
-      --------------------------------------------------------------- */ -}}
-{{- /* ⚠️ 2026-10-28：下面 6 条 href 从 `absURL` 改成了 `relURL`。
-       理由：这 6 个标签只服务于**当前这个 HTML 页面**，同源即可，写全域名是白付字节
-       （每条多 22 B，一页 6 条 ≈ 130 B raw）。更重要的是给「镜像域名」留余地 ——
-       将来若用 Cloudflare 优选 IP 挂第二个域名，绝对 URL 会把那 6 个请求拽回
-       hulatu.com 这个慢域名。
-       ⚠️ 不要改回 `absURL`。需要绝对地址的是 **feed 里的图标**（走 `params.feedIcon`，
-          在 layouts/feed/ 与 seo_tags.html 里），不是这里的 `<link>`。 */ -}}
-{{- /* ⚠️ 2026-11-04：加了 `?v=` 缓存破坏。
-       起因：`_headers` 给这 6 个文件的是 `max-age=604800`，文件名不带哈希，
-       换图标后老访客最多 7 天还看着旧图 —— 上一轮修好 ICO 抗锯齿，自己浏览器里
-       却一点变化都看不到，就是这条缓存。带查询串等于换了个 URL，浏览器会当新图标
-       重新抓、重新存，同时**旧记录不会被删掉**（只是不再被引用）。
-       ⚠️ **每次换图标都要把这个数字 +1**，否则等于没加。
-       ⚠️ 查询串不影响 `static/_headers` 的路径匹配（Cloudflare Pages 按路径匹配）。 */ -}}
+{{- /* 站点图标：SVG + 512/192 PNG + apple-touch + ICO，另加 manifest。
+       上游只输出一条 SVG；RSS 阅读器与老客户端不吃 SVG，所以补齐。
+       ⚠️ 光栅图全部由 favicon.svg 生成，改图标只改 SVG 再按 DESIGN.md 8.6 重跑。
+       ⚠️ 拼 favicon.ico 必须带 `-type TrueColorAlpha`，否则抗锯齿丢、标签页发糊。
+       ⚠️ 光栅图标垫白底：藏青笔画在深色背景上透明底会看不见。
+       ⚠️ URL 用 relURL（不再付绝对域名字节，也给镜像域名留余地）。
+       ⚠️ $iconV 每次换图标 +1，否则 7 天缓存内老访客看不到新图标。 */ -}}
 {{- $iconV := "2" -}}
 <link rel="icon" type="image/svg+xml" href="{{ "favicon.svg" | relURL }}?v={{ $iconV }}">
 <link rel="icon" type="image/png" sizes="512x512" href="{{ "icon-512.png" | relURL }}?v={{ $iconV }}">
@@ -65,36 +12,10 @@
 <link rel="apple-touch-icon" sizes="180x180" href="{{ "apple-touch-icon.png" | relURL }}?v={{ $iconV }}">
 <link rel="shortcut icon" href="{{ "favicon.ico" | relURL }}?v={{ $iconV }}">
 
-{{- /* ── Web App Manifest（2026-10-26 新增）──────────────────────────────
-       加它的唯一理由：**安卓 Chrome 的「添加到主屏幕」**。没有 manifest 时
-       Android 会把网页当书签处理，桌面图标用一张自动截图、名字取 <title>，
-       点开还是浏览器界面。有了 manifest 才会用 icon-192/512、按 short_name
-       起名、以 standalone 模式打开（没有地址栏）。
-
-       ⚠️ 文件是 `static/manifest.webmanifest`，**手写的 JSON、不能写注释**
-          —— JSON 规范不支持注释，加了会让浏览器整份 manifest 解析失败，
-          而且失败是**静默的**（DevTools 的 Application 面板才会报）。
-          所以所有取舍理由都写在这里，改那个文件前先读这段。
-
-       ⚠️ `purpose` 只声明 `any`，**故意不加 `maskable`**。
-          maskable 的图标会被系统裁成圆形/水滴形，规范要求图形落在中心
-          80% 的安全区内；本站图标是「藏青笔画 + 白底」，笔画贴着画布边缘，
-          标成 maskable 会被裁掉一圈笔画。真要加，得先按 DESIGN.md 第 12 节
-          重生成一张四周留白 10% 的专用图，再单独声明一个条目。
-
-       ⚠️ `theme_color` 取 `#061161`（图标的藏青色），不是纸底 —— 它管的是
-          安卓状态栏与任务切换卡的着色，取浅色会让状态栏图标看不见。
-          `background_color` 取 `#fdfdfd`（主题 `--bg-color-primary` 的浅色值），
-          它是**启动瞬间**那一屏的底色，必须和首屏一致，否则会闪一下黑。
-          ⚠️ 深色模式下没有对应的 manifest 字段（规范只有一个 background_color），
-             所以深色用户启动时仍会闪一下浅色 —— 这是规范限制，不是配置错误。
-
-       ⚠️ `id` 与 `start_url` 都写 `/`：manifest 的 id 一旦发布就别再改，
-          改了等于换了一个应用，用户的「已安装」记录会断掉。
-
-       ⚠️ 扩展名必须是 `.webmanifest`（Cloudflare Pages 会发
-          `application/manifest+json`）。改成 `.json` 也能用，但拿不到正确的
-          Content-Type，部分浏览器会拒收。
-      --------------------------------------------------------------- */ -}}
+{{- /* Web App Manifest：服务安卓「添加到主屏幕」。
+       ⚠️ static/manifest.webmanifest 是手写 JSON，不能写注释（解析失败且静默）。
+       ⚠️ purpose 只写 any：图标笔画贴边，maskable 会被裁。
+       ⚠️ theme_color 用图标藏青 #061161；background_color 用浅色底 #fdfdfd。
+       ⚠️ id / start_url 发布后别再改；扩展名保持 .webmanifest。 */ -}}
 <link rel="manifest" href="{{ "manifest.webmanifest" | relURL }}">
 

@@ -1,26 +1,6 @@
-{{- /* 站点层新增（上游没有这个模板）：/run/ 跑步数据页的页面模板。
-
-       —— 这一页从哪来 ——
-       2026-10-12 之前跑步数据是独立子站 run.hulatu.com（sites/run/）。
-       用户要求「把 run.hulatu.com 变成 hulatu.com/run，把网页变成我博客里的一个页面」，
-       于是模板从 sites/run/layouts/index.html 搬过来，只做三处改动：
-         ① 包一层 {{ define "main" }} —— 主站是 baseof + block 的结构，
-            子站那份是整页 HTML（自己带 <head>/<header>/<footer>），这里都不要。
-         ② 补一个页面级 <h1>（子站靠页头那句「胡拉图 · 跑步」当标题；
-            主站页头写的是站名「胡拉图说」，所以这一页要自己出标题）。
-         ③ 数据块的 h2 全部包进 <content> —— 主站 custom_head.html 第 02 段
-            的 `content h2 { margin: 2.2em 0 0.7em }` 挂在 content 上。
-
-       —— 数据从哪来 ——
-       `hugo.Data.runs` 读的是**仓库根目录** data/runs.json（每日由 CI 的
-       scripts/sync-garmin.py 刷新）。主站本来就有这份文件（子站当时是靠
-       [[module.mounts]] 挂载同一个目录），所以这里直接读，**不存在第二份副本**。
-
-       ⚠️ 样式在 partials/custom_head.html 第 25 段，**按 .RelPermalink 守卫**
-          （这些类名只出现在这一页）。改类名要两处一起改。
-       ⚠️ 这一页**没有**面包屑 / 系列带 / 上一篇下一篇 / 评论区 —— 它们都挂在
-          single.html 的 $longForm（posts + weekly）上，而这一页走的是本模板，
-          根本不经过 single.html。 */ -}}
+{{- /* /run/ 页面模板：数据读 data/runs.json（CI 每日刷新）。
+       这一页不走 single.html，所以没有面包屑 / 系列 / 上下篇 / 评论。
+       ⚠️ 样式在 custom.css 第 25 段，类名只出现在这一页。 */ -}}
 {{ define "main" }}
 {{- $data := hugo.Data.runs | default dict -}}
 {{- $stats := $data.stats | default dict -}}

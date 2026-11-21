@@ -1,55 +1,23 @@
-{{- /* 站点层新增（上游没有这个模板）：/archive/ 的页面模板。
+{{- /* /archive/ 的页面模板。
+       /archive/ 是普通内容页（不是 section），上游只有 list.html，所以单独给这一页
+       一个模板；列表本体与 /posts/ /weekly/ 共用 partials/post-list.html。
 
-       —— 为什么需要它 ——
-       导航里 `Posts` 指向 /archive/，而 /archive/ 是 content/archive.md 这一页
-       普通内容页（不是 section）。上游主题只给 section / taxonomy 准备了 list.html，
-       普通内容页只有 single.html，直接落下去会渲染成「一页空白正文」。
-       所以这里给这一页单独写一个列表模板。
-
-       —— 为什么形态是「照抄上游的 list.html」——
-       上游 list.html 就是 BearNeo 的文章列表页（yinji.org 的 /blog/ 就是它），
-       带搜索框 + 篇数 + 按年分组。这里把它整段搬过来，只换三处：
-         ① `.Pages` → `where site.RegularPages "Type" "in" (slice "posts" "weekly")`
-            （这一页不是 section，没有 .Pages；而且归档要把周刊一起收进来）
-         ② 文案英译中（Search... → 搜索标题…；There are N pieces. → 共 N 篇。）
-       其余（年份分组的 $currentYear 逻辑、搜索脚本、grouped/ungrouped 类名）逐字未改。
-       ⚠️ 上游 `</ul>` 后面那面**标签平铺一度被整块删掉**（当时记的理由是「用户不要标签云」），
-          2026-10-11 用户要求照 yinji 补回 → 现在重新铺上了，见该处那段注释。
-          **「不要标签云」说的是按篇数分档字号那种，平铺不在其中。**
-
-       ⚠️ 页面级 <h1>：**2026-10-25 已补上**（`<h1>{{ .Title }}</h1>`，标题取自
-          content/archive.md 的 `title: "归档"`）。此前这一页没有 h1 —— 那时的理由
-          是「全站的 <h1> 来自 header 里的站名」，但站名已在 2026-10-18 降级成
-          `<p class="title">`，那条理由**不再成立**，于是这一页（以及 /posts/ /weekly/）
-          变成整页无 h1、大纲从 `<h3>` 年份分组开始。
-          ⚠️ 别再把它删掉，也别改回「靠站名当 h1」—— 那会和文章页的标题 h1 撞成双 h1。
-
-       ⚠️ 别把这一页改成 section（content/archive/_index.md）—— section 的 .Pages
-          是它自己的子页，空数组，列表会渲染成「No posts yet」。 */ -}}
+       ⚠️ 别改成 section（content/archive/_index.md）：section 的 .Pages 是空数组。
+       ⚠️ 页面必须有 h1（站名不是 h1）。 */ -}}
 {{ define "main" }}
 {{- $posts := (where site.RegularPages "Type" "in" (slice "posts" "weekly")).ByDate.Reverse -}}
 <content>
   <h1>{{ .Title }}</h1>
-  {{ if .Site.Params.postSearch }}
-  {{- /* 搜索框与过滤脚本收在 partials/search-box.html（2026-10-26）——
-        这一页装全部 140 篇，所以在这一页搜正文等于**全站检索**。 */ -}}
-  {{ partial "search-box.html" (dict "countLabel" "篇。") }}
-  {{ end }}
   {{ if .Site.Params.showPostCount }}
-  <p id="post-count">共 {{ len $posts }} 篇。</p>
+  {{- /* 2026-11-21：随机入口放在计数行（升级包页脚按钮已移除）。
+         归档页搜索框 2026-11-21 晚已彻底删除（partial、调用点、postSearch 参数、
+         CSS 47 段一并移除），全站搜索只剩 ⌘K / 命令面板。
+         ⚠️ 随机链接仍放在 #post-count 外面，结构照 /weekly/ 的「共 N 期，请订阅 RSS」；
+            将来若再加过滤脚本，别把链接塞进 span（会被 textContent 重写抹掉）。 */ -}}
+  <p><span id="post-count">共 {{ len $posts }} 篇</span>，<a class="hl-random-inline" id="archive-random" href="{{ "archive/" | relURL }}" title="从全部文章里随机挑一篇">随机阅读一篇</a>。</p>
   {{ end }}
 
-  {{- /* ---------- 系列入口（2026-11-03 改成「只有入口」）------------------
-       用户要求：Posts 页顶部只显示一个「系列」入口，具体篇目点进去再看。
-       所以归档页**不再铺开三组篇目**，只留一行链接 → /series/（新的总览页）。
-
-       这一页现在只做两件事：数「几组、共几篇」；给链接。
-       分组、排序、篇目列表全在 layouts/_default/series.html。
-
-       ⚠️ 之前那版（一个系列一行、篇目横向铺开）已删除；别再搬回来 ——
-         用户 2026-11-03 明确改成「点进去才看」。
-       ⚠️ `with .Params.series` 同时过滤空值：archetype 会给新文章写
-          `series: ""`，空字符串不能算一组。 */ -}}
+  {{- /* 系列计数：入口只显示「几组 · 几篇」，具体篇目在 /series/。 */ -}}
   {{- $seriesNames := slice -}}
   {{- $seriesTotal := 0 -}}
   {{- range $posts -}}
@@ -59,125 +27,39 @@
     {{- end -}}
   {{- end -}}
   {{- $seriesNames = $seriesNames | uniq | sort -}}
-  {{ if $seriesNames }}
-  <p class="series-entry-line">
+
+  {{- /* 分类 / 系列入口。
+         2026-11-21 晚：在「系列」旁边补上「分类」入口 —— 分类词条页一直存在，
+         但此前没有任何站内入口。 */ -}}
+  {{- $categoryCount := len .Site.Taxonomies.categories -}}
+  {{- if or $categoryCount $seriesNames }}
+  <p class="archive-browse">
+    {{- if $categoryCount }}
+    <a class="series-entry" href="{{ "categories/" | relURL }}">
+      <span class="series-entry-label">分类</span>
+      <span class="series-entry-meta">{{ $categoryCount }} 类 · {{ len $posts }} 篇</span>
+    </a>
+    {{- end }}
+    {{- if $seriesNames }}
     <a class="series-entry" href="{{ "series/" | relURL }}">
       <span class="series-entry-label">系列</span>
       <span class="series-entry-meta">{{ len $seriesNames }} 组 · {{ $seriesTotal }} 篇</span>
     </a>
+    {{- end }}
   </p>
   {{ end }}
 
-  <ul class="blog-posts">
-    {{ $currentYear := 0 }}
-    {{ range $posts }}
-    {{ if not .Params.hidden }}
-    {{ if .Site.Params.groupByYear }}
-    {{ $year := .Date.Year }}
-    {{ if ne $year $currentYear }}
-    <h2>{{ $year }}</h2>
-    {{ $currentYear = $year }}
-    {{ end }}
-    {{ end }}
-    <li>
-      <span class="{{ if .Site.Params.groupByYear }} grouped {{ else }} ungrouped {{ end }}">
-        <i>
-          {{- /* 2026-10-14：去掉 `pubdate`（HTML 规范 2017 年已移除该属性）。
-               与 single.html / list.html 同一套写法。 */ -}}
-          <time datetime='{{ .Date.Format "2006-01-02" }}'>
-            {{ if .Site.Params.groupByYear }}
-            {{ .Date.Format (default "02 Jan." .Site.Params.dateFormat) }}
-            {{ else }}
-            {{ .Date.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}
-            {{ end }}
-          </time>
-        </i>
-      </span>
-      <a href="{{ .Permalink }}">{{ partial "orphan-safe.html" .Title }}</a>
-    </li>
-    {{ end }}
-    {{ else }}
-    <li>
-      这里还没有内容。
-    </li>
-    {{ end }}
-  </ul>
+  {{ partial "post-list.html" (dict "pages" $posts "empty" "这里还没有内容。") }}
 
-  {{- /* ---------- 全部标签（2026-10-11 补回，照 yinji.org/blog）-----------------
-
-       上游 list.html 本来就在 `</ul>` 后面铺一遍全部标签（那 10 行），
-       迁移时整块删掉了（见文件头注释 ③）。用户 2026-10-11 要求
-       「照 yinji 的归档页加一个 tags 目录」，于是按上游/yinji 的**原样**补回来：
-       `<small>` 包一层、里面一个 `<div>`、每个标签 `<a>#名字</a>&nbsp;` 平铺。
-       yinji.org/blog 的产物结构与这里逐字相同（我 curl 下来比过它的 279 个标签）。
-
-       ⚠️ **这与当年删掉的「标签墙」不是一回事，别当成推翻了旧决定：**
-          那不是**标签云** —— 没有字号分级、没有按权重排序，就是一行小字平铺。
-          这里也没做分级，`#` + 名字 + `&nbsp;` 而已。「不要标签云」那条说的是
-          「按篇数分档字号」那种，仍然有效。
-
-       ── 排序：数字 → 英文 → 中文（用户明确要求）────────────────────────
-       它**不是**这里写出来的，而是 `range` 一个 map 时 Go 模板自动按 key 升序：
-       `.Site.Taxonomies.tags` 是 `map[string]WeightedPages`，Go 对基础类型 key 排序，
-       字符串按**字节**比。字节序恰好就是
-           数字 0-9 (0x30–0x39) < 英文 (0x41–0x7A) < 汉字 (0x4E00+)
-       而汉字之间是**码位序**（丁 U+4E01 < 万 U+4E07 < 三 U+4E09 …）。
-       yinji.org/blog 的 279 个标签正是这个顺序（数字 4 → 英文 84 → 中文 191），
-       所以照抄上游就能得到要的排序，**不需要额外 sort**。
-       ⚠️ 本站现状（2026-10-11）：184 个标签 = 英文 9 + 中文 175，**没有数字标签**。
-       ⚠️ 字节序的副作用：英文内部**不严格按字母表**。大写 `I`(0x49) 排在小写
-          `a`(0x61) 前面 —— 哪天加了 `iOS` 这类标签，它会插在小写标签**之前**。
-          要严格「数字 → 英文（不分大小写字母序）→ 中文」，得自己 sort，
-          做法写在 MAINTENANCE.md 第 4 节。
-          验收脚本里数一遍三类各占多少，顺序变了才看得见（MAINTENANCE 第 7 节第 9 条）。
-
-       ── 显示文字用 `.Page.Title` ─────────────────────────────────────
-       Hugo 的 `titleCaseStyle` 默认是 AP 风格，所以 `ai` → `#AI`、`nba` → `#NBA`、
-       `hugo` → `#Hugo`，与 yinji 的 `#Ai` 是同一套规则（只是 Hugo 版本更新、缩写表更全）。
-       ⚠️ 唯一难看的是 `iphone` → `#IPhone`。想改有两个办法，**都别擅自做**：
-          ① `hugo.toml` 加 `titleCaseStyle = "none"` —— 全部按 front matter 原样
-             （变成 `#iphone`，同时也把 `#AI` 变回 `#ai`，得一并接受）；
-          ② 内容层把那个标签改成 `iPhone`（但 Title 仍会算成 `IPhone`，所以只有 ① 真管用）。
-
-       ⚠️ 链接落在 `/tags/<slug>/` **词条页**（kind `term`，一直存在）。
-          `/tags/` **索引页**是 `hugo.toml` 里 `disableKinds = ["taxonomy"]` 关掉的，
-          产物里没有那个目录 —— **别把这里改成链到 `/tags/`**，会 404。
-       ⚠️ 这一块在 `<ul class="blog-posts">` **外面**，所以归档页顶部那个搜索框
-          （它只遍历 `.blog-posts li`）不会把它过滤掉。想让它跟着筛，得改那段脚本。
-
-       ⚠️⚠️ **别写成 `{{ with .Site.Taxonomies.tags }}` 然后在里面 `range .Site.…`。**
-           `with` 会**把 `.` 重绑定**成那个 map，里面的 `.Site` 于是从「map 的键」里找，
-           找不到就是 nil → range 一个 nil 得到 **0 次迭代**，产物是
-           `<small class=tag-index><div></div></small>`（**空块、构建 0 警告**，
-           2026-10-11 就这样栽了一次）。所以这里先存进 `$tagList` 再
-           `range $name, $pages := $tagList`，全程用 `$` 变量，不依赖 `.` 的含义。
-       ⚠️ 顺带记一个反直觉现象，能帮下次定位：**`with` 判空用 `len>0`**，
-          所以「`<small>` 渲染出来了、里面却是空的」= map 非空 + `range` 取到了 nil，
-          而不是「没有标签」。真没有标签时整个 `<small>` 都不该出现。
-
-       ⚠️ `class="tag-index"` 加在 **`<small>` 上**（上游原位是裸 `<small>`），
-          与 `partials/custom_head.html` 第 09 段是一份契约，改一处要改两处。
-          那一条规则只做一件事：把 `<small>` 变块级并补回 `margin-bottom: 16px`
-          —— 因为 `<small>` 默认 inline，会让原本「`<ul>` 的 1em 下边距折叠穿透 main」
-          失效，**页脚会贴住标签**（实测 16px → 0）。原因写在第 09 段那段注释里。 */}}
-  {{- /* ---------- 标签（2026-11-03 二改：常显 ≥3 篇，其余折叠）----------
-       用户要求：像「系列」一样收口 —— 保留出现 ≥3 篇的标签常显，
-       其余（本站 187 个只出现 1–2 次的）放进「其余标签」折叠里。
-       **不合并、不删标签**：219 个标签一个不少，只是默认不铺满页面。
-
-       数据仍来自 site.Taxonomies.tags；显示名用 `.Page.Title`（Hugo 会把
-       `ai` 标题化成 `AI`、`iphone` → `IPhone`，与旧标签墙一致），排序用
-       `name`/`count`。常显组按篇数降序（先看到真主题），折叠组按名称排。
-
-       ⚠️ 原来这外面是 `<small>`（inline），靠第 09 段的 `.tag-index` 改块级
-          并补 16px 下边距；现在是 `<section>` + `<h2>`，语义更正确，
-          也不需要那个「inline 防外边距折叠」的技巧了。
-       ⚠️ 折叠默认关闭：这是「把墙收起来」的全部意义，别改成 open。 */ -}}
+  {{- /* 标签：出现 ≥3 篇的常显，其余折叠。不合并、不删标签。
+       ⚠️ 别写成 `with .Site.Taxonomies.tags` 再在里面用 `.Site` —— `with` 会重绑 `.`，
+          导致 0 次迭代且构建 0 警告。先存进变量再 range。
+       ⚠️ 链接落 /tags/<slug>/ 词条页；/tags/ 索引页已关。 */ -}}
   {{- $tagList := .Site.Taxonomies.tags }}
   {{- if $tagList }}
   {{- $tags := slice -}}
   {{- range $name, $pages := $tagList -}}
-    {{- $tags = $tags | append (dict "name" $pages.Page.Title "count" (len $pages) "url" $pages.Page.Permalink) -}}
+    {{- $tags = $tags | append (dict "name" $pages.Page.Title "count" (len $pages) "url" $pages.Page.RelPermalink) -}}
   {{- end -}}
   {{- $topTags := sort (where $tags "count" "ge" 3) "count" "desc" -}}
   {{- $moreTags := sort (where $tags "count" "lt" 3) "name" -}}

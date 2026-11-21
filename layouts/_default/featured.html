@@ -1,31 +1,49 @@
-{{- /* 精选文章页（站点层新增，2026-11-05）。
-       入口在首页（layouts/index.html 的 .featured-entry，只在有精选时显示）。
-       数据口径：posts + weekly 里 Params.featured 为 true 的，按日期倒序；
-       与归档页、系列页同一批页池口径，根级独立页不会混进来。
-       列表复用归档页的 .blog-posts（第 05 段的日期列样式），所以这里不另写 CSS。
-       计数行沿用归档页的写法（「共 N 篇。」）；一篇都没有时显示空状态，
-       不铺空列表。 */ -}}
+{{- /* 精选页「主编导读」（站点层新增 2026-11-05；2026-11-21 改成三组导读）
+
+       数据源：data/featured.yaml（唯一真值）。这里只负责渲染：
+         intro  → 一段导语
+         groups → 每组的 name / note / items
+         items  → file（相对 content/ 的路径）+ note（一句推荐语）
+
+       ⚠️ 为什么用 File.Path 而不是 slug / URL：
+          文章改 slug、改日期都会让 RelPermalink 变，但文件路径不动；
+          `where site.RegularPages "File.Path" $item.file` 不会因为改 URL 静默少一篇。
+       ⚠️ 页面池不限定 posts + weekly：data 里写的是确定路径，根级页不会混进来；
+          真要放一篇 /about/ 也能放（但不建议）。
+       ⚠️ data 缺失或条目找不到时只输出空提示，不再有第二套列表 ——
+          构建 0 警告不代表路径写对了，改完数一遍 `.featured-item` 是否等于条目数。 */ -}}
 {{ define "main" }}
-{{- $featured := (where site.RegularPages "Type" "in" (slice "posts" "weekly")) -}}
-{{- $featured = where $featured "Params.featured" true -}}
-{{- $featured = $featured.ByDate.Reverse -}}
+{{- $data := hugo.Data.featured -}}
 <content>
   <h1>{{ .Title }}</h1>
   {{ .Content }}
-  <p id="post-count">共 {{ len $featured }} 篇精选。</p>
-  {{- if $featured }}
-  <ul class="blog-posts">
-    {{- range $featured }}
-    <li>
-      <span>
-        <i>
-          <time datetime='{{ .Date.Format "2006-01-02" }}'>{{ .Date.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}</time>
-        </i>
-      </span>
-      <a href="{{ .RelPermalink }}">{{ partial "orphan-safe.html" .Title }}</a>
-    </li>
+
+  {{- with $data }}
+  {{- with .intro }}
+  <p class="featured-intro">{{ . }}</p>
+  {{- end }}
+  <div class="featured-groups">
+    {{- range .groups }}
+    <section class="featured-group">
+      <h2 class="featured-group-head">{{ .name }}</h2>
+      {{- with .note }}<p class="featured-group-note">{{ . }}</p>{{ end }}
+      <ul class="featured-list">
+        {{- range .items }}
+        {{- $item := . }}
+        {{- $pages := where site.RegularPages "File.Path" $item.file }}
+        {{- with $pages }}
+        {{- with index . 0 }}
+        <li class="featured-item">
+          <a class="featured-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
+          {{- with $item.note }}<p class="featured-note">{{ . }}</p>{{ end }}
+        </li>
+        {{- end }}
+        {{- end }}
+        {{- end }}
+      </ul>
+    </section>
     {{- end }}
-  </ul>
+  </div>
   {{- else }}
   <p>还没有精选文章。</p>
   {{- end }}

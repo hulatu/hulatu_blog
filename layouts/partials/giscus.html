@@ -9,7 +9,7 @@
 
        ⚠️ <details> **恒带 open**（始终展开），折叠由 .is-open 类 + max-height 控制 ——
        这是刻意的：收起态必须用 max-height:0 + visibility:hidden 藏住（而非 display:none），
-       iframe 才保有正常布局宽度，giscus 测算高度不会算出 0（理由详见 custom_head.html）。
+       iframe 才保有正常布局宽度，giscus 测算高度不会算出 0（理由见 custom.css 第 07 段）。
        JS 里 preventDefault 掉 summary 的原生 toggle，改由状态机接管展开/收起。
 
        提示放在 .giscus-body 外面：正文没就绪时 body 是收着的（max-height: 0），
@@ -20,34 +20,52 @@
        同时 summary 从「胶囊按钮」变成一行纯文字 —— 这些都只是 CSS 的事，
        下面这 5 个 id 一个都没动，assets/js/giscus.js 不用改。 */ -}}
 {{- if site.Params.giscus.repo -}}
-  <details class="giscus-box" id="giscus-box" open>
-    {{- /* 2026-11-15：`role="button"` + `aria-expanded`。
-           ⚠️ 这里有个**天生矛盾**：`<details>` 恒带 `open`（收起态靠 max-height:0，
-              理由见文件头），所以原生 summary 的无障碍状态**永远是「已展开」** ——
-              收起时读屏会念「展开评论，已展开」。
-           解法是让 summary 不再以 disclosure 的身份出现：`role="button"` 之后
-           展开状态改由它自己的 `aria-expanded` 决定，由 giscus.js 的 setState
-           每次切换时同步写入（`open` 只留给布局用，不再被读出来）。
-           初值 `false` 与 CSS 一致：`.giscus-body` 默认 `max-height:0; visibility:hidden`。 */ -}}
-    <summary class="giscus-toggle" id="giscus-toggle" role="button" aria-expanded="false" aria-label="展开评论">
-      <span class="giscus-toggle-text">{{ .title | default "评论" }}</span>
-    </summary>
-    <p class="giscus-loading" id="giscus-loading" hidden aria-live="polite">正在加载评论…</p>
-    <div class="giscus-body" id="giscus-body">
-      <div id="giscus-slot"
-        data-repo="{{ site.Params.giscus.repo }}"
-        data-repo-id="{{ site.Params.giscus.repoId }}"
-        data-category="{{ site.Params.giscus.category }}"
-        data-category-id="{{ site.Params.giscus.categoryId }}"
-        data-mapping="{{ site.Params.giscus.mapping | default "pathname" }}"
-        data-strict="{{ if site.Params.giscus.strict }}1{{ else }}0{{ end }}"
-        data-reactions-enabled="{{ if site.Params.giscus.reactions }}1{{ else }}0{{ end }}"
-        data-emit-metadata="{{ if site.Params.giscus.emitMetadata }}1{{ else }}0{{ end }}"
-        data-input-position="{{ if .inputPosition }}{{ .inputPosition }}{{ else }}{{ site.Params.giscus.inputPosition | default "bottom" }}{{ end }}"
-        data-theme="preferred_color_scheme"
-        data-lang="{{ site.Params.giscus.lang | default "zh-CN" }}"></div>
+  <div class="giscus-head">
+    <details class="giscus-box" id="giscus-box" open>
+      {{- /* 2026-11-15：`role="button"` + `aria-expanded`。
+             ⚠️ 这里有个**天生矛盾**：`<details>` 恒带 `open`（收起态靠 max-height:0，
+                理由见文件头），所以原生 summary 的无障碍状态**永远是「已展开」** ——
+                收起时读屏会念「展开评论，已展开」。
+             解法是让 summary 不再以 disclosure 的身份出现：`role="button"` 之后
+             展开状态改由它自己的 `aria-expanded` 决定，由 giscus.js 的 setState
+             每次切换时同步写入（`open` 只留给布局用，不再被读出来）。
+             初值 `false` 与 CSS 一致：`.giscus-body` 默认 `max-height:0; visibility:hidden`。 */ -}}
+      <summary class="giscus-toggle" id="giscus-toggle" role="button" aria-expanded="false" aria-label="展开评论">
+        <span class="giscus-toggle-text">{{ .title | default "评论" }}</span>
+      </summary>
+      <div class="giscus-body" id="giscus-body">
+        <div id="giscus-slot"
+          data-repo="{{ site.Params.giscus.repo }}"
+          data-repo-id="{{ site.Params.giscus.repoId }}"
+          data-category="{{ site.Params.giscus.category }}"
+          data-category-id="{{ site.Params.giscus.categoryId }}"
+          data-mapping="{{ site.Params.giscus.mapping | default "pathname" }}"
+          data-strict="{{ if site.Params.giscus.strict }}1{{ else }}0{{ end }}"
+          data-reactions-enabled="{{ if site.Params.giscus.reactions }}1{{ else }}0{{ end }}"
+          data-emit-metadata="{{ if site.Params.giscus.emitMetadata }}1{{ else }}0{{ end }}"
+          data-input-position="{{ if .inputPosition }}{{ .inputPosition }}{{ else }}{{ site.Params.giscus.inputPosition | default "bottom" }}{{ end }}"
+          data-theme="preferred_color_scheme"
+          data-lang="{{ site.Params.giscus.lang | default "zh-CN" }}"></div>
+      </div>
+    </details>
+    {{- /* 2026-11-21：弱网 / 国内网络下 giscus 依赖 GitHub API，常停在
+           「正在加载评论…」。这里给读者一个不用 GitHub 的出口。
+           2026-11-21 晚用户指定整行文案：「欢迎评论，如果不想公开评论或
+           加载有问题，欢迎给我写信！」——「写信」仍是 mailto 链接。
+           ⚠️ 提示在 `.giscus-box` **外面**，与 details 平级：details 展开/收起
+              只改变自己的高度，不会再把右侧这行字挤到下一行（2026-11-21 修）。
+              两者由 `.giscus-head` 的 flex 行放在同一条基线上。
+           ⚠️ fallback 与 loading 都放进 `.giscus-hint`，CSS 用 grid 叠在
+              同一格；loading 出现/消失不改变行高，页面不会因此跳动。
+           ⚠️ 只在配置了邮箱时输出 fallback；没有邮箱时 hint 里只剩隐藏的
+              loading 元素，JS 仍可正常工作。 */ -}}
+    <div class="giscus-hint">
+      {{- with site.Params.Author.email }}
+      <p class="giscus-fallback">欢迎评论，如果不想公开评论或加载有问题，欢迎给我<a href="mailto:{{ . }}?subject={{ "博客评论" | urlquery }}">写信</a>！</p>
+      {{- end }}
+      <p class="giscus-loading" id="giscus-loading" hidden aria-live="polite">正在加载评论…</p>
     </div>
-  </details>
+  </div>
   {{- /* 只有这一页真的带评论才加载这个脚本，不塞进全站 —— 不然 300 多个
          页面都要为它付一次请求。它自己会等滚到评论区前 300px 才注入 giscus。 */ -}}
   {{- $giscusJs := resources.Get "js/giscus.js" | minify | fingerprint -}}

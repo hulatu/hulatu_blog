@@ -1,7 +1,22 @@
 /**
- * Cloudflare Pages Functions 中间件 —— 订阅源的内容协商（2026-10-15 新增）
+ * Cloudflare Pages Functions 中间件 —— 订阅源的内容协商 + www 归一（2026-10-15 / 2026-11-21）
  *
- * ── 为什么需要它 ──────────────────────────────────────────────────────
+ * ── www → 根域（2026-11-21 新增）────────────────────────────────────
+ * `www.hulatu.com` 与根域指向同一个 Pages 项目，但搜索引擎会把两个主机名
+ * 当成两份内容，权重被摊薄。这里在边缘做 301，把 www 永久并到根域，
+ * 路径、查询串、锚点原样保留：
+ *     https://www.hulatu.com/posts/x/?a=1  →  https://hulatu.com/posts/x/?a=1
+ *
+ * ⚠️ 只处理 GET / HEAD。301 会把 POST 改成 GET，表单提交不能这么干 ——
+ *    本站没有表单接口，这个守卫是防以后加东西时踩坑。
+ * ⚠️ 只认精确的 `www.hulatu.com`，不认 `*.pages.dev` 预览域和本地
+ *    `localhost` —— 否则预览环境会被跳到生产站。
+ * ⚠️ 这条规则**依赖 www 也绑定在这个 Pages 项目上**。如果 www 只是 DNS
+ *    指向别处（或没开橙云），函数根本不会执行，301 也不会发生。
+ *    验证：`curl -sI https://www.hulatu.com/ | head` 应该看到
+ *    `HTTP/2 301` 与 `location: https://hulatu.com/`。
+ *
+ * ── 为什么需要内容协商 ──────────────────────────────────────────────
  * Chromium 正在移除 XSLT，浏览器打开 /index.xml 时会弹
  *   This site uses XSLT; that functionality is being removed from this browser…
  * 等它真移除，那一页就从「设计过的 HTML」退化成一片 raw XML。
@@ -28,6 +43,9 @@
  *    函数返回的响应不吃那些规则。
  */
 
+const APEX_HOST = 'hulatu.com';
+const WWW_HOST = 'www.hulatu.com';
+
 /** feed 地址 → 浏览器视图地址 */
 const FEED_VIEWS = new Map([
   ['/index.xml', '/feed/'],
@@ -38,6 +56,14 @@ export async function onRequest(context) {
   const { request, env, next } = context;
 
   const url = new URL(request.url);
+
+  // www → 根域：只对读请求做，301 永久跳转（权重并到根域）。
+  if (url.hostname === WWW_HOST && (request.method === 'GET' || request.method === 'HEAD')) {
+    const target = new URL(request.url);
+    target.hostname = APEX_HOST;
+    return Response.redirect(target.toString(), 301);
+  }
+
   const view = FEED_VIEWS.get(url.pathname);
   if (!view) return next();
 

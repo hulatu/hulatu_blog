@@ -1,10 +1,9 @@
 ---
 title: "如何更好的使用 AI 工具"
-featured: false
 categories: ["工具"]
 tags: ["AI", "效率"]
 date: 2026-01-26T09:59:07+08:00
-lastmod: 2026-11-05T21:30:42+08:00
+lastmod: 2026-11-21T23:14:46+08:00
 slug: how-to-better-use-ai-tools
 
 summary: AI 也可以为我们更好的服务。

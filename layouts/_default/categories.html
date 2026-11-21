@@ -1,0 +1,46 @@
+{{- /* 分类总览页（2026-11-21 新增）。
+
+       ── 为什么需要这一页 ──────────────────────────────────────────────
+       分类词条页 `/categories/<词>/` 从 2026-10-26 起就存在、可索引、进 sitemap，
+       但全站一直没有入口 —— 读者只能从文章页底部的分类链接点进去。
+       `/archive/` 顶部现在有「分类」入口，点进来就是这一页。
+
+       ── 数据 ──────────────────────────────────────────────────────────
+       · `.Site.Taxonomies.categories`：词条 → WeightedPages；
+       · 每个词的标题 / 描述来自 `content/categories/<词>/_index.md`；
+       · 按篇数从多到少排，标题相同的按 Hugo 原始顺序。
+       ⚠️ `hugo.toml` 里 `disableKinds = ["taxonomy"]` 关掉的是 `/categories/`
+          这个索引页，**不是词条页**；所以这一页用普通 content 页 + `url` 占位，
+          不要再把 taxonomy kind 打开（会把 /tags/ 索引页一起生成）。
+       ⚠️ 类名与 custom.css 第 58 段是一份契约。 */ -}}
+{{ define "main" }}
+{{- $terms := .Site.Taxonomies.categories -}}
+{{- $items := slice -}}
+{{- $total := 0 -}}
+{{- range $name, $pages := $terms -}}
+  {{- $page := $pages.Page -}}
+  {{- $items = $items | append (dict
+      "name" $page.Title
+      "url" $page.RelPermalink
+      "count" (len $pages)
+      "desc" $page.Description) -}}
+  {{- $total = add $total (len $pages) -}}
+{{- end -}}
+{{- $items = sort $items "count" "desc" -}}
+<content>
+  <h1>{{ .Title }}</h1>
+  {{ .Content }}
+  <p class="category-summary">{{ len $items }} 个分类 · 共 {{ $total }} 篇</p>
+  <div class="category-index">
+    {{- range $items }}
+    <a class="category-row" href="{{ .url }}">
+      <span class="category-head">
+        <span class="category-name">{{ .name }}</span>
+        <span class="category-count">{{ .count }} 篇</span>
+      </span>
+      {{- with .desc }}<span class="category-desc">{{ . }}</span>{{ end }}
+    </a>
+    {{- end }}
+  </div>
+</content>
+{{ end }}

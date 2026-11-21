@@ -1,69 +1,60 @@
-{{- /* 站点层覆盖：上游的首页只有 {{ .Content }}，也就是「站名 + 一句话」，
-       等于一张空页 —— 打开 hulatu.com 看不到任何文章入口。
-
-       这里**逐条照 yinji.org**（同样基于 Hugo Bear Neo）的首页：
-       正文（h1「嗨！」+ 引用 + 简介 + 链接行）→ 虚线 <hr> → h2「最近更新：」
-       → .recent-posts 列表。四件套的文案全在 content/_index.md 里，改文案不碰模板。
-
-       ⚠️ 四处刻意与上游/yinji 对齐、别改回去：
-        · 简介正文**不包 <content>**（见下面那一行的注释）—— 上游包、yinji 不包，
-          本站照 yinji。
-        · 列表标题是**中文**「最近更新：」—— 2026-11-05 用户要求从英文「Recent Posts:」改过来，与中文导航统一。
-        · 分隔线用裸 <hr>：主题 CSS 里 `hr { border-top: 1px dashed }` 本来就是虚线，
-          不用再加类名或内联样式。
-        · 列表**后面什么都没有** —— 没有「查看全部文章 →」那类尾巴，
-          yinji 没有，全站文章入口交给导航的 Posts。
-
-       列表只取 posts / weekly 两个栏目（about、privacy 等根目录独立页 Section 为空，被排除）。
-       条数由 params.homeRecentCount 控制，设 0 就不显示列表（退回上游原样）。
-       同时给首页重定义 title 块 —— 上游是 `{{ .Title }} | {{ .Site.Title }}`，
-       首页 .Title 等于站名，会显示成「胡拉图说 | 胡拉图说」。 */ -}}
+{{- /* 首页：正文（不包 <content>）→ 最近更新 → 最新一期周刊。
+       文案在 content/_index.md；条数由 params.homeRecentCount 控制。
+       ⚠️ 不要包 <content>：否则首页简介会吃正文行高 1.5，且「嗨！」贴住导航。
+       ⚠️ 标题用中文「最近更新：」；列表后不加「查看全部」尾巴。 */ -}}
 {{ define "title" }}{{ .Site.Title }}{{ end }}
 {{ define "main" }}
-{{- /* ⚠️ 这里**刻意不包 <content>** —— 与上游不同、与 yinji.org 一致。
-       上游 index.html 是 `<content>{{ .Content }}</content>`，本站 2026-10-11
-       之前也是。包着的话首页简介会吃 `content { line-height: 1.6 }`
-       和 `content > :first-child { margin-top: 0 }` 两条，结果是：
-         · 行高 1.6 —— 而 yinji 首页走 body 的 1.5；
-         · 「Hi!」紧贴导航（上间距被归零）—— yinji 那里有 16px 的空。
-       用户要求「字体、配色参考 yinji 的设计」，所以照 yinji 把这一层去掉：
-       首页是「站点简介」，按 body 的行高读，和文章正文（content 的 1.6）分开。
-       ⚠️ 下面 <hr> / <h3> / <ul.recent-posts> 本来就在 <content> 外面，不受影响。
-       ⚠️ 要退回上游行为，把这一行换回 `<content>{{ .Content }}</content>` 即可。 */ -}}
+{{- /* ⚠️ 首页正文不包 <content>：走 body 的 1.5 行高，且保留「嗨！」的上间距。 */ -}}
 {{ .Content }}
 {{- $n := .Site.Params.homeRecentCount | default 5 }}
 {{- if gt $n 0 }}
-{{- $posts := where .Site.RegularPages "Section" "in" (slice "posts" "weekly") }}
+{{- $posts := where .Site.RegularPages "Section" "posts" }}
 {{- $posts = $posts.ByDate.Reverse | first $n }}
 <hr>
-{{- /* ⚠️ 2026-10-25：h3 → h2，并且**必须带 `.recent-posts-head` 这个类**。
-       原因：首页正文那个「Hi!」在这一天从 h2 升成了 h1（见 content/_index.md），
-       于是这里如果还是 h3，大纲就成了 h1 → h3（跳级），axe / Lighthouse 的
-       `heading-order` 会判失败 —— 而改动之前 h2 → h3 是连续的。
-       降到 h2 之后是 h1 → h2，正常。
-       ⚠️ 类名不是装饰：h2 的 UA 默认字号是 1.5em、h3 是 1.17em，而这条标题在
-          `<content>` **外面**（首页不包 content），拿不到 `content h2` 那条
-          边距规则，能变的只有字号 —— 所以由 `custom_head.html` 第 33 段
-          用 `.recent-posts-head { font-size: 1.17em }` 把字号按 h3 的原值钉回去。
-          删掉类名 = 这行标题立刻大一号（1.17em → 1.5em）。 */ -}}
-<h2 class="recent-posts-head">最近更新：</h2>
+{{- /* ⚠️ 标题必须是 h2（与正文 h1 连续），且必须带 .recent-posts-head；
+       字号由 custom.css 第 33 段钉回 1.17em。删类名会大一号。 */ -}}
+{{- /* 精选入口：与「最近更新」同一行右侧。数据源只有 data/featured.yaml，
+       首页不再依赖 featured 参数。 */ -}}
+<div class="recent-posts-head-row">
+  <h2 class="recent-posts-head">最近更新：</h2>
+  <p class="featured-entry"><a href="{{ "featured/" | relURL }}">精选文章</a></p>
+</div>
 <ul class="recent-posts">
   {{- range $posts }}
   <li>
     <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format (.Site.Params.dateFormat | default "2006-01-02") }}</time>
-    <a href="{{ .Permalink }}">{{ partial "orphan-safe.html" .Title }}</a>
+    <a href="{{ .RelPermalink }}">{{ partial "orphan-safe.html" .Title }}</a>
   </li>
   {{- end }}
 </ul>
 {{- end }}
 
-{{- /* 精选入口（2026-11-05 新增）。
-       列表后面本来刻意没有尾巴（见上面那段注释），但用户要求加一个精选入口 ——
-       只在至少一篇 featured: true 时才显示，没有时整行消失，
-       所以空站状态下首页还是原来那个干净的样子。
-       口径与精选页一致（posts + weekly，Params.featured）。 */ -}}
-{{- $featured := where (where site.RegularPages "Type" "in" (slice "posts" "weekly")) "Params.featured" true -}}
-{{- if $featured }}
-<p class="featured-entry"><a href="{{ "featured/" | relURL }}">精选文章 →</a></p>
+{{- /* 最新一期周刊：期号 + summary + 日期 + RSS。
+       ⚠️ 只取 weekly section 的最新一篇，别用全站日期排（周刊 URL 也在 /posts/ 下）。
+       ⚠️ 期号从标题「第N期」解析，解析不到就退回完整标题。 */ -}}
+{{- $weeklies := where site.RegularPages "Section" "weekly" }}
+{{- with $weeklies.ByDate.Reverse }}
+{{- with index . 0 }}
+{{- $issueLabel := .Title }}
+{{- range findRESubmatch `第\s*([0-9]+)\s*期` .Title 1 }}
+  {{- $issueLabel = printf "第 %s 期" (index . 1) }}
 {{- end }}
+<section class="latest-weekly" aria-labelledby="latest-weekly-head">
+  <div class="latest-weekly-head">
+    <h2 class="latest-weekly-title-wrap" id="latest-weekly-head">
+      <a class="latest-weekly-title" href="{{ .RelPermalink }}">{{ $issueLabel }}</a>
+      <span class="latest-weekly-kicker">最新一期周刊</span>
+    </h2>
+    <p class="latest-weekly-actions"><a href="{{ "weekly/index.xml" | relURL }}">订阅周刊 RSS</a> · <a href="{{ "weekly/" | relURL }}">全部周刊</a></p>
+  </div>
+  {{- with .Summary }}
+  <p class="latest-weekly-desc">{{ . }}</p>
+  {{- end }}
+  <p class="latest-weekly-foot">
+    <time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format (.Site.Params.dateFormat | default "2006-01-02") }}</time> · 每周日更新
+  </p>
+</section>
+{{- end }}
+{{- end }}
+
 {{ end }}

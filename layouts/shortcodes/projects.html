@@ -1,0 +1,26 @@
+{{- $title := .Get "title" | default "正在折腾与代表作" -}}
+{{- $moreText := .Get "moreText" | default "全部工具 →" -}}
+{{- $moreUrl := .Get "moreUrl" | default "/tools/" -}}
+<section class="hl-section" aria-label="{{ $title }}">
+  <div class="hl-section-head">
+    <h2 class="hl-section-title">{{ $title }}</h2>
+    {{- if $moreUrl -}}
+    <a class="hl-more-link" href="{{ $moreUrl }}">{{ $moreText }}</a>
+    {{- end -}}
+  </div>
+  <ul class="hl-project-list">
+    {{- range hugo.Data.projects.items -}}
+    <li class="hl-project-item">
+      <a class="hl-project-link" href="{{ .url }}">
+        <span class="hl-project-main">
+          <span class="hl-project-name">{{ .name }} ↗</span>
+          <span class="hl-project-desc">{{ .desc }}</span>
+        </span>
+        {{- if .tag -}}
+        <span class="hl-tag-pill">{{ .tag }}</span>
+        {{- end -}}
+      </a>
+    </li>
+    {{- end -}}
+  </ul>
+</section>

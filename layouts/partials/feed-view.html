@@ -16,7 +16,7 @@
        ⚠️ 这两页都设了 noindex（front matter），别去掉：它们是 /archive/ 的
           重复内容，旧 XSLT 页面本来就进不了索引（它不是 HTML 页）。
 
-       ⚠️ 样式在 partials/custom_head.html 第 28 段，且**按 .Type/.Section 守卫**，
+       ⚠️ 样式在 custom.css 第 28 段，且**按 .Type/.Section 守卫**，
           只有这两页输出那几条 CSS（其余页 0 字节）。改类名要两处一起改。 */ -}}
 {{- $scope := .scope | default "site" -}}
 {{- $isWeekly := eq $scope "weekly" -}}

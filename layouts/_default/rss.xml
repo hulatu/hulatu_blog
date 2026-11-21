@@ -1,50 +1,9 @@
-{{- /* 站点层覆盖：themes/hugo-bearneo/layouts/_default/rss.xml
-       （上游那份与 Hugo 内置模板逐字相同，只把 language 写成 site.LanguageCode）
-
-       ══ 这份覆盖做三件事 ══════════════════════════════════════════════════
-
-       一、**不再**用 XSLT 给浏览器渲染这一页（2026-10-15）。
-           feed 是一份纯 RSS 2.0，顶部**没有** <?xml-stylesheet?>。
-           原因：Chromium 正在移除 XSLT，浏览器打开 /index.xml 会弹
-           「This site uses XSLT; that functionality is being removed…」横幅，
-           等它真移除，那一页就从「设计过的 HTML」退化成一片 raw XML。
-           旧的 static/rss.xsl 已随之删除（连带 static/_headers 里那条规则）。
-           现在「浏览器直接打开 feed 看到的页面」由两条腿承担：
-             · 静态侧：/feed/ 与 /feed/weekly/ 两个 HTML 页
-               （content/feed/ + layouts/feed/ + partials/feed-view.html）
-             · 边缘侧：functions/_middleware.js 做内容协商 ——
-               只有「浏览器地址栏导航」（Sec-Fetch-Dest: document）才被改写到
-               上面那两个页面，订阅器 / 聚合站一律原样拿到这份 XML。
-           ⚠️ 订阅器根本不看 <?xml-stylesheet?>，所以这次改动对订阅零影响；
-              也**别把那一行加回来** —— 加回来横幅就跟着回来。
-           ⚠️ /feed/ 那两页的页面集合口径必须和下面的 $pages 逐字一致：
-              两边算得不一样就是「网页上比订阅里少一篇」，而且构建 0 警告。
-
-       二、让 feed 只收「文章页」。
-           用户要求：新增的 /about/ /now/ /roll/ /privacy/ /donate/ /archive/
-           这类非文章页面**禁止被 RSS 收录**。
-           它们都是 content/ 根目录下的普通页，Type 是 "page"；
-           文章住在 content/posts/（Type "posts"）与 content/weekly/（Type "weekly"）。
-           所以首页那一路 feed 用 where … "Type" "in" (slice "posts" "weekly") 一挡就行。
-           ⚠️ 周刊 feed（/weekly/index.xml）走的是下面 .RegularPages 那一支，
-              本来就是该 section 自己的页面，全是文章，不用另外过滤。
-           ⚠️ 别改成按 .Params.noindex 过滤：noindex 表达的是「别让搜索引擎收录」，
-              与「要不要进订阅」是两件事（/donate/ 设了 noindex，但真正把它挡在外面的
-              是这里的 Type 白名单）。
-
-       三、条目字段补回旧站那几项：atom:updated（更新于）、category（分类与标签）、
-           摘要式 description、全文式 content:encoded。
-           ⚠️ 旧站这里还调过一个 partials/formula.html 把 $$…$$ 换成 <p class="formula">，
-              那个 partial 随自建主题一起删了，本仓已无。**别按旧版照抄那一行**，
-              会直接构建失败（partial not found）。
-
-       ⚠️ 本仓 [minify] disableXML = true，产物不会被压成一行，改完可以肉眼对。
-       ⚠️ 只有 home（[outputs] home = ["HTML","RSS"]）与 content/weekly/_index.md
-          （front matter 里 outputs: ["HTML","RSS"]）出 feed；section / taxonomy / term
-          都被 [outputs] 压回 HTML-only。所以全站只有这两个 .xml：
-          /index.xml（全站文章）与 /weekly/index.xml（只有周刊）。
-*/ -}}
-
+{{- /* RSS：纯 XML，不挂 xml-stylesheet（Chromium 已移除 XSLT）；浏览器视图交给
+       /feed/ 两页 + functions/_middleware.js 内容协商。
+       只收 posts / weekly；/weekly/index.xml 走 .RegularPages。
+       ⚠️ /feed/ 的页面集合口径必须与下面 $pages 一致，否则「网页比订阅少一篇」。
+       ⚠️ 别按 noindex 过滤：noindex 是搜索引擎语义，不是订阅语义。
+       ⚠️ 全站只有 /index.xml 与 /weekly/index.xml 两个 feed。 */ -}}
 {{- /* 作者信息：兼容旧写法 site.Author（Hugo 已弃用），沿用上游那份的处理。 */ -}}
 {{- $authorEmail := "" }}
 {{- with site.Params.author }}
@@ -82,10 +41,7 @@
 {{- if ge $limit 1 }}{{ $pages = $pages | first $limit }}{{ end }}
 
 {{- printf "<?xml version=\"1.0\" encoding=\"utf-8\" standalone=\"yes\"?>\n" | safeHTML }}
-{{- /* 这里原本还输出一行 <?xml-stylesheet type="text/xsl" href="…/rss.xsl"?>，
-       2026-10-15 删除（理由见文件头「一、」）。**别加回来**：
-       Chromium 移除 XSLT 后那行只剩副作用（浏览器弹横幅），
-       而订阅器本来就不读它。浏览器视图改由 /feed/ 那两页承担。 */ -}}
+{{- /* ⚠️ 别再输出 <?xml-stylesheet?>：订阅器不读，浏览器只会弹 XSLT 移除横幅。 */ -}}
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom" xmlns:content="http://purl.org/rss/1.0/modules/content/">
   <channel>
     <title>{{ if .IsHome }}{{ site.Title }}{{ else }}{{ .Title }} - {{ site.Title }}{{ end }}</title>
@@ -100,31 +56,15 @@
     <managingEditor>{{ . }}{{ with $authorName }} ({{ . }}){{ end }}</managingEditor>
     <webMaster>{{ . }}{{ with $authorName }} ({{ . }}){{ end }}</webMaster>
     {{- end }}
-    {{- /* 用「最新一篇文章的时间」而不是构建时间：否则每次推送（含每天的跑步数据提交、
-           依赖同步这类不带新内容的构建）都会让订阅端以为 feed 更新了。 */ -}}
+    {{- /* 用最新文章时间而不是构建时间，避免数据同步提交让订阅端误判更新。 */ -}}
     {{- if $pages }}
     <lastBuildDate>{{ (index $pages.ByLastmod.Reverse 0).Lastmod.Format "Mon, 02 Jan 2006 15:04:05 -0700" }}</lastBuildDate>
     {{- end }}
     {{- with .OutputFormats.Get "RSS" }}
     {{ printf "<atom:link href=%q rel=\"self\" type=%q />" .Permalink .MediaType | safeHTML }}
     {{- end }}
-    {{- /* 站点图标（2026-10-25 新增）
-
-           RSS 2.0 的 <image> 是**订阅端唯一有明文依据**的图标来源。没有它，
-           阅读器只能去猜：按 /favicon.ico 约定取、读 head 的 <link rel=icon>、
-           或者退回自己的字母头像 / 地球图标 —— 猜不到就出现
-           「订阅里的头像和网站不一样」。
-
-           ⚠️ url 必须是**光栅图**（PNG）。SVG 在多数阅读器的图标管线里
-              不被接受，指向 favicon.svg 等于没写这一段。
-           ⚠️ width / height 必须与文件真实尺寸一致（当前 images/feed-icon.png
-              是 144×144）。RSS 2.0 规范对 width 的上限就是 144，改大不会报错，
-              但严格实现会忽略整块 —— 要换大图就同时改这两行和那张 PNG。
-           ⚠️ 这段走 `site.Params.feedIcon`，图换了只改 hugo.toml 一处；
-              参数缺失时整块不输出（不会吐出半截 XML）。
-           ⚠️ 位置必须在 <item> 之前：规范要求 image 属于 channel 级字段，
-              塞进 item 里读者一律忽略。
-      */ -}}
+    {{- /* 订阅端图标：必须是 PNG，宽高与文件一致（RSS 上限 144），
+           且必须在 <item> 之前。参数缺失时整块不输出。 */ -}}
     {{- with site.Params.feedIcon }}
     <image>
       <url>{{ . | absURL }}</url>
@@ -143,10 +83,7 @@
       {{- with $authorEmail }}
       <author>{{ . }}{{ with $authorName }} ({{ . }}){{ end }}</author>
       {{- end }}
-      {{- /* 文章页早就有「更新于」（靠 scripts/sync-lastmod.py 刷），RSS 却只发 pubDate
-             —— 订阅端感知不到一篇被修订过。atom:updated 用 RFC3339（-07:00 这个写法
-             输出 +08:00），是 Atom 里表达「更新于」的标准字段；channel 上面已经声明了
-             xmlns:atom。Lastmod 等于 Date 的文章也照发（值相同，读者侧无副作用）。 */ -}}
+      {{- /* atom:updated 用 RFC3339 表达「更新于」；Lastmod == Date 也照发。 */ -}}
       <atom:updated>{{ .Lastmod.Format "2006-01-02T15:04:05-07:00" }}</atom:updated>
       <guid>{{ .Permalink }}</guid>
       {{- range .Params.categories }}
@@ -155,12 +92,9 @@
       {{- range .Params.tags }}
       <category>{{ . }}</category>
       {{- end }}
-      {{- /* 摘要是「纯文本摘要」，给 feed 阅读器的列表用；正文另走 content:encoded。
-             plainify 掉标签后还要 htmlUnescape，否则 `&amp;` 会被 Go 再转义一层。 */ -}}
+      {{- /* description 是纯文本摘要；plainify 后必须 htmlUnescape。 */ -}}
       <description>{{ .Summary | plainify | htmlUnescape }}</description>
-      {{- /* 全文：RSS 没有本站的样式，订阅端拿到的是一段自成一体的 HTML。
-             transform.XMLEscape 把 < > & 转成实体（= 把 HTML 当文本带过去），
-             外面必须包 safeHTML 阻止 Go 再转义一遍 —— 这是 Hugo 内置模板的口径。 */ -}}
+      {{- /* 全文：XMLEscape 后必须 safeHTML，否则被再转义一层。 */ -}}
       <content:encoded>{{ .Content | transform.XMLEscape | safeHTML }}</content:encoded>
     </item>
     {{- end }}

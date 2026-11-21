@@ -69,18 +69,49 @@
     return !!slot.querySelector("iframe.giscus-frame");
   }
 
+  /* 展开 / 收起会让 .giscus-body 的高度从 0 变到 iframe 高度。
+     如果浏览器把评论区下方（页脚等）选成 scroll anchoring 的锚点，
+     它会为了「保持下方内容不动」反向滚一段 —— 读者看到的就是
+     点一下「评论」，整个页面跳一下。
+
+     这里在切换 class 前后各量一次按钮的视口位置，差值用 scrollBy 补回去。
+     在 rAF 里执行，赶在绘制前完成，所以不会先跳一下再弹回来。
+     ⚠️ 只在「展开态真的变了」时调用；loading 与 fallback 现在共用一个
+        格子，单纯的 loading 切换不会改变高度，不需要补偿。 */
+  function keepTogglePosition(beforeTop) {
+    if (typeof requestAnimationFrame !== "function") return;
+    requestAnimationFrame(function () {
+      var delta = toggle.getBoundingClientRect().top - beforeTop;
+      if (Math.abs(delta) <= 1) return;
+      /* 直接改 scrollTop，不用 scrollBy：全站开了
+         `html { scroll-behavior: smooth }`（custom_head 第 17 段），
+         scrollBy 会变成一段可见的平滑滚动 —— 那本身就是「跳动」。
+         scrollTop 是同步赋值，不受 scroll-behavior 影响。 */
+      var scroller = document.scrollingElement || document.documentElement;
+      scroller.scrollTop += delta;
+    });
+  }
+
   /* 唯一决定界面的地方：状态一变，展开样式、箭头、提示文字全部跟着走 */
   function setState(next) {
     state = next;
     body.dataset.state = next;
     clearTimers();
+    /* loading 与 fallback 共用第 1 行第 2 列：这个类只切可见性，
+       不改变行高，所以不会因为「正在加载」出现而把页面撑高。 */
+    box.classList.toggle("is-loading", next === "opening" || next === "slow");
 
-    if (next === "open") {
+    var wasOpen = box.classList.contains("is-open");
+    var willOpen = next === "open";
+    var beforeTop = toggle.getBoundingClientRect().top;
+
+    if (willOpen) {
       stopWatchingFrames();
       box.classList.add("is-open");
       toggle.setAttribute("aria-label", "收起评论");
       toggle.setAttribute("aria-expanded", "true");
       if (loading) loading.hidden = true;
+      if (wasOpen !== willOpen) keepTogglePosition(beforeTop);
       return;
     }
 
@@ -104,6 +135,8 @@
         loading.hidden = true;
       }
     }
+
+    if (wasOpen !== willOpen) keepTogglePosition(beforeTop);
   }
 
   function watchForFrame() {
@@ -206,6 +239,13 @@
     }, { rootMargin: "300px 0px" });
     nearObserver.observe(slot);
   }
+
+  /* 鼠标点按不要抢焦点：部分浏览器在 mousedown 后会把 summary 滚进视口
+     （尤其是按钮正好贴着视口下缘时），看起来就是点一下页面跳一下。
+     preventDefault 只拦焦点与文本选择，不拦 click；键盘 Enter / 空格不受影响。 */
+  toggle.addEventListener("mousedown", function (e) {
+    e.preventDefault();
+  });
 
   toggle.addEventListener("click", function (e) {
     e.preventDefault();

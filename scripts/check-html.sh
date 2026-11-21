@@ -21,11 +21,15 @@
 #  TOC 的写法，替换会**静默失效**，页面上就会出现两个同 id 的 nav。
 #  这个脚本就是那条防线的执行者。
 #
-#  ── 查哪四样 ───────────────────────────────────────────────────────────
+#  ── 查哪八样 ───────────────────────────────────────────────────────────
 #    ① 同页重复 id            —— 无效 HTML，锚点跳转与 aria-* 引用都会失准
 #    ② 同名 landmark          —— 两个 aria-label="目录" 的 nav，读屏分不清
 #    ③ <img> 缺 alt 属性      —— 不是「alt 为空」（装饰图允许空），是压根没写
 #    ④ 标题跳级               —— h2 直接跳到 h4，大纲断档
+#    ⑤ 重复锚点 aria-label    —— 所有 `#` 都叫「链接到本节」，读屏分不清
+#    ⑥ 产物污染               —— livereload / localhost:1313（hugo server 的残留）
+#    ⑦ 打印字号               —— 屏幕 px 字号是否压过了 print 的 pt 覆盖
+#    ⑧ 对比度                 —— :root 里正文/次级/三级/链接色对底色的最终组合
 #
 #  ⚠️ 本脚本不联网、不依赖构建之外的任何工具，只要求 python3。
 #  ⚠️ 别把它并进 check-links.sh：那一个依赖 lychee（可能没装），
@@ -79,9 +83,17 @@ IMG = re.compile(r'<img\b[^>]*>')
 #    只写 `\salt=` 会把这类全部误报成「缺 alt」（2026-11-15 首跑踩过一次）。
 ALT = re.compile(r"\salt(?=[\s=>/])")
 HEADING = re.compile(r'<h([1-6])\b')
+ANCHOR_TAG = re.compile(r'<a\b[^>]*>')
 
 problems = collections.OrderedDict(
-    [("重复 id", []), ("同名 landmark", []), ("img 缺 alt", []), ("标题跳级", [])]
+    [
+        ("重复 id", []),
+        ("同名 landmark", []),
+        ("img 缺 alt", []),
+        ("标题跳级", []),
+        ("重复锚点 aria-label", []),
+        ("产物污染(livereload/localhost)", []),
+    ]
 )
 
 
@@ -117,6 +129,140 @@ for path in files:
         if previous and level > previous + 1:
             problems["标题跳级"].append(f"{rel}: h{previous} → h{level}")
         previous = level
+
+    labels = []
+    for m in ANCHOR_TAG.finditer(text):
+        tag = m.group(0)
+        if "heading-anchor" not in tag:
+            continue
+        lm = re.search(r'\baria-label=' + VAL, tag)
+        if lm:
+            labels.append(unquote(lm.group(1)))
+    # 只查「所有锚点共用一个泛化名称」这种回归；同页两节标题恰好同名
+    # （如周刊里的「主要内容：」）时 label 相同是内容本身决定的，不算错。
+    if len(labels) > 1 and len(set(labels)) == 1:
+        problems["重复锚点 aria-label"].append(
+            f"{rel}: {len(labels)} 个锚点的 aria-label 全是「{labels[0]}」"
+        )
+
+    if "livereload" in text or "http://localhost:1313" in text:
+        problems["产物污染(livereload/localhost)"].append(f"{rel}: 含开发服务器注入内容")
+
+# robots.txt / sitemap.xml 也要查：它们不在 files 里（不是 .html）
+for name in ("robots.txt", "sitemap.xml"):
+    p = root / name
+    if p.exists():
+        t = p.read_text(encoding="utf-8", errors="replace")
+        if "localhost:1313" in t:
+            problems["产物污染(livereload/localhost)"].append(f"{name}: 指向 localhost:1313")
+
+# ── CSS 检查：当前 HTML 真正引用的那一份（别被 public/ 里的旧 hash 误导）──
+css_hrefs = set()
+for path in files:
+    text = path.read_text(encoding="utf-8", errors="replace")
+    for m in re.finditer(r'<link\b[^>]*rel=stylesheet[^>]*href=' + VAL, text):
+        href = unquote(m.group(1))
+        css_hrefs.add(href.split("?")[0].split("#")[0])
+css_text = ""
+for href in css_hrefs:
+    p = root / href.lstrip("/")
+    if p.exists() and p.suffix == ".css":
+        css_text += p.read_text(encoding="utf-8", errors="replace") + "\n"
+
+
+def media_blocks(css, needle):
+    out = []
+    for m in re.finditer(r'@media\s*([^{]+)\{', css):
+        if needle not in m.group(1):
+            continue
+        i = m.end()
+        depth = 1
+        j = i
+        while j < len(css) and depth:
+            if css[j] == "{":
+                depth += 1
+            elif css[j] == "}":
+                depth -= 1
+            j += 1
+        out.append(css[i:j - 1])
+    return out
+
+
+print_blocks = media_blocks(css_text, "print")
+print_css = "\n".join(print_blocks)
+css_no_print = css_text
+for block in print_blocks:
+    css_no_print = css_no_print.replace(block, "")
+
+# 屏幕上的正文字号如果是 px，打印时必须再写一条 pt 覆盖，否则 20px 会压过 body 11pt。
+extra = collections.OrderedDict([
+    ("打印字号", []),
+    ("对比度", []),
+])
+for m in re.finditer(r'content\.post-body\s*\{([^}]*)\}', css_no_print):
+    fm = re.search(r'font-size\s*:\s*([^;}]+)', m.group(1))
+    if not fm:
+        continue
+    screen_size = fm.group(1).strip()
+    pm = re.search(r'content\.post-body\s*\{([^}]*)\}', print_css)
+    print_size = None
+    if pm:
+        pf = re.search(r'font-size\s*:\s*([^;}]+)', pm.group(1))
+        print_size = pf.group(1).strip() if pf else None
+    if not screen_size.endswith("pt") and (not print_size or not print_size.endswith("pt")):
+        extra["打印字号"].append(
+            f"content.post-body 屏幕字号 {screen_size}，但打印块没有 pt 覆盖"
+        )
+
+# 对比度：按 CSS 顺序合并 :root 变量，分别得到 light / dark 的最终值。
+ROOT = re.compile(
+    r'(@media\s*\(prefers-color-scheme\s*:\s*(light|dark)\)\s*\{\s*)?:root\s*\{([^}]*)\}'
+)
+palettes = {"light": {}, "dark": {}}
+for m in ROOT.finditer(css_text):
+    mode = m.group(2)
+    decls = dict(re.findall(r'(--[\w-]+)\s*:\s*([^;]+)', m.group(3)))
+    for key in (["light", "dark"] if not mode else [mode]):
+        palettes[key].update({k: v.strip() for k, v in decls.items()})
+
+
+def luminance(hex_color):
+    h = hex_color.lstrip("#")
+    if len(h) == 3:
+        h = "".join(c * 2 for c in h)
+    if len(h) != 6:
+        return None
+    r, g, b = (int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+
+    def f(c):
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+
+    return 0.2126 * f(r) + 0.7152 * f(g) + 0.0722 * f(b)
+
+
+def contrast(fg, bg):
+    a, b = luminance(fg), luminance(bg)
+    if a is None or b is None:
+        return None
+    hi, lo = sorted((a, b), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
+
+
+for mode, pal in palettes.items():
+    bg = pal.get("--bg-color-primary")
+    for var in ("--text-color-primary", "--text-color-secondary",
+                "--text-color-tertiary", "--link-color"):
+        fg = pal.get(var)
+        if not bg or not fg or not fg.startswith("#"):
+            continue
+        ratio = contrast(fg, bg)
+        if ratio is not None and ratio < 4.5:
+            extra["对比度"].append(
+                f"{mode}: {var} {fg} on {bg} = {ratio:.2f}:1 (< 4.5)"
+            )
+
+for name, items in extra.items():
+    problems[name] = items
 
 total = 0
 for name, items in problems.items():

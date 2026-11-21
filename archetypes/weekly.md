@@ -7,7 +7,6 @@ summary: ""
 description: ""
 categories: ["周刊"]
 tags: [""]
-featured: false
 comments: true
 draft: true
 ---

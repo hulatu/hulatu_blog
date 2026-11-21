@@ -31,12 +31,12 @@
        ── 为什么用 `<a>` 而不是老版的 `<button>` ──────────────────────
        `<button>` 必须有 JS 才有效（要 `scrollTo`）。纯 CSS 方案里锚点更合适：
        `<body id="top">`（见 baseof.html）＋ `href="#top"`，
-       配合 `html { scroll-behavior: smooth }`（custom_head.html 第 17 段）就是平滑回顶。
+       配合 `html { scroll-behavior: smooth }`（custom.css 第 17 段）就是平滑回顶。
        ⚠️ 别删 baseof.html 上那个 `id="top"` —— 删了按钮就变成「点了没反应」，而且**不报错**。
 
        ⚠️ 只要上面的判据成立就**总是**输出（不判断浏览器），
           「显不显示」全部交给 CSS —— 构建期做不到探测浏览器能力。
-       ⚠️ 样式在 custom_head.html 第 16 段，改类名要两边一起改。
+       ⚠️ 样式在 custom.css 第 16 段，改类名要两边一起改。
        ============================================================ */ -}}
 {{- $longForm := and .IsPage (in (slice "posts" "weekly") .Type) -}}
 {{- /* 长列表页：只认这两个精确路径，不用 Section / Kind ——

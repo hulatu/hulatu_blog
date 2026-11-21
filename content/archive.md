@@ -16,7 +16,8 @@ toc: false
 
 <!--
 这一页没有正文。全部内容由 layouts/_default/archive.html 渲染：
-  搜索框（postSearch）→ 「共 N 篇。」→ 按年分组的 .blog-posts 列表。
+  「共 N 篇，随机阅读一篇。」→ 分类 / 系列入口 → 按年分组的 .blog-posts 列表。
+  （顶部搜索框 2026-11-21 晚已彻底删除，连同 partial、postSearch 参数与高亮样式。）
 文章和周刊混在一起（`where site.RegularPages "Type" "in" (slice "posts" "weekly")`），
 因为「归档」的语义就是「全部内容按时间回溯」。
 -->

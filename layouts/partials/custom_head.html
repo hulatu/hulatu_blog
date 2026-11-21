@@ -1,37 +1,25 @@
-{{- /* ============================================================
-       站点头部（站点层钩子，baseof.html 里在 style.html 之后加载）
+{{- /* 站点头部：样式管道 + 升级包覆写（2026-11-21） */ -}}
+{{- /* 升级包主题引导：必须在样式之前执行，避免深色闪白。 */ -}}
+<script>
+  (function () {
+    try {
+      var saved = localStorage.getItem('hl-theme');
+      var prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
+    } catch (e) {}
+  })();
+</script>
 
-       2026-11-06 起样式不再内联：主题 CSS（assets/css/theme.css）
-       与站点补丁 CSS（assets/css/custom.css）由下面这段管道拼成
-       一个带内容哈希的外部文件 /css/main.min.<hash>.css，全站共用、
-       浏览器长缓存。改 CSS 去那两个文件改，别往这里贴 <style>。
-       主题的内联 <style> 由站点层 layouts/partials/style.html
-       （空覆盖）压掉 —— 主题文件本身一个字节没改。
-       ============================================================ */ -}}
-{{- /* giscus 的连接提示不再在页面加载时提前发出。
-       评论脚本本来就延迟到距评论区 300px 才注入；现在 DNS / TLS
-       提示由 assets/js/giscus.js 在同一时刻动态加入，避免读者只看正文
-       时也提前连第三方域。 */ -}}
+{{- /* 站点头部：CSS 管道 + 升级包覆写 + 预连 + theme-color + GoatCounter。
+       样式分两层：assets/css/{theme,custom}.css 走下面的管道；
+       文件末尾的 <style> 是升级包原样样式（--hl-* 令牌 + 组件），最后加载。
+       ⚠️ 新的站点补丁仍然写 custom.css；别在管道之前插样式。
+       style.html 的空覆盖压掉主题内联样式。 */ -}}
+{{- /* giscus 的连接提示由 assets/js/giscus.js 在接近评论区时动态加入。 */ -}}
 
-{{- /* 图床预连（2026-10-25 新增）。
-       正文图片全部来自 img.hulatu.com，是一个**跨域主机** —— 不预连的话，
-       浏览器要等 HTML 解析到第一个 <img> 才开始 DNS + TCP + TLS。
-       实测该主机 TLS 0.63–0.86 s、首字节 1.6–2.1 s，这段延迟完全落在首屏上。
-
-       ⚠️ 用 `.Content` 判断「这一页到底有没有图床图片」，而不是全站无脑加：
-          全站 256 个 HTML 页里只有 **74 页**含 `<img>`，其余 182 页连了也用不上，
-          白建一个连到 10 秒后自动关闭的空连接。`.Content` 在这里调用是安全的 ——
-          Hugo 会缓存渲染结果，body 里再取不会重跑渲染钩子。
-       ⚠️⚠️ 判据必须**同时**要求出现 `<img`（2026-10-28 修）。只判主机名会误命中
-          三类页面：`/`（正文里有个指向图床的「支持」链接）、`/about/`（二维码链接）、
-          `/privacy/`（正文用文字提到了这个域名）—— 它们都把 `img.hulatu.com`
-          写成了 `<a href>` 或纯文本，一个 `<img>` 都没有。
-          实测：只判主机名 → 77 页挂预连；加上 `<img` → 正好 74 页。
-          ⚠️ giscus 的预连已改为接近评论区时由 JS 动态加入，不再出现在静态 HTML；
-             验收本项时应只数 `href="https://img.hulatu.com"` 的 preconnect。
-       ⚠️ **不要加 crossorigin**：`<img src>` 是 no-cors 请求，匹配的是
-          **不带** crossorigin 的 preconnect 连接池。写了 crossorigin 反而
-          建出一个用不上的 CORS 连接池，等于没预连。 */ -}}
+{{- /* 图床预连：仅当本页正文同时含 img.hulatu.com 与 <img 时输出。
+       ⚠️ 两个条件缺一不可：只判主机名会误命中 /、/about/、/privacy/（链接或纯文本）。
+       ⚠️ 不要加 crossorigin：<img> 走 no-cors 连接池，加了等于没预连。 */ -}}
 {{- with .Content -}}
   {{- if and (strings.Contains . "img.hulatu.com") (strings.Contains . "<img") }}
 <link rel="preconnect" href="https://img.hulatu.com">
@@ -39,55 +27,18 @@
   {{- end -}}
 {{- end }}
 
-{{- /* ---------------------------------------------------------------
-       移动端地址栏 / 任务切换器配色。
+{{- /* 地址栏配色：手动深浅色后由 custom_body.html 的 applyTheme 动态改。 */ -}}
+<meta name="theme-color" id="hl-theme-color" content="#FFFFFF">
 
-       本站是**纯 `prefers-color-scheme`**（没有手动主题开关，也没有
-       toggle 脚本），所以这里给浅 / 深两档各写一条 media 限定即可，
-       不需要 JS。取值与主题的两个底色 token 一致：
-         浅色 --bg-color-primary  #fdfdfd
-         深色 --bg-color-primary  #121212
-       ⚠️ 换主题底色要同步改这里（写错不报错，只是地址栏颜色和页面不搭）。
-
-       ⚠️ 必须写 media 的**两条**，而不是在 `:root` 上写 `color-scheme` 之外
-          再靠 `<meta>` 推断 —— theme-color 只接受值，媒体条件版才是标准写法。
-      --------------------------------------------------------------- */ -}}
-<meta name="theme-color" content="#fdfdfd" media="(prefers-color-scheme: light)">
-<meta name="theme-color" content="#121212" media="(prefers-color-scheme: dark)">
-
-{{- /* ---------------------------------------------------------------
-       CSS 管道（2026-11-06 新增，F3）
-
-       主题与站点两份 CSS 拼成一个文件，再压缩、指纹化。
-       顺序不能换：主题在前、站点补丁在后 —— 站点层靠「后出现者胜」
-       覆盖主题（以前是两个 <style> 块的先后顺序，现在是拼合顺序）。
-       指纹在文件名里（main.min.<hash>.css），内容一变文件名就变，
-       所以 static/_headers 里 /css/* 可以放心写 1 年 + immutable。
-       integrity 是 SRI 校验，与 giscus.js / code-copy.js 同一做法。
-
-       ⚠️ 2026-11-07：**删掉了原来那条 `<link rel=preload as=style>`**。
-          它非但没有「抵消多一次请求」，反而**让 CSS 被下了两次**：
-          下面那个 stylesheet 带 `integrity` + `crossorigin=anonymous`（CORS 模式），
-          而 preload 不带 crossorigin（no-CORS 模式），两者凭据模式不一致，
-          浏览器把它们当成两个缓存键 → CDP 的 requestWillBeSent 里同一个
-          URL 出现 2 次。而且 preload 对一个 render-blocking 的 stylesheet
-          本来就没有加速作用：两条 link 挨在一起，预加载扫描器同时发现它们。
-          **别再把它加回来**；真要为别的资源预加载，记得 crossorigin 与
-          消费方一致，否则照样双下。
-       --------------------------------------------------------------- */ -}}
+{{- /* CSS 管道：theme.css 在前、custom.css 在后，压缩 + 指纹。
+       ⚠️ 顺序不能反：站点补丁靠后出现覆盖主题。
+       ⚠️ 别再加载 preload as=style：凭据模式与 stylesheet 不一致会让 CSS 下两次。 */ -}}
 {{- $themeCSS := resources.Get "css/theme.css" -}}
 {{- $customCSS := resources.Get "css/custom.css" -}}
 {{- $css := slice $themeCSS $customCSS | resources.Concat "css/main.css" | minify | fingerprint -}}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" crossorigin="anonymous">
 
-{{- /* ============================================================
-       统计（GoatCounter）
-       上游主题的 baseof.html 里没有统计的挂载点，所以挂在站点层的这个
-       「用户可覆盖」钩子里（baseof 会 partial "custom_head.html"）。
-       行为与改版前的 layouts/partials/analytics.html 逐字一致：
-       延迟到空闲 / 首次滚动 / 首次指针按下才真正下载脚本，并且跳过
-       被预渲染（Speculation Rules）的页面 —— 否则鼠标扫过链接也算一次浏览。
-       ============================================================ */ -}}
+{{- /* GoatCounter：空闲 / 首次滚动 / 首次指针按下才加载，并跳过预渲染页面。 */ -}}
 {{- with site.Params.analytics -}}
   {{- with .goatcounter -}}
     <script>
@@ -99,11 +50,9 @@
           var endpoint = "{{ . }}";
           var s = document.createElement("script");
           s.async = true;
-          /* ⚠️ 2026-10-14：原来写的是协议相对 `//gc.zgo.at/count.js`。
-             协议相对 URL 是 HTTP/1 时代的历史遗留 —— 页面从
-             file:// 打开、或任何非 http(s) 上下文下它会解析失败。
-             写死 https:// 全场景一致。 */
-          s.src = "https://gc.zgo.at/count.js";
+          /* 同源代理 functions/stats/[[path]].js：第三方域名会被 uBlock 静默拦截。
+             想绕过就改回 https://gc.zgo.at/count.js，并同步 hugo.toml。 */
+          s.src = "/stats/count.js";
           s.dataset.goatcounter = endpoint;
           document.body.appendChild(s);
         }
@@ -126,66 +75,322 @@
   {{- end -}}
 {{- end -}}
 
-{{- /* ---------------------------------------------------------------
-       Speculation Rules：站内跳转**预渲染**（2026-10-28 新增）
-
-       ── 为什么加这个 ────────────────────────────────────────────────
-       本站在「加载层」已经没什么可优化的了：0 个阻塞资源、0 个 webfont、
-       外链 JS 只有 giscus / code-copy 两个小文件、HTML 6–10 KB（gzip）。
-       剩下唯一的体验缺口在**站内跳转**——每次点导航 / 文章卡片，都要等
-       一次完整的导航往返。博客读者的典型行为是「进来一次，站内跳 3–5 篇」，
-       所以这一项比继续压缩首屏更贴近真实体验。
-
-       预渲染 = 浏览器在**后台先把目标页整页渲染好**，用户真点下去时直接换帧，
-       没有白屏、没有布局跳动。对本站这种「页面只有 6 KB、零外部依赖」的站，
-       预渲染一页的成本极低。
-
-       ── 为什么是 `moderate` 而不是 `eager` / `conservative` ──────────
-         conservative  只在用户真的按下鼠标（pointerdown）时才渲染 —— 太晚，
-                       在网络慢的环境下等于没赶上。
-         moderate      鼠标悬停约 200 ms 或 pointerdown 时渲染 —— 这里选的。
-                       悬停本身就是「很可能要点」的强信号，命中率高、浪费少。
-         eager         链接一进视口就渲染 —— 列表页一屏十几个链接，会同时
-                       预渲染好几页，把带宽吃光，**别改成这个**。
-
-       ── 为什么本站可以放心开 ────────────────────────────────────────
-       · 统计（GoatCounter）那段脚本**已经**带 `document.prerendering` 守卫
-         （见上面那个 partial 里的 IIFE）：预渲染期间不加载，页面被激活后
-         才通过 `prerenderingchange` 事件补发。不会多算一次访问。
-       · 评论区（giscus）是「滚到评论区前 300 px 才注入」，预渲染的页面不滚动，
-         所以不会触发；用户真进去之后滚动行为与普通加载完全一致。
-       · 全站没有 Service Worker、没有会写 localStorage 的脚本，预渲染不会
-         产生副作用。
-
-       ── 想关掉 ──────────────────────────────────────────────────────
-       删掉下面这一个 `<script>` 块即可，没有其他联动（不删也没坏处：
-       不支持的浏览器——Safari / Firefox——会直接忽略这个 type）。
-
-       ⚠️ `href_matches` 写 `/*` 是**相对本文档的 URL** 解析的，所以只命中
-          同源路径，外链不会被预渲染。别把它换成「跨源全通配」那种写法
-          （那会真的去预渲染外站）。
-       ⚠️ 别把 `/*` 写成 `/**`：URLPattern 里 `**` 是跨段的通配，语义不同。
-      --------------------------------------------------------------- */ -}}
-{{- /* ---------------------------------------------------------------
-     36 **已撤回**：文末作者卡片（2026-11-05 当天加、当天撤）
-
-         上线后用户认为卡片与极简风格不一体，要求去掉。
-         样式（.author-card*）与 single.html 里的挂载已同步删除。
-         别再加回来 —— 不是「做得不够好」，是「看过之后认为不要」。
-      --------------------------------------------------------------- */ -}}
-
-{{- /* ---------------------------------------------------------------
-     37 首页精选入口 —— **无守卫**（与第 04 段同类：首页样式全站生效）
-
-         入口本身只在有精选文章时渲染（见 layouts/index.html 的注释），
-         所以这一行在没有精选时根本不存在；这里只钉住它出现时的上边距，
-         取 1.2rem、与最近更新列表的 li 间距同值，节奏一致。
-
-         ⚠️ 2026-11-05：规则本体原来写在这段注释下面、style 块外面，
-            成了 head 里的一段裸文本，全站每页顶上都多一行
-            `.featured-entry { margin-top: 1.2rem; }`（就是用户说的
-            「页面顶部乱码」），同时规则本身从未生效。已把规则移入
-            style 内（第 38 段之后），这里只留注释，别再把规则贴回来。
-      --------------------------------------------------------------- */ -}}
-
+{{- /* Speculation Rules：站内跳转预渲染，eagerness=moderate。
+       ⚠️ href_matches 的 /* 相对本文档解析，只命中同源；别改成跨源通配。
+       ⚠️ 别写 /**（URLPattern 里 ** 是跨段通配，语义不同）。 */ -}}
 <script type="speculationrules">{"prerender":[{"where":{"href_matches":"/*"},"eagerness":"moderate"}]}</script>
+
+
+{{- /* 升级包注入的完整样式（原样保留，最后加载，覆盖站点旧设计）。 */ -}}
+<style>
+  :root {
+    --hl-bg: #FFFFFF;
+    --hl-bg-subtle: #F7F8FA;
+    --hl-bg-hover: #F1F3F6;
+    --hl-ink: #111315;
+    --hl-ink-2: #374151;
+    --hl-mute: #6B7280;
+    --hl-hair: #E5E7EB;
+    --hl-accent: #1D4ED8;
+    --hl-accent-soft: rgba(29, 78, 216, 0.08);
+    --hl-green: #16A34A;
+    --hl-code-bg: #F6F8FA;
+    --hl-shadow: 0 20px 50px -12px rgba(17, 19, 21, 0.18);
+  }
+
+  [data-theme="dark"] {
+    --hl-bg: #111214;
+    --hl-bg-subtle: #181A1F;
+    --hl-bg-hover: #20232A;
+    --hl-ink: #F3F4F6;
+    --hl-ink-2: #C8CDD6;
+    --hl-mute: #8B93A1;
+    --hl-hair: #262A33;
+    --hl-accent: #60A5FA;
+    --hl-accent-soft: rgba(96, 165, 250, 0.12);
+    --hl-green: #4ADE80;
+    --hl-code-bg: #16181D;
+    --hl-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
+  }
+
+  html, body {
+    background-color: var(--hl-bg) !important;
+    color: var(--hl-ink-2) !important;
+    transition: background-color 0.2s ease, color 0.2s ease;
+  }
+
+  h1, h2, h3, h4, strong {
+    color: var(--hl-ink);
+  }
+
+  a {
+    color: var(--hl-accent);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  hr {
+    border-color: var(--hl-hair);
+  }
+
+  pre, code {
+    background-color: var(--hl-code-bg);
+    color: var(--hl-ink);
+  }
+
+  blockquote {
+    border-left-color: var(--hl-hair);
+    color: var(--hl-mute);
+  }
+
+  /* 文章列表一句话导语（如在 list.html 中添加 .hl-post-desc） */
+  .hl-post-desc {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.88em;
+    color: var(--hl-mute);
+    line-height: 1.55;
+  }
+
+  /* Last Updated：按用户要求不再强调，和 byline 其他项一样是普通灰字。
+     2026-11-21 去掉了升级包的浅蓝底徽章样式。 */
+
+  /* 正在折腾与代表作区块 */
+  .hl-section {
+    margin: 34px 0 38px;
+  }
+
+  .hl-section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--hl-hair);
+    margin-bottom: 6px;
+  }
+
+  .hl-section-title {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin: 0;
+    color: var(--hl-ink);
+  }
+
+  .hl-more-link {
+    font-size: 0.85rem;
+    text-decoration: none;
+  }
+
+  .hl-project-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .hl-project-item {
+    border-bottom: 1px solid var(--hl-hair);
+    transition: opacity 0.18s ease;
+  }
+
+  .hl-project-item:last-child {
+    border-bottom: none;
+  }
+
+  .hl-project-link {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 12px 0;
+    text-decoration: none !important;
+  }
+
+  .hl-project-main {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .hl-project-name {
+    font-weight: 600;
+    color: var(--hl-ink);
+    transition: color 0.15s ease;
+  }
+
+  .hl-project-link:hover .hl-project-name {
+    color: var(--hl-accent);
+  }
+
+  .hl-project-desc {
+    font-size: 0.88em;
+    color: var(--hl-mute);
+    line-height: 1.5;
+  }
+
+  .hl-tag-pill {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 0.76em;
+    padding: 2px 7px;
+    border-radius: 4px;
+    background: var(--hl-bg-subtle);
+    color: var(--hl-mute);
+    border: 1px solid var(--hl-hair);
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+
+  .hl-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+  /* 顶部工具按钮（搜索 / 深浅色）与页脚随机漫游 */
+  .hl-toolbar {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-left: 12px;
+    vertical-align: middle;
+  }
+
+  .hl-ctrl-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    height: 28px;
+    padding: 0 9px;
+    border-radius: 6px;
+    border: 1px solid var(--hl-hair);
+    background: var(--hl-bg);
+    color: var(--hl-mute);
+    font-size: 12.5px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .hl-ctrl-btn:hover {
+    border-color: var(--hl-mute);
+    color: var(--hl-ink);
+    background: var(--hl-bg-subtle);
+  }
+
+  .hl-kbd {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 11px;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: var(--hl-bg-subtle);
+    border: 1px solid var(--hl-hair);
+  }
+
+  /* 全局 / 命令面板 */
+  .hl-cmd-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(17, 19, 21, 0.42);
+    backdrop-filter: blur(3px);
+    display: none;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 12vh 16px 24px;
+    z-index: 9999;
+  }
+
+  .hl-cmd-overlay.open { display: flex; }
+
+  .hl-cmd-dialog {
+    width: 100%;
+    max-width: 520px;
+    background: var(--hl-bg);
+    border: 1px solid var(--hl-hair);
+    border-radius: 12px;
+    box-shadow: var(--hl-shadow);
+    overflow: hidden;
+  }
+
+  .hl-cmd-input-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--hl-hair);
+  }
+
+  .hl-cmd-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--hl-ink);
+    font-size: 15px;
+  }
+
+  .hl-cmd-results {
+    max-height: 320px;
+    overflow-y: auto;
+    list-style: none;
+    padding: 8px;
+    margin: 0;
+  }
+
+  .hl-cmd-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    width: 100%;
+    padding: 9px 10px;
+    border-radius: 6px;
+    border: none;
+    background: none;
+    color: var(--hl-ink);
+    text-align: left;
+    font-size: 14px;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .hl-cmd-item:hover,
+  .hl-cmd-item.selected {
+    background: var(--hl-bg-hover);
+    color: var(--hl-accent);
+  }
+
+  .hl-cmd-foot {
+    padding: 8px 14px;
+    border-top: 1px solid var(--hl-hair);
+    background: var(--hl-bg-subtle);
+    display: flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--hl-mute);
+  }
+
+  /* ── 站点令牌桥接（2026-11-21 按用户要求完全采用升级包配色）────────
+     把站点原来的暖纸白 / 墨水蓝令牌映射到升级包的 --hl-* 变量，
+     让 custom.css 里的表格、代码块、页脚、TOC 等老组件也一起换色。
+     ⚠️ custom.css 的深色规则已全部改成 [data-theme="dark"]，
+        不再走 prefers-color-scheme —— 否则手动切换会出现半明半暗。
+  */
+  :root,
+  :root[data-theme="light"] {
+    --bg-color-primary: var(--hl-bg);
+    --bg-color-secondary: var(--hl-bg-subtle);
+    --text-color-primary: var(--hl-ink);
+    --text-color-secondary: var(--hl-ink-2);
+    --text-color-tertiary: var(--hl-mute);
+    --border-color: var(--hl-hair);
+    --link-color: var(--hl-accent);
+    --link-visited-color: var(--hl-accent);
+    color-scheme: light;
+  }
+
+  :root[data-theme="dark"] {
+    --bg-color-primary: var(--hl-bg);
+    --bg-color-secondary: var(--hl-bg-subtle);
+    --text-color-primary: var(--hl-ink);
+    --text-color-secondary: var(--hl-ink-2);
+    --text-color-tertiary: var(--hl-mute);
+    --border-color: var(--hl-hair);
+    --link-color: var(--hl-accent);
+    --link-visited-color: var(--hl-accent);
+    color-scheme: dark;
+  }
+</style>

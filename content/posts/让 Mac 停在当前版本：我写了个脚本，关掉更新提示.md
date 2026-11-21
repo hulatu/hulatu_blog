@@ -1,13 +1,12 @@
 ---
 title: 不让 Mac 更新：我写了个脚本，关掉更新提示
 date: 2026-11-16T08:50:00+08:00
-lastmod: 2026-11-16T17:46:42+08:00
+lastmod: 2026-11-21T23:14:46+08:00
 slug: pin-macos
 summary: 让 mac 发现不了更新，我做了一个脚本。
 description: "一个不到 300 行的开源脚本，从多方面屏蔽 macOS 的更新检测。"
 categories: ["工具"]
 tags: ["Mac", "脚本", "开源", "效率", "更新"]
-featured: false
 comments: true
 draft: false
 ---

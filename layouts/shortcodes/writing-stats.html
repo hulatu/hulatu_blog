@@ -1,0 +1,153 @@
+{{- /* ============================================================
+     写作统计 + 过去 365 天发布热力图（2026-11-21）
+
+     调用点：content/about.md 的「写作统计」一节。
+
+     ── 口径 ─────────────────────────────────────────────────────
+     · 只统计 posts + weekly，和首页 home-stats、归档页一致；
+     · 字数沿用 byline 的算法：汉字每字 1，英文单词每词 1（不是 Hugo 的
+       .WordCount，那个对中英混排的数字会飘）。
+     · 热力图按**发布日期**（.Date）计数，不按 lastmod —— 它回答的是
+       「这一年我发了多少东西」，不是「改过多少东西」。
+     · 过去 365 天 = 今天往前 364 天，加上今天。起始日按周一对齐，
+       前面补空网格，保证每一列都是周一到周日。
+
+     ── 为什么不用 JS ─────────────────────────────────────────────
+     145 个页面的日期在构建期就能算完，输出静态 span 即可。没有脚本、
+     没有请求，阅读器/爬虫看到的也是同一张图。站点每天由
+     .github/workflows/daily-rebuild.yml 触发重建，所以「今天」会自己走。
+
+     ⚠️ 改热力图的起始日、颜色或格子尺寸，看 custom.css 第 51 段。
+     ⚠️ 别把 `.Plain` 换成 `.Content`：后者会把 HTML 标签也算进字数。
+     ============================================================ */ -}}
+
+{{- $visible := site.RegularPages -}}
+{{- $posts := where $visible "Section" "posts" -}}
+{{- $weekly := where $visible "Section" "weekly" -}}
+{{- $all := where $visible "Section" "in" (slice "posts" "weekly") -}}
+
+{{- /* 累计字数：与 single.html 的 byline 同一套公式 */ -}}
+{{- $words := 0 -}}
+{{- range $all -}}
+  {{- $words = add $words (add (len (findRE "\\p{Han}" .Plain)) (len (findRE "[A-Za-z]+" .Plain))) -}}
+{{- end -}}
+
+{{- /* 写作天数：第一篇 → 今天 */ -}}
+{{- $days := 0 -}}
+{{- $firstDate := "" -}}
+{{- with $all.ByDate -}}
+  {{- with index . 0 -}}
+    {{- $firstDate = .Date.Format "2006-01-02" -}}
+    {{- $days = add (int (div (sub now.Unix .Date.Unix) 86400)) 1 -}}
+  {{- end -}}
+{{- end -}}
+
+{{- /* 按日期计数 */ -}}
+{{- $counts := dict -}}
+{{- range $all -}}
+  {{- $k := .Date.Format "2006-01-02" -}}
+  {{- $n := add (index $counts $k | default 0) 1 -}}
+  {{- $counts = merge $counts (dict $k $n) -}}
+{{- end -}}
+
+{{- /* 数值与单位拆开：统计条里数字大、单位小，读起来更像数据而不是句子 */ -}}
+{{- $wordNum := printf "%d" $words -}}
+{{- $wordUnit := "字" -}}
+{{- if ge $words 10000 -}}
+  {{- $wordNum = printf "%.1f" (div (float $words) 10000) -}}
+  {{- $wordUnit = "万字" -}}
+{{- end -}}
+
+{{- $today := now -}}
+{{- $start := $today.AddDate 0 0 -364 -}}
+{{- $weekday := dict "Mon" 0 "Tue" 1 "Wed" 2 "Thu" 3 "Fri" 4 "Sat" 5 "Sun" 6 -}}
+{{- $offset := index $weekday ($start.Format "Mon") -}}
+{{- $totalCols := add (div (add $offset 364) 7) 1 -}}
+
+{{- /* 月份刻度：记下每个月从第几列开始，供月份标签行定位 */ -}}
+{{- $months := slice -}}
+{{- $lastMonth := "" -}}
+{{- range $i := seq 0 364 -}}
+  {{- $d := $start.AddDate 0 0 $i -}}
+  {{- $m := $d.Format "2006-01" -}}
+  {{- if ne $m $lastMonth -}}
+    {{- $months = $months | append (dict "col" (div (add $offset $i) 7) "label" ($d.Format "1月")) -}}
+    {{- $lastMonth = $m -}}
+  {{- end -}}
+{{- end -}}
+
+<div class="writing-stats">
+  <div class="stats-grid">
+    <div class="stat">
+      <span class="stat-label">文章</span>
+      <span class="stat-value">{{ len $posts }}<span class="stat-unit">篇</span></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">周刊</span>
+      <span class="stat-value">{{ len $weekly }}<span class="stat-unit">期</span></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">累计正文</span>
+      <span class="stat-value">{{ $wordNum }}<span class="stat-unit">{{ $wordUnit }}</span></span>
+    </div>
+    <div class="stat">
+      <span class="stat-label">写作天数</span>
+      <span class="stat-value">{{ $days }}<span class="stat-unit">天</span></span>
+    </div>
+  </div>
+
+  <div class="heatmap-block">
+    <div class="heatmap-head">
+      <span class="heatmap-title">过去 365 天</span>
+      <span class="heatmap-meta">{{ $start.Format "2006.01" }} – {{ $today.Format "2006.01" }} · {{ len $counts }} 天有发布</span>
+    </div>
+    {{- /* 月份行与格子必须放在同一个滚动容器里，窄屏才会一起横向滚动。 */ -}}
+    <div class="heatmap-scroll" tabindex="0" role="region" aria-label="过去 365 天的发布热力图，共 {{ len $counts }} 天有发布，可横向滚动">
+      <div class="heatmap-main" style="--cols: {{ $totalCols }}">
+        <div class="heatmap-months" aria-hidden="true">
+          {{- range $idx, $m := $months -}}
+            {{- $nextCol := $totalCols -}}
+            {{- if lt (add $idx 1) (len $months) -}}
+              {{- $nextCol = (index $months (add $idx 1)).col -}}
+            {{- end -}}
+            {{- $span := sub $nextCol $m.col -}}
+            {{- /* 只给能放下文字的月份留标签：只剩 2 列的首月（如 11 月）
+                   在窄屏会和下一个月挤在一起，直接不显示；
+                   起始月份由上方 2025.11 – 2026.11 的范围文字交代。 */ -}}
+            {{- if ge $span 3 -}}
+          <span class="heat-month" style="grid-column: {{ add $m.col 1 }} / span {{ $span }}">{{ $m.label }}</span>
+            {{- end -}}
+          {{- end }}
+        </div>
+        <div class="heatmap" role="img" aria-label="过去 365 天的发布热力图，共 {{ len $counts }} 天有发布">
+          {{- range seq 1 $offset }}
+          <span class="heat-pad"></span>
+          {{- end }}
+          {{- range $i := seq 0 364 }}
+            {{- $d := $start.AddDate 0 0 $i -}}
+            {{- $k := $d.Format "2006-01-02" -}}
+            {{- $n := index $counts $k | default 0 -}}
+            {{- $lvl := 0 -}}
+            {{- if ge $n 1 }}{{ $lvl = 1 }}{{ end -}}
+            {{- if ge $n 2 }}{{ $lvl = 2 }}{{ end -}}
+            {{- if ge $n 3 }}{{ $lvl = 3 }}{{ end -}}
+            {{- if ge $n 4 }}{{ $lvl = 4 }}{{ end -}}
+          <span class="heat-cell heat-l{{ $lvl }}" title="{{ $k }}，{{ $n }} 篇" aria-hidden="true"></span>
+          {{- end }}
+        </div>
+      </div>
+    </div>
+    <div class="heatmap-foot">
+      <span class="heat-legend">少
+        <span class="heat-cell heat-l0"></span>
+        <span class="heat-cell heat-l1"></span>
+        <span class="heat-cell heat-l2"></span>
+        <span class="heat-cell heat-l3"></span>
+        <span class="heat-cell heat-l4"></span>
+        多</span>
+      <span>每格一天，颜色越深篇数越多</span>
+    </div>
+  </div>
+
+  <p class="stats-note">从 {{ $firstDate }} 写到现在，共 {{ $days }} 天，其中 {{ len $counts }} 天有发布。字数按汉字每字、英文每词计，含正文小标题、列表、引用、行内代码与代码块，不含图片属性。</p>
+</div>

@@ -1,36 +1,7 @@
-{{- /* ============================================================
-       站点层覆盖：themes/hugo-bearneo/layouts/partials/seo_tags.html
-
-       ── 为什么整份覆盖 ────────────────────────────────────────────
-       上游有三样东西本站不要，只能整份覆盖（改 themes/ 是硬规矩）：
-         ① `<meta name="keywords">` —— Google 2009-09 起官方声明不再使用，
-            Bing 同样忽略。上游的 `{{ else }}` 分支（非 .IsPage 页）
-            `range .Site.Taxonomies` 把**全站 187 个标签平铺进 head**，
-            实测单页 670 B / 边际 gzip 首页 −1062 B、/weekly/ −1173 B、
-            187 个标签词条页各 −1067 B —— 每页白搭约 1 KB，还白送一份标签清单。
-         ② `<meta name="title">` —— 与 `<title>` 重复，无搜索引擎使用。
-         ③ `{{ template "_internal/schema.html" . }}` —— 每页吐 6 个
-            `<meta itemprop=…>`，而全站 **`itemscope` / `itemtype` 计数为 0**
-            （实测）。Microdata 规范要求 itemprop 挂在有 itemscope 的祖先上，
-            否则不属于任何 item → 零语义价值。改成下面的 JSON-LD。
-
-       ── 顺带的三件事 ──────────────────────────────────────────────
-         ① 调用路径从 `_internal/opengraph.html` 换成 Hugo 0.146 起的
-            `_partials/opengraph.html`（前者是兼容别名，构建 0 警告，
-            收益为 0，纯粹跟上当前写法）。
-         ② 补 `og:image:width` / `og:image:height`。
-            Hugo 的内置模板只输出 URL；社交平台没有宽高就得先把图抓下来
-            才能定卡片比例（传图 = 分享时多一次往返、还慢一帧）。
-            值取自 hugo.toml 的 `ogImageWidth` / `ogImageHeight`，
-            **换分享图要同步改这两行**（写错不会报错，只会让比例算错）。
-         ③ `og:image` 用的是全站同一张 share.webp。将来若某篇单独配了
-            `images`，这里的宽高会对不上 —— 需要时按页覆盖，别硬改这一段。
-
-       ⚠️ 本文件与 themes/ 那一份保持「同结构、少三样、多两样」，
-          上游若改动 seo_tags.html，diff 时按这个口径对，别整份重抄。
-       ⚠️ 产物里搜 `keywords` / `itemprop` / `name=title` 都应为 0 处；
-         `og:image:width` / `ld+json` 每页都应有。
-       ============================================================ */ -}}
+{{- /* 整份覆盖上游 seo_tags：删 meta keywords / meta title / itemprop 微数据，
+       补 og:image 宽高，改成按页型输出的 JSON-LD。
+       ⚠️ 产物里搜 keywords / itemprop / name=title 应为 0；ld+json 每页都有。
+       ⚠️ 与上游保持「同结构、少三样、多两样」，同步时按口径 diff。 */ -}}
 
 <!-- Primary Meta Tags -->
 <meta name="description" content="{{ with .Description }}{{ . }}{{ else }}{{ if .IsPage }}{{ .Summary }}{{ else }}{{ with .Site.Params.Description }}{{ . }}{{ end }}{{ end }}{{ end }}">
@@ -43,10 +14,7 @@
 <!-- Twitter -->
 {{ template "_partials/twitter_cards.html" . }}
 
-{{- /* og:image 的宽高（见文件头注释）。站点级兜底 —— 上游的 opengraph
-       模板只输出 URL。值在 hugo.toml 的 [params] 里。
-       ⚠️ 先取出来再用：`with` 会把 `.` 重绑定，第二层就是「高」，直接写 `{{ . }}`
-          会把宽写成高（本仓踩过同类坑）—— 所以下面两个都是具名变量。 */ -}}
+{{- /* og:image 宽高，值在 hugo.toml。两个都先取进具名变量，别在 with 里取。 */ -}}
 {{- $ogW := .Site.Params.ogImageWidth -}}
 {{- $ogH := .Site.Params.ogImageHeight -}}
 {{- if and $ogW $ogH -}}
@@ -54,52 +22,12 @@
 <meta property="og:image:height" content="{{ $ogH }}">
 {{- end -}}
 
-{{- /* ---------------------------------------------------------------
-       结构化数据：JSON-LD（取代上游的 itemprop 微数据）。
-
-       页型映射（.IsPage = kind page，即文章 + about/now/roll/privacy/
-       donate/run/archive 这些根级独立页；section / term / home 为 false）：
-         首页 .IsHome        → WebSite（name / url / inLanguage / publisher）
-         文章 + 周刊 (posts / weekly，140 页) → BlogPosting 全套
-         其他根级独立页（about / archive / now / roll / run / privacy / donate）
-                              → WebPage **极简**（只有 name / url）
-         404 .Kind == "404"  → WebPage（不是 CollectionPage —— 它是 noindex 页）
-         section / term      → CollectionPage（name / url）
-
-       ⚠️ **刻意不带 `description`**（2026-10-14 实测后撤掉）：上游 schema 那段
-          没有它，而我第一版按「结构化数据要自包含」补上了，结果 /archive/ 与
-          /about/ 各 +294 / +324 B gzip —— 这两页没有 front matter description，
-          取值回落到**整段 .Summary**（站点描述，76 字）。
-          而 `og:description` 已经带着同一句话，Google / 社交卡片读的是它。
-          → JSON-LD 只留 headline / url / 日期 / image / author / wordCount，
-            不重复一份长文本。
-            （2026-10-26 补了 inLanguage / articleSection / keywords 三个**短值**，
-              仍然不含任何长文本 —— 这条原则没破。别往里加 description。）
-
-       ⚠️⚠️ 三个坑与 `layouts/partials/breadcrumbs.html` 的 JSON-LD 完全相同：
-       ① 必须 `| jsonify | safeJS`，否则 Go 的 html/template 把整段包成
-          JS 字符串（最外层多一对引号），Schema.org 不认。
-       ② `jsonify` 之后**不能再接任何过滤器**（`replace` 会把 template.HTML
-          降级成 string，又回到 ①）。
-       ③ `jsonify` 自己会把 `<` `>` `&` 转义成 `\u003c` 等，
-          **不需要**再防 `</script>` 截断；手加转义反而坏事。
-
-       面包屑另有 `BreadcrumbList` 一段（在 partials/breadcrumbs.html，
-       只给文章页输出）—— 两者互不冲突，Google 支持同一页多段 JSON-LD。
-       --------------------------------------------------------------- */ -}}
-{{- /* 分享卡片图（JSON-LD 用）。
-       2026-10-26 起取自 `layouts/partials/og-image.html` —— 与 og:image /
-       twitter:image **同一张、同一套取值逻辑**（按 slug 找
-       images/og/<slug>.png，取不到回落 share.webp）。
-
-       ⚠️ 这里以前用的是 `site.Params.images` 的第一张，于是 140 篇文章的
-          JSON-LD `image` 全是同一张 share.webp，而 og:image 早就逐篇不同了。
-          后果不是报错，而是**白丢差异化缩略图**：Google 的 Article 富媒体
-          结果与 Discover 读的是 JSON-LD，不是 og:image。
-       ⚠️ partial 返回的是**绝对 URL**，下面直接用 `slice $img`，
-          **不要**再套 absURL（二次处理）。
-       ⚠️ `$img` 为空时 `slice ""` 会得到 `[""]`。本站 hugo.toml 配了
-          `params.images`，走不到这个分支；真要清空配置，先看这里。 */ -}}
+{{- /* JSON-LD 按页型：首页 WebSite；posts/weekly BlogPosting；其他根级页 WebPage；
+       404 WebPage；section/term CollectionPage。面包屑另有 BreadcrumbList。
+       ⚠️ 不放 description（会回落到整段 .Summary，白增几百字节）；只放短值。
+       ⚠️ 必须 `| jsonify | safeJS`，之后不能再接过滤器；jsonify 已处理 </script>。 */ -}}
+{{- /* JSON-LD 的 image 与 og:image 同源（og-image.html，绝对 URL）。
+       ⚠️ 不要再套 absURL；params.images 已配置，$img 不会为空。 */ -}}
 {{- $img := partial "og-image.html" . -}}
 {{- if .IsHome -}}
   {{- $ld := dict "@context" "https://schema.org" "@type" "WebSite"
@@ -107,28 +35,10 @@
       "publisher" (dict "@type" "Organization" "name" .Site.Title) -}}
 <script type="application/ld+json">{{ $ld | jsonify | safeJS }}</script>
 {{- else if .IsPage -}}
-  {{- /* 文章 / 周刊（posts + weekly，共 140 页）→ BlogPosting 全套；
-        其余**根级独立页**（/about/ /archive/ /privacy/ /donate/ /now/ /roll/ /run/）
-        → WebPage 极简三字段（name / url，不硬造 author / image / 日期）。
-
-        ⚠️ 为什么要拆开：2026-10-14 第一版按 `.IsPage` 一律发 BlogPosting 全套，
-           实测 /archive/ **+283 B gzip**、/about/ **+315 B** —— 那些字段对
-           「归档页」没有任何意义，纯白送。
-           而这批页面 fallback 到旧的 itemprop 只有 6 个短 meta ≈ 400 B，
-           极简 WebPage ≈ 120 B，反而比改之前**更小**。 */ -}}
+  {{- /* 文章 / 周刊发 BlogPosting；其他根级页只发 name/url 的 WebPage。 */ -}}
   {{- if in (slice "posts" "weekly") .Type -}}
-  {{- /* 2026-10-26 补三个字段：articleSection / keywords / inLanguage。
-        都是**短值**，不会把「不重复长文本」这条原则破掉：
-          · articleSection = 分类（一个词，如「工具」）
-          · keywords       = 标签逗号拼接（Schema.org 允许逗号分隔的字符串，
-                             也允许重复属性；Google 的 Article 文档两种都收）
-          · inLanguage     = 站点 locale（zh-CN）
-        ⚠️ `with` 会重绑定 `.`，所以两个值都**先取进具名变量**再进 dict，
-           否则 `index . 0` 里的 `.` 已经不是页面了（本仓踩过同类坑）。
-        ⚠️ 分类和标签都可能为空（比如根级独立页走不到这个分支，但周刊早期
-           有几篇没写 categories），所以两个都用 `merge` 条件追加，
-           不能直接塞进 `dict` —— 塞空值会输出 `"articleSection":""`，
-           Google 的富媒体测试会报「字段为空」。 */ -}}
+  {{- /* 三个短字段：articleSection / keywords / inLanguage。
+       ⚠️ 先取进具名变量（with 会重绑 .）；空值用 merge 条件追加，不能塞空串。 */ -}}
   {{- $section := "" -}}
   {{- with .Params.categories }}{{ $section = index . 0 }}{{ end -}}
   {{- $keywords := "" -}}
@@ -161,9 +71,7 @@
 <script type="application/ld+json">{{ $ld | jsonify | safeJS }}</script>
   {{- end -}}
 {{- else if eq .Kind "404" -}}
-  {{- /* 404 页：发 WebPage 而不是 CollectionPage。
-        它本来就是 `noindex, follow`（见 baseof.html），结构化数据只是别让它
-        语义上错成一个「集合」。标题取 .Site.Title —— 404 没有自己的标题。 */ -}}
+  {{- /* 404 发 WebPage（不是 CollectionPage），标题用站点名。 */ -}}
   {{- $ld := dict "@context" "https://schema.org" "@type" "WebPage"
       "name" .Site.Title "url" .Permalink -}}
 <script type="application/ld+json">{{ $ld | jsonify | safeJS }}</script>

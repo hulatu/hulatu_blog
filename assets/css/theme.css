@@ -1,8 +1,9 @@
 /* ============================================================
-   上游主题 hugo-bearneo 的全部样式（原样复制，未改一个字节）。
-   来源：themes/hugo-bearneo/layouts/partials/style.html
-   主题文件本身不改 —— 站点层用 layouts/partials/style.html
-   （空覆盖）把主题的内联 <style> 压掉，样式改走这里。
+   上游主题 hugo-bearneo 的全部样式（除下方已登记的 content 行高、
+   link-visited 颜色外，与上游一致）。
+   来源：themes/hugo-bearneo/layouts/partials/style.html（镜像，两处同步改）
+   主题的内联 <style> 由站点层 layouts/partials/style.html（空覆盖）压掉，
+   实际生效的是本文件；本文件是样式唯一真值。
    主题升级时对照着同步一份过来即可。
    由 layouts/partials/custom_head.html 里的管道拼成
    /css/main.min.<hash>.css（见该文件）。
@@ -20,23 +21,24 @@
         --text-color-secondary: #444;
         --text-color-tertiary: #8c8c8c;
         --link-color: #0066cc;
-        --link-visited-color: #551a8b;
+        /* 2026-11-21：visited 与 link 同色。主题原本是 #551a8b / 深色 #b388ff，
+           与「全站只有一个强调色」冲突，归档列表里已读链接会突然变紫。 */
+        --link-visited-color: #0066cc;
         --border-color: #d0d7de;
     }
 
-    @media (prefers-color-scheme: dark) {
-        /* dark theme */
-        :root {
+    /* dark theme */
+    [data-theme="dark"] {
             --bg-color-primary: #121212;
             --bg-color-secondary: #1c1f24;
             --text-color-primary: #e5e5e5;
             --text-color-secondary: #b3b3b7;
             --text-color-tertiary: #a0a0a0;
             --link-color: #6da6ff;
-            --link-visited-color: #b388ff;
+            --link-visited-color: #6da6ff;
             --border-color: #30363d;
         }
-    }
+    
 
     body {
         font-family: var(--font-primary);
@@ -110,13 +112,10 @@
     }
 
     content {
-        /* ⚠️ 本站改过：上游是 1.6（2026-10-14 改成 1.8）。
-           理由：拉丁字母有 x-height 与 ascender/descender 作视觉补偿，1.6 够松；
-           中文是方块字、没有 x-height，同一行距读长文明显更挤。
-           1.8 = 16px / 28.8px，与参考站花墨 flowersink.com 实测一致。
-           详情与「推翻过的旧结论」见 DESIGN.md 第 5 节。
-           本注释不计体积 —— minify 会剥掉（原 6424 B 的那份没有注释）。 */
-        line-height: 1.8;
+        /* ⚠️ 本站改过：上游是 1.6 → 2026-10-14 改成 1.8 → 2026-11-21 收到 1.7 → 同日定在 1.5。
+           中文是方块字、没有 x-height，太紧会挤；但用户实测 1.6 仍偏松，
+           1.5（18px × 1.5 = 27px）在可读性与紧凑度之间。 */
+        line-height: 1.5;
     }
 
     content ul,

@@ -3,7 +3,7 @@
        Feather 风格的 24×24 线性 SVG：fill none、stroke currentColor，
        颜色与大小由调用处的 CSS（.tool-icon）控制，不在这里写死。
        图标路径对照 Feather 4.29.0 的同名图标逐一核对过（send /
-       book-open / maximize-2），不要凭记忆改路径。
+       book-open / maximize-2 / unlock / shield），不要凭记忆改路径。
        加新图标 = 在下面加一个分支，并在 data/tools.yaml 里写 icon 名。
        未知名字不输出任何内容（不报错，别依赖它来发现拼写错误）。 */ -}}
 {{- $name := . -}}
@@ -13,4 +13,8 @@
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path></svg>
 {{- else if eq $name "maximize-2" }}
 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><polyline points="15 3 21 3 21 9"></polyline><polyline points="9 21 3 21 3 15"></polyline><line x1="21" y1="3" x2="14" y2="10"></line><line x1="3" y1="21" x2="10" y2="14"></line></svg>
+{{- else if eq $name "unlock" }}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+{{- else if eq $name "shield" }}
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
 {{- end }}

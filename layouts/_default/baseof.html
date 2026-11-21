@@ -1,26 +1,6 @@
 <!DOCTYPE html>
-{{- /* 站点层覆盖：相对上游有**两处**改动 ——
-
-     ① 上游用的是 .Site.LanguageCode，Hugo 0.158 起已弃用、将来会被移除
-        （届时整个主题会构建失败）。这里换成 .Site.Language.Locale。
-
-     ② 补回 <meta name="robots" content="noindex, follow">（2026-10-11）。
-        上游完全没有 robots 输出，而本站有两类页面本来就该 noindex：
-          · content/privacy.md、content/posts/_index.md 带 `noindex: true`
-          · 标签 / 分类的**词条页**（/tags/写作/ 这类）与 404 页
-        整站迁移到上游主题时，实现它的那段被一起删掉了 → 字段成了**空转**，
-        这两页会重新被收录（线上旧站实测确实是 noindex, follow）。
-        下面这个条件是从旧站逐字取回的（git show HEAD:layouts/_default/baseof.html），
-        **一字未改**，所以行为与迁移前一致。
-
-        ⚠️ `.Data.Plural` 在普通页面上取到空值，eq 比较恒为假，无害。
-        ⚠️ 2026-11-15 校注：下面这段记录的是 2026-10-11 的状态，**已经过期** ——
-           `layouts/sitemap.xml` 后来加回来了，并且和本文件共用
-           `partials/noindex.html` 同一个判定。实测产物 sitemap 156 条 URL，
-           `/privacy/`、`/posts/`、`/tags/*` 一条都不在里面，
-           「地址仍会先交给爬虫一次」的问题已消失。
-
-     除这两处外一字未改。 */ -}}
+{{- /* 站点层覆盖：① languageCode → .Site.Language.Locale（Hugo 0.158 起弃用）；
+       ② 补回 robots noindex。判定统一走 partials/noindex.html，sitemap.xml 同源。 */ -}}
 <html lang="{{ with .Site.Language.Locale }}{{ . }}{{ else }}en-US{{ end }}">
 
 <head>
@@ -29,23 +9,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   {{- partial "favicon.html" . -}}
   <title>{{- block "title" . }}{{ with .Title }}{{ . }} | {{ end }}{{ .Site.Title }}{{- end }}</title>
-  {{- /* 判定逻辑已抽到 `layouts/partials/noindex.html`（2026-10-26）。
-        原来这里和 sitemap.xml 各写一份同样的 `or(...)`，两份文件的注释
-        都写着「必须逐字一致」—— 现在只有一份，改口径只改 partial。 */ -}}
+  {{- /* noindex 判定只在 partials/noindex.html 一处，改口径改那里。 */ -}}
   {{- if partial "noindex.html" . }}
   <meta name="robots" content="noindex, follow">
   {{- end }}
 
   {{- partial "seo_tags.html" . -}}
-  {{- /* Referrer Policy：2026-10-14 从 `no-referrer-when-downgrade` 改成
-        `strict-origin-when-cross-origin`，两个理由：
-         ① 前者是 Referrer Policy 规范的 **legacy 值**（原样保留只为兼容旧实现）；
-            后者是规范当前的现代值，也是各大浏览器的**默认值**。
-         ② 与 `static/_headers` 的 `Referrer-Policy: strict-origin-when-cross-origin`
-            **保持一致** —— 原来两处不是一个值，而 meta 会覆盖 header，
-            等于 _headers 里那一行在浏览器眼里从没被遵守过。
-       行为差别：跨源请求只带 scheme+host+port（不带完整 URL 与查询串），
-       同源请求仍带完整 URL。本站没有依赖来源信息的第三方服务。 */ -}}
+  {{- /* 必须与 static/_headers 的 Referrer-Policy 同值；meta 会覆盖 header。 */ -}}
   <meta name="referrer" content="strict-origin-when-cross-origin" />
 
   {{ with .OutputFormats.Get "rss" -}}
@@ -60,29 +30,18 @@
   {{- partial "custom_head.html" . -}}
 </head>
 
-{{- /* ⚠️ `id="top"` 是**返回顶部那个锚点的落点**，见 partials/back-top.html。
-       纯 CSS 的返回顶部靠 `<a href="#top">`，所以必须有一个 `#top` 存在。
-       挂在 `<body>` 上而不是另加一个空 `<span>` —— body 本来就在文档最开头，
-       语义上也正是「文档顶部」，不需要为它多插一个空元素。
-       ⚠️ 别删这个 id：删了返回顶部就变成「点了没反应」，而且**不报错**。 */ -}}
-<body id="top">
-  {{- /* skip-link（2026-10-17 新增，WCAG 2.4.1 A 级）。
-         键盘用户第一次按 Tab 就能跳过站名 + 7 项导航直达正文；
-         鼠标用户看不见它（平时在视口外，聚焦才滑入）。样式在 custom_head.html 第 29 段。
-         ⚠️ 目标必须是 `<main>` 上的 `#main`，**不能**复用 `#top` ——
-            后者是返回顶部的落点，跳过去等于「跳到页头」，正是要绕开的东西。 */}}
+{{- /* ⚠️ id="top" 是返回顶部的落点（back-top.html 用 href="#top"）；删了就不报错地失效。 */ -}}
+<body id="top"{{ with .Params.bodyClass }} class="{{ . }}"{{ end }}>
+  {{- /* skip-link：样式在 custom.css 第 29 段。
+         ⚠️ 目标必须是 #main，不能复用 #top（那是返回顶部落点）。 */}}
   <a class="skip-link" href="#main">跳到正文</a>
   <header>
     {{- partial "header.html" . -}}
   </header>
-  {{- /* `tabindex="-1"` 让 `#main` 能被**程序化聚焦** —— 没有它时，浏览器只滚动
-         不移动焦点，下一次 Tab 又会回到页头，skip-link 等于白做。
-         它不会把 main 加进 Tab 序列（那是 tabindex="0"）。焦点环由第 29 段关掉。 */}}
+  {{- /* tabindex="-1" 让 #main 可被程序化聚焦，否则 skip-link 只滚动不换焦点。 */}}
   <main id="main" tabindex="-1">
     {{- block "main" . }}{{- end }}
-    {{- /* 打印时在文末输出当前页地址（屏幕上 display:none，零布局影响）。
-           为什么要一个元素而不是 CSS：CSS 拿不到 location，`content: attr()` 也没有源。
-           ⚠️ 只在长文页输出 —— 独立页 / 列表页打印时不需要出处，且这样少写 210 个空元素。 */}}
+    {{- /* 打印时输出当前页地址（屏幕隐藏）；只给长文页，避免全站空元素。 */}}
     {{- if and .IsPage (in (slice "posts" "weekly") .Type) }}
     <p class="print-url">{{ .Permalink }}</p>
     {{- end }}
@@ -91,52 +50,18 @@
     {{- partial "footer.html" . -}}
   </footer>
 
-  {{- /* 返回顶部。**只对长文页输出**（判断在 partial 里）。
-         位置在 footer 之后：它是 position: fixed，DOM 顺序不影响视觉，
-         放在最后可以让正文 / 页脚先到达。
-         ⚠️ 曾经的「阅读进度条」2026-10-11 已按用户要求删除，只剩这一个装置。 */ -}}
+  {{- /* 返回顶部：只对长文页输出（判断在 partial 里）。没有阅读进度条。 */ -}}
   {{- partial "back-top.html" . -}}
 
-  {{- /* 代码块复制按钮的脚本。**只在含代码块的页面加载**（判断在 partial 里），
-         否则 320 多个页面都要为它付一次请求。 */ -}}
+  {{- /* 代码块复制脚本：只在含代码块的页面加载（判断在 partial 里）。 */ -}}
   {{- partial "code-copy.html" . -}}
 
-  {{- /* 搜索快捷键（2026-11-15，同日改口径后收敛到这里）
-         **全站只有一个搜索入口：/archive/ 页面顶部那个输入框。**
-         2026-11-15 白天先做过一个独立的 ⌘K 浮层面板，用户当天要求
-         「输入框、搜索框集中到 /archive/ 原有的那个搜索框上」——
-         于是面板（partials/search-panel.html + assets/js/search.js）整块删除，
-         它的能力（正文索引、命中高亮、键盘导航）并进了 search-box.html 的脚本。
-
-         这里只留「把人送到那个框」这一件事：
-           · 已经在 /archive/ → 直接聚焦输入框（不刷新、不留 hash）；
-           · 在别的页面 → 跳到 /archive/#search-input，浏览器会滚过去并聚焦。
-         ⚠️ 跳转会离开当前文章。这是「只有一个搜索框」的必然代价，用户明确选了这条路。
-         ⚠️ `/` 只在没在输入时生效，否则打不出斜杠；不用 `s` 当快捷键 ——
-            中文输入法下 `s` 是打字，会频繁误触。
-         ⚠️ 内联而不是外链 JS：这段不到 500 B，比多发一个请求划算。 */ -}}
-  <script>
-  (function () {
-    var SEARCH_URL = {{ "archive/" | relURL }} + "#search-input";
-    function focusSearch() {
-      var input = document.getElementById("search-input");
-      if (!input) return false;
-      input.focus();
-      input.select();
-      return true;
-    }
-    document.addEventListener("keydown", function (e) {
-      var tag = (e.target && e.target.tagName) || "";
-      var typing = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT" ||
-                   (e.target && e.target.isContentEditable);
-      var isK = (e.metaKey || e.ctrlKey) && (e.key === "k" || e.key === "K");
-      var isSlash = e.key === "/" && !typing && !e.metaKey && !e.ctrlKey && !e.altKey;
-      if (!isK && !isSlash) return;
-      e.preventDefault();
-      if (!focusSearch()) window.location.href = SEARCH_URL;
-    });
-  })();
-  </script>
+  {{- /* 搜索快捷键：2026-11-21 起由 custom_body.html 的全局命令面板接管
+         （`/` 与 `⌘K` 在任何页面都能呼出，不再跳 /archive/）。
+         ⚠️ 别在这里再加一份 keydown —— 两处同时监听会一次开两个面板，
+            或出现「面板打开后页面又跳走」。
+         ⚠️ /archive/ 的搜索框 2026-11-21 已彻底删除（partial 与 postSearch 参数都没了）；
+            将来若再加输入框，记得补回 `/` 的 typing 守卫。 */ -}}
 
   <!-- A partial to be overwritten by the user.
   Simply place a custom_body.html into

@@ -1,150 +1,59 @@
 {{ define "main" }}
-{{- /* 站点层覆盖：上游这一行是 {{ if eq .Type "blog" }}，把标题和日期写死给了 blog 段。
-       于是 /weekly/ 的 24 篇文章、/about/、/privacy/ 全都渲染成「没有标题、没有日期」的裸正文。
-       这里只把这一层条件去掉，其余（正文、标签、TOC、Mermaid）原样保留。 */ -}}
-{{- /* 页面是否属于「长文页」（文章 + 周刊）。文末的系列带、上一篇/下一篇、
-       评论区都只挂在这两类上，所以提到最前面算一次，后面复用。
-       ⚠️ 别在下面再写一次 `$longForm :=` —— 同一层作用域重复声明会直接构建失败。 */ -}}
+{{- /* 站点层覆盖：去掉上游只给 blog 段的 if，让 weekly / 根级页也有标题和日期。
+       长文页 = posts + weekly；文末导航与评论区都只挂这两类。 */ -}}
 {{- $longForm := and .IsPage (in (slice "posts" "weekly") .Type) -}}
-{{- /* ---------- 目录（TOC）：桌面侧栏保留，手机折叠不恢复（2026-11-02 第二轮）----------
-       第一轮按「标签页不显示目录、也不显示开头的折叠目录」把两种目录一起删了；
-       用户随后改口径：**电脑端的侧边目录恢复成之前的样子**。
-       所以现在的状态是：
-         · 桌面（>1200px）：右侧悬浮目录 div.toc ← 本文件末尾，已恢复；
-         · 窄屏（≤1200px）：没有目录（正文顶部的 <details class="toc-mobile"> 保持删除）。
-
-       两块原本共用 `$tocEnabled`（2026-10-17 为了防止「侧栏关了、手机上还有」），
-       现在只有侧栏用它，`$h2count`（只服务手机折叠目录）不再需要，已删。
-       `hugo.toml` 的 params.toc 已改回 true；roll / archive / donate 三页仍用
-       front matter 的 `toc: false` 单独关掉。
-
-       ⚠️ 主题 style.html 的 div.toc 样式、custom_head 第 20 段（1200px 断点）
-          都还在原处，侧栏恢复后直接生效；第 31 段（.toc-mobile）仍是无消费者的死样式。
-       ⚠️ 目录锚点（h2 的 id）由 render-heading / Goldmark 生成，与是否显示目录无关。 */ -}}
+{{- /* byline 用的字数 / 阅读时长 / 更新判据，只算一次。
+       汉字 400 字/分、英文 200 词/分，向上取整、最少 1 分钟。 */ -}}
+{{- $hanChars := len (findRE "\\p{Han}" .Plain) -}}
+{{- $engWords := len (findRE "[A-Za-z]+" .Plain) -}}
+{{- $totalWords := add $hanChars $engWords -}}
+{{- $readMins := int (math.Ceil (add (div (float $hanChars) 400.0) (div (float $engWords) 200.0))) -}}
+{{- if lt $readMins 1 }}{{ $readMins = 1 }}{{ end -}}
+{{- $showUpdated := and .Lastmod (.Lastmod.After .Date) (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) -}}
+{{- /* 目录两块并存：>1200px 右侧 div.toc，≤1200px 正文顶部 <details>。
+       共用 $tocEnabled；媒体查询在 custom.css 第 20 / 46 段。
+       ⚠️ 锚点由 render-heading 生成，与目录显隐无关。 */ -}}
 {{- $tocEnabled := default .Site.Params.toc .Params.toc -}}
-{{- /* 面包屑（站点层 partial，只对文章页输出）。放在 <h1> 之前 ——
-       它是「当前位置」的指示，必须在标题上面。见 partials/breadcrumbs.html。 */ -}}
+{{- /* 面包屑必须在 h1 之前。 */ -}}
 {{- partial "breadcrumbs.html" . -}}
 {{ if not .Params.menu }}
-{{- /* 标题行。front matter 写 `hideTitle: true` 可以**整行**藏掉 ——
-       目前 /about/ /now/ /roll/ 用它：那几页照 yinji.org 做成无标题的独立页，
-       页面上不出标题（标题只留在 <title> 和导航高亮里）。
-       ⚠️ 和 hideDate 是两个开关，互不影响：/roll/ 两个都开了。
-
-       ⚠️ 2026-10-25：藏掉标题时**仍然输出一个视觉隐藏的 <h1>**（`.sr-only`）。
-          原因：站名在 2026-10-18 从 <h1> 降级成 <p class="title"> 之后，
-          这三页就变成整页一个标题都没有 —— 屏幕阅读器按标题跳转时**无处可落**，
-          SEO 上也少一个主标题。隐藏起来是为了不改动「无标题」这个视觉决定：
-          `.sr-only` 走的是 clip 方案，元素仍在无障碍树里、只是看不见。
-          ⚠️ 别改成 `display:none` / `hidden` 属性 —— 那样会连读屏一起藏掉。 */ -}}
+{{- /* hideTitle 只藏视觉标题，仍输出 .sr-only h1（clip 方案）。
+       ⚠️ 别改成 display:none / hidden，会连读屏一起藏掉。 */ -}}
 {{ if not .Params.hideTitle }}
 <h1>{{ partial "orphan-safe.html" .Title }}</h1>
 {{ else }}
 <h1 class="sr-only">{{ partial "orphan-safe.html" .Title }}</h1>
 {{ end }}
-{{- /* 日期行。front matter 写 `hideDate: true` 可以只藏掉这一行 ——
-       目前 /about/ 用了它（独立页挂一个「最后修改于某天」的日期没有意义）。
-       注意只影响页面上的显示：<meta property="article:published_time"> 等仍按 .Date 输出。
-       ⚠️ 2026-10-14：去掉了 `pubdate`。该属性 2017 年就被 HTML 规范移除，
-          现在 `datetime` 一个属性就是完整的语义（微数据那条路本站也不再走，
-          见 layouts/partials/seo_tags.html 的 JSON-LD）。
-       顺序（2026-11-06 调整）：标题 → 这一行 → 副标题 .dek → 正文。
-       之前副标题夹在标题与这一行之间；用户要求这一行紧贴标题下方。 */ -}}
+{{- /* hideDate 只藏页面上的日期行；meta 仍按 .Date 输出。
+       ⚠️ 不要加回 pubdate（HTML 规范已移除）。顺序：标题 → 日期 → dek → 正文。 */ -}}
 {{ if and .Date (not .Params.hideDate) }}
-{{- /* 「更新于」只在**真的改过**的时候出现（2026-10-26 新增）。
-       ── 判据为什么是「日期不同」而不是「差 ≥ 24 小时」──────────────
-         · 本站 140 篇文章里 **137 篇**的 `lastmod` 与 `date` 不同（实测）。
-           其中 135 篇是 2026-11-05 同一次批量改动留下的**同一个时间戳** ——
-           它们显示的「更新于 2026-11-05」完全一样，数据没错但对读者没有区分度；
-           要恢复区分度只能按真实修订时间重写 lastmod，**别为此改这里的判据**。
-           剩下两篇是几天到几个月后的小修，也有「当天发、当天改」的。
-         · 当天改的那种，两个日期长得一模一样，并排显示成
-           「2026-10-26 · 更新于 2026-10-26」—— 纯噪音。
-         · 所以判据取**日历日不同**：`Format "2006-01-02"` 之后比较字符串。
-           它天然等价于「跨了一天以上」，又不用做时长相减
-           （Go 模板里 `gt` 比 int64 与无类型常量容易报类型不匹配）。
-       ⚠️ 必须同时要求 `.Lastmod.After .Date`：万一 front matter 把
-          `lastmod` 写成了早于 `date` 的值，光比字符串会显示成「更新于更早的日期」。
-       ⚠️ `lastmod` 没写的文章，Hugo 会把它设成等于 `date`（本站没开
-          `enableGitInfo`），所以这一整块对那 51 篇**不会输出任何东西**，
-          也就不会每篇都挂两个日期。
-       ⚠️ 「更新于」本身不加任何 CSS：整段仍然在同一个 `<i>` 里，
-          只用一个分隔符。但这一行的字号在 2026-11-06 之前是**混着的**：
-          只有 `<time>` 是 15px，「约 X 分钟 · 全文约 Y 字」那段文本直接
-          继承正文 18px。这次把它整体收到 15px（`.byline`，
-          custom_head.html 第 39 段），与「日期行 15px，与正文拉开」的原意对齐。 */ -}}
-{{- $showUpdated := and .Lastmod (.Lastmod.After .Date) (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) -}}
+{{- /* 「更新于」判据：Lastmod 晚于 Date 且日历日不同（当天改不显示）。
+       ⚠️ 必须同时比 After，防止 lastmod 被写成更早。
+       byline 样式在 custom.css 第 39 段；用间距分隔，不用中点串。 */ -}}
 <p class="byline">
-  <i>
-    <time datetime='{{ .Date.Format "2006-01-02" }}'>
-      {{ .Date.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}
-    </time>
-    {{- if $showUpdated }}
-    · 更新于 <time datetime='{{ .Lastmod.Format "2006-01-02" }}'>{{ .Lastmod.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}</time>
-    {{- end }}
-    {{- if $longForm }}
-    {{- /* 阅读时长与字数（2026-11-05 新增）。
-           Hugo 内置 .WordCount 把连续中文算成 1 个词（实测：100 汉字 + 10 英文词 → 11），
-           .ReadingTime 跟着错，所以这里自己算：
-             · 汉字：findRE "\p{Han}" 计数；英文：findRE "[A-Za-z]+" 按词计数；
-             · 合计为「字」；中文 400 字/分钟、英文 200 词/分钟，加权后向上取整、最少 1 分钟。
-           显示沿用本行已有的分隔符；整行字号由 `.byline` 收到 15px
-           （2026-11-06 之前只有 <time> 是 15px，这段文本是 18px）。
-           只给长文页（$longForm：posts + weekly），独立页不挂。 */ -}}
-    {{- $hanChars := len (findRE "\\p{Han}" .Plain) -}}
-    {{- $engWords := len (findRE "[A-Za-z]+" .Plain) -}}
-    {{- $totalWords := add $hanChars $engWords -}}
-    {{- $readMins := int (math.Ceil (add (div (float $hanChars) 400.0) (div (float $engWords) 200.0))) -}}
-    {{- if lt $readMins 1 }}{{ $readMins = 1 }}{{ end }}
-    · 约 {{ $readMins }} 分钟 · 全文约 {{ $totalWords }} 字
-    {{- end }}
-  </i>
+  <span>发布于 <time datetime='{{ .Date.Format "2006-01-02" }}'>{{ .Date.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}</time></span>
+  {{- if $showUpdated }}
+  <span>更新于 <time datetime='{{ .Lastmod.Format "2006-01-02" }}'>{{ .Lastmod.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}</time></span>
+  {{- end }}
+  {{- if $longForm }}
+  <span class="byline-read">约 {{ $readMins }} 分钟</span>
+  <span class="byline-words">全文约 {{ $totalWords }} 字</span>
+  {{- end }}
 </p>
 {{ end }}
 {{ end }}
-{{- /* 副标题（2026-11-06 新增，参考 Medium 的 dek；2026-11-06 晚移位）：
-       front matter 的 description 本来只进 meta / og 标签、页面上不显示，
-       这里在长文页（$longForm：posts + weekly）把它渲染成灰色副标题。
-       位置：日期行之后、正文之前（标题 → 日期行 → 副标题 → 正文）。
-       之前它夹在标题与日期行之间；用户要求日期行紧贴标题下方，所以整块
-       从标题分支里挪到这里。只挂长文页（$longForm），/about/ /now/ /roll/
-       不是长文页，不走这条分支。
-       140 篇文章都有 description（唯一缺的是 content/posts/_index.md，
-       那是列表页不是文章），所以不用补写；哪天某篇没写，`with` 会让整行
-       直接消失，不留空行。样式在 custom_head.html 第 39 段。 */ -}}
+{{- /* 长文页把 description 渲染成 .dek 副标题；没写就整行消失。
+       样式在 custom.css 第 39 段。 */ -}}
 {{ if $longForm }}{{ with .Description }}<p class="dek">{{ . }}</p>{{ end }}{{ end }}
 
-{{- /* ---------- 窄屏折叠目录（2026-11-15 恢复）-------------------------------
-       2026-11-02 按用户要求删过一次（「电脑端的侧边目录恢复成之前的样子」，
-       手机折叠目录保持删除）。2026-11-15 用户重新拍板：**≤1200px 时正文顶部
-       这块折叠目录要显现**，与右侧侧栏互补：
-
-         >1200px  → div.toc（右侧浮动，含主题的滚动高亮脚本）
-         ≤1200px  → 这块 <details>（正文顶部，静态列表）
-
-       ⚠️ **DOM 里同时存在两份目录**，靠第 20 / 46 段两个严丝合缝的媒体查询
-          互斥显示。别试图「合成一份」：桌面那份是 position: fixed，
-          要挪到正文顶部得同时改定位、DOM 顺序和主题脚本的作用域。
-       ⚠️ 这份**没有 id、没有 <nav> 外壳、没有脚本** —— 直接从 `.TableOfContents`
-          把 `<nav id="TableOfContents">` 换成 `<div class="toc-mobile-list">`：
-            · 不产生重复 id（两份都带 id 是无效 HTML，且主题脚本只认第一个）；
-            · 不重复注册滚动高亮（那份归桌面侧栏）；
-            · 不需要再处理主题那 130 行 JS。
-          ⚠️ 锚点仍然要过 `toc-anchors.html` —— 正文标题 id 是拼音化的，
-             这里不换就跟桌面那份对不上，点了跳错位置。
-       ⚠️ 空目录的判断用 `in $tocMobile "<ul"`，不抄主题那句
-          `ne .TableOfContents "<nav id=\"TableOfContents\"></nav>"`：
-          后者依赖 Hugo 对空 TOC 的确切写法，前者只认「有没有条目」。
-       ⚠️ 它放在 <content> **外面**：进去就会吃 `content { line-height: 1.6 }`
-          与首元素 margin 归零那两条，折叠块的上下间距会跟着正文变。
-       --------------------------------------------------------------- */ -}}
+{{- /* 窄屏折叠目录：无 id、无 nav、无脚本，避免与桌面目录重复。
+       ⚠️ 锚点必须过 toc-anchors.html，否则与正文拼音 id 对不上。
+       ⚠️ 空目录用 `in $tocMobile "<ul"` 判断。
+       ⚠️ 放在 <content> 外面，避免吃正文行高与首元素 margin。 */ -}}
 {{- if $tocEnabled -}}
   {{- $tocMobile := .TableOfContents -}}
   {{- if in $tocMobile "<ul" -}}
-    {{- /* ⚠️ 用 `replaceRE` 而不是 `replace`：只认「带 id=TableOfContents 的 nav」，
-           属性顺序变了也照样命中。写成 `replace `<nav id="TableOfContents">``
-           的话，Hugo 哪天换个属性顺序就会**静默失效** —— 后果是页面上多出一个
-           重复 id 的 <nav>，不报错、只在审计时看得见。 */ -}}
+    {{- /* 用 replaceRE 匹配带 id 的 nav：属性顺序变了也不失效。 */ -}}
     {{- $tocMobile = replaceRE `<nav[^>]*\bid="TableOfContents"[^>]*>` `<div class="toc-mobile-list">` $tocMobile -}}
     {{- $tocMobile = replace $tocMobile `</nav>` `</div>` -}}
     {{- $tocMobile = partial "toc-anchors.html" (dict "html" $tocMobile "page" .) -}}
@@ -155,80 +64,32 @@
   {{- end -}}
 {{- end }}
 
-{{- /* 表格横向滚动包裹（2026-10-11 从旧「印章」主题取回）
-     宽表格在窄屏会**撑破容器**（内容区手机只有 352px），整页跟着横向滚动。
-     解法是在 `<table>` 外面套一层 `.table-wrap`，让**只有表格自己**横滚。
-
-     ⚠️ 为什么用 `replaceRE` 而不是 Goldmark 的 `render-table.html` 钩子：
-        那个钩子拿到的是 `.THead` / `.TBody` 这类**结构化数据**，
-        要自己把表头、表体、合并单元格全遍历一遍才能还原出表格 ——
-        为「加一层 div」重写整个表格渲染，代价远大于收益。
-        字符串替换在这里更简单、也更难写错（表格是块级元素，`<table` 不会出现在别处）。
-     ⚠️ `</table>` 要带 `>`：只写 `</table` 也行，但带上右尖括号更精确，
-        不会误伤假设中的 `</table-something>`。
-     ⚠️ `.Content` 本来是 `template.HTML`，过一次 `replaceRE` 会**降级成普通 string**
-        （这正是 `render-link.html` 注释里记过的类型坑），所以末尾必须 `safeHTML` 还原回来，
-        否则整篇 HTML 会被转义成可见的标签文本。
-     ⚠️ 没有表格的页面也走这两个 `replaceRE`（空转），代价是两次正则扫描 —— 可忽略。
-        2026-11-15 校注：这里原本写「全站只有 1 篇文章有表格（…3 列）」，已过期 ——
-        实测 3 篇文章（《工科研究生用 Mac》《分享 3 个开源工具》《周刊 30》）
-        加 /run/ 页共 4 处 `<table>`，全部已被包上 `.table-wrap`。数这一项别靠印象，
-        用 `grep -rl '<table' public --include=index.html`。 */ -}}
+{{- /* 表格包一层 .table-wrap，让窄屏只横滚表格。
+       ⚠️ replaceRE 会把 template.HTML 降级成 string，末尾必须 safeHTML。
+       ⚠️ 不要为这一层 div 重写 render-table 钩子，字符串替换更简单。 */ -}}
 {{- $content := .Content | replaceRE "<table" "<div class=\"table-wrap\"><table" | replaceRE "</table>" "</table></div>" -}}
-{{- /* 正文内链：见 partial 里的大段注释（词表 data/inline-links.json，29 条）*/ -}}
+{{- /* 正文内链：词表 data/inline-links.json。 */ -}}
 {{- $content = partial "inline-links.html" (dict "c" $content "p" .) -}}
-{{- /* 手机端折叠目录（原 <details class="toc-mobile">）2026-11-02 删除后**不恢复**：
-       用户只要求恢复电脑端的侧边目录。桌面那份在文件末尾，见文件头注释。 */ -}}
-<content> {{ $content | safeHTML }} </content>
+{{- /* long-form 类只给长文页与 /style/，引用框新样式挂这个类。 */ -}}
+{{- $bodyClass := or $longForm .Params.longForm -}}
+<content{{ if $bodyClass }} class="long-form"{{ end }}> {{ $content | safeHTML }} </content>
 
-{{- /* ---------- 标签行（2026-10-11 改回单行）---------------------------
-     ⚠️ 这一行曾经在 2026-10-11 当天**短暂地变成两行**（`● 分类` + `#标签`），
-        用户当天就否掉了：「把我文章页底部的分类去掉」。
-        理由：文章页**页首的面包屑里已经有分类了**（`首页 / 文章 / 工具`），
-        文末再来一遍是重复；而标签是文章页独有的信息（面包屑里没有），所以只留标签。
-
-     ⚠️ **别再把它加回来。** 分类的入口有两处，都不在文末：
-        · 页首面包屑的第三段（`/categories/<分类>/`）
-        · `/categories/<分类>/` 词条页本身（仍然生成，只是没有索引页）
-     想找分类入口，看 layouts/partials/breadcrumbs.html 而不是这里。
-     ⚠️ 用 `.GetTerms`（拿的是词条页对象，有 `.LinkTitle` / `.Permalink`），
-        不是 `.Params.tags`（那只有字面字符串）。
-     --------------------------------------------------------------- */ -}}
+{{- /* 文末只放标签，不放分类（分类入口在面包屑）。
+       ⚠️ 用 .GetTerms 取词条页对象，不要用 .Params.tags。 */ -}}
 {{- with .GetTerms "tags" }}
 <p>
   {{- range . }}
-  <a href="{{ .Permalink }}">#{{ .LinkTitle }}</a>
+  <a href="{{ .RelPermalink }}">#{{ .LinkTitle }}</a>
   {{- end }}
 </p>
 {{- end }}
 
-{{- /* ============================================================
-     文末导航（站点层新增，上游主题没有）—— 2026-10-11
-     两段，都在标签行之后、评论区之前：
-       ① 「系列」坐标带 —— 只有连载文章才有
-       ② 「上一篇 / 下一篇」—— 全站按日期排的邻居
-
-     为什么是这个顺序：读者读完正文，先想知道「我在这组连载里的哪一篇、上下篇是
-     哪两篇」（纵向），再想知道「时间线上的前后邻居」（横向），最后才是评论。
-
-     ⚠️ 样式在 partials/custom_head.html 第 09 / 10 段（异步于首屏），
-        改类名要两处一起改。
-     ⚠️ 两段都**只给长文页**（posts + weekly）。独立页（/about/、/roll/ …）
-        既没有 series 也不该出现「上一篇」，用 $longForm 挡掉。
-     ============================================================ */ -}}
+{{- /* 文末推荐三选一：系列 > 相关文章 > 上一篇/下一篇。
+       样式在 custom.css 第 09 / 10 段；只给长文页。 */ -}}
 {{- if $longForm }}
 
-  {{- /* ---------- ① 系列坐标带 ------------------------------------------
-       数据口径与归档页的系列入口**完全一致**：都从 content 的 `series:` 字段
-       取组，都用 `.ByDate`（升序 = 连载顺序）定位，所以两处算出来的
-       「第 N / M 篇」必然一样，不会各说各话。
-
-       站里现有 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4。
-
-       ⚠️ 只有 `len $seriesGroup > 1` 才渲染 —— 单篇的「系列」是自相矛盾的。
-       ⚠️ 系列内上下篇用 `index $seriesGroup (sub $seriesPos 2)` 求，**别用
-          `.NextInSection` / `.PrevInSection`** —— 那两个是按 section 的全站日期序，
-          会把系列之外的文章算成邻居。 */ -}}
+  {{- /* 系列带：口径与归档页一致（series 字段 + .ByDate 升序）。
+       ⚠️ 只有多于 1 篇才渲染；上下篇别用 PrevInSection。 */ -}}
   {{- $seriesName := .Params.series -}}
   {{- $seriesGroup := slice -}}
   {{- $seriesPos := 0 -}}
@@ -240,19 +101,44 @@
     {{- end -}}
   {{- end -}}
   {{- $hasSeriesBand := and $seriesName (gt (len $seriesGroup) 1) -}}
+
+  {{- /* 时间线邻居提前算，供相关文章排除。 */ -}}
+  {{- $allPosts := (where site.RegularPages "Type" "in" (slice "posts" "weekly")).ByDate.Reverse -}}
+  {{- $olderPage := false -}}
+  {{- $newerPage := false -}}
+  {{- range $i, $p := $allPosts -}}
+    {{- if eq $p.RelPermalink $.RelPermalink -}}
+      {{- if lt (add $i 1) (len $allPosts) -}}{{- $olderPage = index $allPosts (add $i 1) -}}{{- end -}}
+      {{- if gt $i 0 -}}{{- $newerPage = index $allPosts (sub $i 1) -}}{{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- /* 相关文章：系列文章排除整个系列组，非系列排除时间线上下篇。
+       扫 12 条再截 4 条；排序由 hugo.toml 的 [related] 决定。 */ -}}
+  {{- $exclude := slice $.RelPermalink -}}
+  {{- if $hasSeriesBand -}}
+    {{- range $seriesGroup -}}{{- $exclude = $exclude | append .RelPermalink -}}{{- end -}}
+  {{- else -}}
+    {{- with $olderPage -}}{{- $exclude = $exclude | append .RelPermalink -}}{{- end -}}
+    {{- with $newerPage -}}{{- $exclude = $exclude | append .RelPermalink -}}{{- end -}}
+  {{- end -}}
+  {{- $relPool := where site.RegularPages "Type" "in" (slice "posts" "weekly") -}}
+  {{- $related := slice -}}
+  {{- range first 12 ($relPool.Related .) -}}
+    {{- if not (in $exclude .RelPermalink) -}}
+      {{- $related = $related | append . -}}
+    {{- end -}}
+  {{- end -}}
+  {{- $related = first 4 $related -}}
+
   {{- if $hasSeriesBand -}}
   <nav class="post-series" aria-label="系列导航">
-    <p class="post-series-head"><a href="{{ "series/" | relURL }}">系列</a> · <span class="post-series-name">{{ $seriesName }}</span><span class="post-series-count">第 {{ $seriesPos }} / {{ len $seriesGroup }} 篇</span></p>
+    <p class="post-series-head"><a href="{{ "series/" | relURL }}#{{ $seriesName | anchorize }}" title="查看「{{ $seriesName }}」全部 {{ len $seriesGroup }} 篇">系列</a> · <span class="post-series-name">{{ $seriesName }}</span><span class="post-series-count">第 {{ $seriesPos }} / {{ len $seriesGroup }} 篇</span></p>
     <div class="post-series-links">
       {{- if gt $seriesPos 1 -}}
         {{- $prev := index $seriesGroup (sub $seriesPos 2) -}}
-        {{- /* 标题里的系列前缀（「综述写作之-」「居家流水账-」）和上面那行系列名
-               重复了，剥掉才读得通；完整标题留在 title 里，鼠标停一下还能看到。
-               与归档页的系列入口用同一套剥法，两处保持一致。
-
-               ⚠️ 这里**不走** orphan-safe 那类「末 2 字包 nowrap」的处理：
-               `.post-series-title` 是 nowrap + ellipsis，标题永不换行，
-               包了也是空转。直接插值即可（HTML 上下文里 Go 模板本来就会转义）。 */ -}}
+        {{- /* 剥掉标题里的系列前缀；完整标题留在 title 属性。
+               .post-series-title 本身 nowrap + ellipsis，不需要 orphan-safe。 */ -}}
         {{- $prevLabel := strings.TrimPrefix (printf "%s之-" $seriesName) $prev.Title -}}
         {{- $prevLabel = strings.TrimPrefix (printf "%s-" $seriesName) $prevLabel -}}
         <a class="post-series-link" href="{{ $prev.RelPermalink }}" title="{{ $prev.Title }}">
@@ -275,26 +161,13 @@
   </nav>
   {{- end -}}
 
-  {{- /* ---------- ② 相关文章（2026-10-25 新增）------------------------------
-       动机：全站 140 篇里 112 篇正文 0 条站内链接，文末只有「按日期排的
-       上下篇」。读者从搜索结果落进来，下一篇只能靠「碰巧日期相邻」。
-
-       口径：`site.RegularPages.Related` 用 hugo.toml 的 [related] 算分
-       （tags 200 / categories 50 / threshold 20，为什么是这些数写在那边）。
-       ⚠️ 取页池时**必须限定 posts + weekly** —— 不限定的话 /about/、/now/、
-          /roll/ 这些根级单页会混进推荐位（它们也带 tags）。
-       ⚠️ 权重与阈值见 hugo.toml；**改之前先数产物里 `.post-related` 有几个**，
-          2026-10-05 那次就是 threshold 吃默认 80 导致「一条都推不出来」。
-       ⚠️ 只有 `$longForm`（posts + weekly）才渲染，和上面两段同一个守卫。
-
-       位置刻意放在「上一篇/下一篇」**之前**：读者此刻想要的是「还有什么
-       类似的」，而不是「按时间下一篇是谁」。 */ -}}
-  {{- $relPool := where site.RegularPages "Type" "in" (slice "posts" "weekly") -}}
-  {{- with first 4 ($relPool.Related .) }}
+  {{- /* 相关文章：页池必须限定 posts + weekly，否则根级页会混进来。
+       ⚠️ 改 [related] 前先数产物里的 .post-related 数量。 */ -}}
+  {{- if and (not $hasSeriesBand) $related }}
   <nav class="post-related" aria-label="相关文章">
     <p class="post-related-head">相关文章</p>
     <ul class="post-related-list">
-      {{- range . }}
+      {{- range $related }}
       <li class="post-related-item">
         <a class="post-related-link" href="{{ .RelPermalink }}">{{ .Title }}</a>
         <span class="post-related-date">{{ .Date.Format site.Params.dateFormat }}</span>
@@ -304,34 +177,10 @@
   </nav>
   {{- end }}
 
-  {{- /* ---------- ③ 全站「上一篇 / 下一篇」 ------------------------------
-       2026-10-05 曾经删过一次（当时的理由是它和相关文章 if/else 互斥、从没渲染过，
-       且「按顺序连载」交给 series 就够了）；2026-10-11 用户要求加回来 ——
-       这次与系列带并存了一段时间；**2026-11-03 起，有系列带的文章不再渲染这一块**
-       （用户要求）：系列带已经给了组内「上一篇 / 下一篇」，再出现一组同名的
-       「时间线前后」会让读者分不清两个「上一篇」到底指谁。系列带没有渲染的
-       情况（非系列文章、或系列只有 1 篇）仍然保留这一块。
-
-       口径：posts + weekly 合起来按 `.ByDate.Reverse`（新的在前）排成一列，
-       找到当前页的下标 i：
-         · i-1 → 更新的那篇 → 标「下一篇」
-         · i+1 → 更早的那篇 → 标「上一篇」
-       即「上一篇 = 更早、下一篇 = 更晚」，**与上面系列带的上下篇方向一致**
-       （系列带也是 上一篇 = 升序里更靠前 = 更早）。两处方向必须一致，
-       否则同一页里两个「上一篇」会指向相反的方向。
-
-       ⚠️ 别用 `.PrevInSection` / `.NextInSection`：那是 section 内的顺序，
-          weekly 和 posts 会被割成两条线，周刊的邻居就丢了。 */ -}}
-  {{- if not $hasSeriesBand -}}
-  {{- $allPosts := (where site.RegularPages "Type" "in" (slice "posts" "weekly")).ByDate.Reverse -}}
-  {{- $olderPage := false -}}
-  {{- $newerPage := false -}}
-  {{- range $i, $p := $allPosts -}}
-    {{- if eq $p.RelPermalink $.RelPermalink -}}
-      {{- if lt (add $i 1) (len $allPosts) -}}{{- $olderPage = index $allPosts (add $i 1) -}}{{- end -}}
-      {{- if gt $i 0 -}}{{- $newerPage = index $allPosts (sub $i 1) -}}{{- end -}}
-    {{- end -}}
-  {{- end -}}
+  {{- /* 兜底：时间线上一篇/下一篇。posts + weekly 合并按日期倒序，
+       上一篇 = 更早、下一篇 = 更晚，方向与系列带一致。
+       ⚠️ 别用 PrevInSection / NextInSection，会把 posts 与 weekly 割开。 */ -}}
+  {{- if and (not $hasSeriesBand) (not $related) -}}
   {{- if or $olderPage $newerPage -}}
   <nav class="post-nav" aria-label="上一篇 / 下一篇">
     {{- with $olderPage }}
@@ -353,12 +202,9 @@
   </nav>
   {{- end -}}
   {{- end -}}
-{{- /* 作者卡片 2026-11-05 已删：上线后用户认为与极简风格不一体，要求去掉。别再加回来。 */ -}}
+{{- /* 不要再加作者卡片或文末「本文信息」块。 */ -}}
 {{- end }}
-{{- /* 评论区。移植自 ~/Blog：只给「长文页」（文章 + 周刊）挂，
-       并且尊重单篇的 comments: false。
-       列表页 / 关于页 / 隐私页不挂 —— 它们一屏到底，挂上去只会多一个空盒子。
-       上游主题没有评论区，这一段是站点层新增的。 */ -}}
+{{- /* 评论区只给长文页，尊重单篇 comments: false。 */ -}}
 {{- if and site.Params.giscus.repo $longForm (ne .Params.comments false) }}
 <section class="giscus-wrap" id="comments">
   {{ partial "giscus.html" (dict "title" "评论") }}
@@ -366,35 +212,15 @@
 {{- end }}
 
 <!-- Place the TOC at the end to ensure the article content loads first. -->
-{{- /* 电脑端的右侧悬浮目录（2026-11-02 第二轮恢复）。
-       ⚠️ 只在 >1200px 可见（custom_head.html 第 20 段）；≤1200px 整块 display:none，
-          手机上不会出现任何目录 —— 手机折叠目录没有恢复，见正文顶部那条注释。 */ -}}
+{{- /* 桌面右侧目录：>1200px 显示，窄屏由正文顶部折叠目录承担。 */ -}}
 {{ if $tocEnabled }}
 <div class="toc">
-{{- /* ⚠️ 目录里的 href 要跟着正文 id 一起换成拼音锚点，见 partials/toc-anchors.html。
-       捕获 partial 的输出再替换，是为了**不改主题的 toc.html**（那 130 行 JS 得原样留着）。 */ -}}
+{{- /* 目录 href 必须换成与正文同一套拼音锚点；保留主题 toc.html 不动。 */ -}}
 {{- $tocHTML := partial "toc.html" . -}}
 {{- partial "toc-anchors.html" (dict "html" $tocHTML "page" .) | safeHTML -}}
 </div>
-{{- /* 目录显隐脚本（2026-11-06，配合 custom_head.html 第 40 段的 Medium 风格）。
-       主题 toc.html 里那 130 行 JS 只管「当前节高亮 + 点击平滑滚动」，不管显隐，
-       这里补一小段只管三件事 —— 都是 Medium 实测的行为：
-         ① 滚动时收起面板：Medium 里面板打开时再滚动会收起；这里滚动中给
-            div.toc 加 .toc-scrolling，第 40 段的 :hover / .toc-open 规则
-            都带 :not(.toc-scrolling)，滚动一停（150ms 后）就摘掉，鼠标
-            还在指示器上时面板会自己回来（和 Medium 一致）。
-         ② 点按开关（给触屏 / 没有悬停的设备）：第一下点按只打开面板、
-            不跳转，第二下点链接才跳转。拦跳转靠的是注册顺序：本脚本行内
-            执行，主题的监听挂在 DOMContentLoaded 之后，所以同一元素
-            （.toc-nav）上本脚本先注册，先跑到的这里能用 stopImmediatePropagation
-            拦住主题那个；面板打开后就直接放行。只拦触屏（pointerType 是
-            touch 时）：鼠标点链接时悬停已经打开了面板，不用拦。
-         ③ 没 H2 的文章：主题 partial 输出空，div.toc 是个空盒子，直接藏掉，
-            免得右缘多一个 36px 宽的空白悬停区。
-         键盘：Tab 进目录时 focusin 给 div.toc 加 .toc-open 打开面板，
-         Tab 出去 focusout 时摘掉。不用 `:focus-within` 写进 CSS，因为它
-         分不清「鼠标点链接」（点完焦点留在链接上，面板会粘住不收）和
-         「键盘 Tab」，脚本里用 keydown Tab / mousedown 区分。 */ -}}
+{{- /* 目录显隐：滚动时收起；触屏第一下点按只展开；空目录隐藏；
+       键盘 Tab 进入时展开。主题 toc.html 的滚动高亮脚本保持原样。 */ -}}
 <script>
 (function () {
   var toc = document.querySelector('div.toc');

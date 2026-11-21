@@ -1,5 +1,5 @@
 {{- /* 首页身份条（2026-11-20）
-       —— 只给 content/_index.md 用，输出「文章数，周刊数，已写天数。」，
+       —— 只给 content/_index.md 用，输出「文章 N 篇，周刊 N 篇，运行 N 天。」，
           直接接在「如果觉得…支持一下」前面，**同一段、同一个正文样式**。
 
        ⚠️ 2026-11-20 用户要求：不要小字/三级灰，也不要 <br> 换行 ——
@@ -9,10 +9,9 @@
           发文章回来改。`now` 取构建时刻；天数由
           `.github/workflows/daily-rebuild.yml` 每天触发一次 CF 重建来前进。
        ⚠️ 只统计数据页，不把 about/privacy 这类独立页算进「文章」。
-       ⚠️ `.Params.hidden` 的页面（如果以后有）也要排除，和列表页口径一致。
        ⚠️ 输出必须是**纯内联文本**：调用点在段首，后面紧跟 Markdown 链接。
           若输出块级元素或 <br>，「支持一下」会被拆行/拆段。               */ -}}
-{{- $visible := where site.RegularPages "Params.hidden" "!=" true -}}
+{{- $visible := site.RegularPages -}}
 {{- $posts := where $visible "Section" "posts" -}}
 {{- $weekly := where $visible "Section" "weekly" -}}
 {{- $all := where $visible "Section" "in" (slice "posts" "weekly") -}}
@@ -22,4 +21,4 @@
     {{- $days = add (int (div (sub now.Unix .Date.Unix) 86400)) 1 -}}
   {{- end -}}
 {{- end -}}
-{{- printf "%d 篇文章，%d 期周刊，已写 %d 天。" (len $posts) (len $weekly) $days -}}
+{{- printf "文章 %d 篇，周刊 %d 篇，运行 %d 天。" (len $posts) (len $weekly) $days -}}

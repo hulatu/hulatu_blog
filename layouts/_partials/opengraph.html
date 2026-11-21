@@ -7,7 +7,7 @@
          ③ `site.Params.images` 的第一张（= images/share.webp）
        于是全部页面的 `og:image` **全是同一张 share.webp**。任何一篇文章
        被分享到微信 / 群 / Twitter，卡片长得一模一样 —— 这是「专业感」上
-       最外显的一处缺失（DESIGN.md 第 8 节第 1 条记了很久）。
+       最外显的一处缺失（缺口已于 2026-10-17 解决，机制见 DESIGN.md 8.8）。
 
        ── 改法 ────────────────────────────────────────────────────────
        取图逻辑（按 slug 找 `images/og/<slug>.png`，找不到回落 share.webp）

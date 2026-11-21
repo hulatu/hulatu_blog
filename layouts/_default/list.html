@@ -1,117 +1,24 @@
-{{- /* 站点层覆盖：上游把这几句界面文案写死成英文了（There are N pieces. / Search... /
-       Filtering for "X" / Remove filter），主题没有走 i18n，所以只能整份覆盖这个模板。
-       除这 5 处文案外一字未改。 */ -}}
+{{- /* 站点层覆盖：翻译上游写死的英文文案（篇数 / 搜索 / 筛选）。
+       列表本体在 partials/post-list.html，与 /archive/ 共用。 */ -}}
 {{ define "main" }}
 <content>
-  {{- /* 页面级 <h1>（2026-10-25 新增，a11y / 语义）。
-         背景：站名在 2026-10-18 从 <h1> 降级成 <p class="title">（为了修「双 h1」），
-         于是列表页 /posts/ /weekly/ 变成**整页一个 h1 都没有** —— 屏幕阅读器按标题
-         跳转时直接落到按年份分组的 <h3>，大纲从三级标题开始。
-         ⚠️ 只给 section 页加：词条页（/tags/xxx/、/categories/xxx/）走下面
-            `.Data.Singular` 分支，那一页的标题是「筛选：X」，形态不同，别混进来。
-         ⚠️ 用 `.Title`（「文章」/「周刊」），与 <title> 里那个词保持同一说法。 */ -}}
   {{ if not .Data.Singular }}
   <h1>{{ .Title }}</h1>
-  {{ end }}
-  {{- /* 周刊页的计数行要带一个 RSS 订阅按钮（2026-10-14 用户要求把「共 N 篇。」
-       改成「共 N 期周刊内容，请订阅 RSS」）。
-       判断条件用 Kind + Section：Kind "section" 只命中 /weekly/ 这一页本身，
-       词条页（/tags/xxx/）是 Kind "term"，不会误进这个分支。
-       ⚠️ 链接指向周刊**自己的** feed（/weekly/index.xml），不是全站的 /index.xml
-         —— 后者混着 126 篇文章，订阅它的人想要的是周刊。 */ -}}
-  {{ $isWeekly := and (eq .Kind "section") (eq .Section "weekly") }}
-  {{- /* 站点层改动：上游没有 taxonomy 模板，于是 /tags/ 那一页掉进这里，
-         被当成一次「筛选」渲染 —— 标题写「Filtering for Tags」，
-         正文把全站文章又列一遍。用户决定不要标签云，所以现在直接在
-         hugo.toml 里 `disableKinds = ["taxonomy"]` 把这一页整个关掉
-         （只关 taxonomy 列表页，/tags/xxx/ 词条页仍然生成，文章下方的
-         标签链接照常能用）。这里不再需要任何分支判断。 */ -}}
-  {{ if .Data.Singular }}
-  {{- /* 词条页（/tags/xxx/、/categories/xxx/）的页面级 <h1>（2026-10-26）。
-         这一行原本是 `<h3 style="margin-bottom:0">筛选：{{ .Title }}</h3>`，
-         而全站 h1 只有站名那一个 —— 2026-10-26 分类页放行后，它们变成
-         **可索引页**，没有 h1 说不过去。
-
-         ── 为什么标题只剩分类名（2026-10-26 第二轮）──────────────────
-         第一版是 `<h1 class="term-head">筛选：{{ .Title }}</h1>` + 第 34 段的
-         `content h1.term-head{font-size:1.17em;margin:1.9em 0 0}`，把 h3 的
-         字号边距钉回去、视觉零变化。但「筛选：」是**筛选器 UI 的遗留文案**，
-         而这一页现在是被 Google 索引的落地页 —— 标题读作「筛选：思考」不合适。
-         去掉前缀后它就是**正常的页面标题**，于是与 `/archive/` 的「归档」、
-         `/posts/` 的「文章」同口径：2em 字号 + 主题的 `margin:16px 0`。
-         → **第 34 段随之删除**（它唯一的用途就是还原 h3 的观感）。
-
-         ⚠️ 后面的年份分组是 h2，所以大纲是 `h1 → h2 → h2 …`，不跳级。
-            这一行必须始终是页面里最高的一级。
-         ⚠️ 返回链接指向 `/archive/`（可索引），不再是 `/posts/`
-            —— 后者是 noindex 页，从落地页链过去是白送一个无效出口。
-            带尾斜杠，避免多一次 308。 */ -}}
-  <h1>{{ .Title }}</h1>
-  <small>
-    <a href="{{ "archive/" | relURL }}">全部文章</a>
-  </small>
-  {{ end }}
-  {{- /* 搜索框 2026-11-03 起只保留在 /archive/（全站 135 篇）。
-         词条页（/tags/*、/categories/*）通常只有几篇到十几篇，搜索价值很低；
-         /weekly/ 的 25 期也已经一屏排得下 —— 这些页不再挂输入框和 2.7KB 的
-         内联过滤脚本。archive.html 有自己的 search-box 调用，别在这里加回来。 */ -}}
-  {{ if .Site.Params.showPostCount }}
-  {{ $visiblePages := where .Pages "Params.hidden" "!=" true }}
-  {{- /* 周刊页的计数行（2026-10-14 用户要求）：
-       共 25 期周刊内容，请订阅 RSS
-
-       ⚠️ `#post-count` 是 **span**，订阅链接在它**外面**、两者之间放中文逗号 ——
-         这样搜索框过滤时只改 span 的文字，链接不会被 innerHTML 覆盖掉
-         （见上面搜索脚本的注释）。
-       ⚠️ 订阅入口是**普通文字链接**，不额外加样式（2026-10-14 用户要求「简化」：
-         原先是带 1px 边框 + RSS 图标的小徽章，样式在 custom_head.html 第 27 段，
-         已整段删除）。与页面其他链接长得一样即可。
-       ⚠️ 链接走 relURL，不写死 `/weekly/index.xml`：站点将来挂到子路径
-         （baseURL 变 /blog/）时不用回来改模板。 */ -}}
-  {{ if $isWeekly }}
-  <p>
-    <span id="post-count">共 {{ len $visiblePages }} 期周刊内容</span>，<a href="{{ "weekly/index.xml" | relURL }}">请订阅 RSS</a>
-  </p>
   {{ else }}
-  <p id="post-count">共 {{ len $visiblePages }} 篇。</p>
+  {{- /* 词条页（/tags/xxx/、/categories/xxx/）：标题就是词条名。 */ -}}
+  <h1>{{ .Title }}</h1>
+  <small><a href="{{ "archive/" | relURL }}">全部文章</a></small>
   {{ end }}
-  {{ end }}
-  <ul class="blog-posts">
-    {{ $currentYear := 0 }}
-    {{ range .Pages }}
-    {{ if not .Params.hidden }}
-    {{ if .Site.Params.groupByYear }}
-    {{ $year := .Date.Year }}
-    {{ if ne $year $currentYear }}
-    <h2>{{ $year }}</h2>
-    {{ $currentYear = $year }}
-    {{ end }}
-    {{ end }}
-    <li>
-      <span class="{{ if .Site.Params.groupByYear }} grouped {{ else }} ungrouped {{ end }}">
-        <i>
-          {{- /* ⚠️ 2026-10-14：去掉了 `pubdate`（HTML 规范 2017 年已移除该属性）。
-               保留单引号包住 datetime —— 与 single.html 同一套写法。 */ -}}
-          <time datetime='{{ .Date.Format "2006-01-02" }}'>
-            {{ if .Site.Params.groupByYear }}
-            {{ .Date.Format (default "02 Jan." .Site.Params.dateFormat) }}
-            {{ else }}
-            {{ .Date.Format (default "02 Jan, 2006" .Site.Params.dateFormat) }}
-            {{ end }}
-          </time>
-        </i>
-      </span>
-      <a href="{{ .Permalink }}">{{ partial "orphan-safe.html" .Title }}</a>
-    </li>
-    {{ end }}
-    {{ else }}
-    <li>
-      No posts yet
-    </li>
-    {{ end }}
-  </ul>
-  {{- /* 站点层改动：上游在这里把**全部**标签平铺在列表页底部（本站 184 个，
-         铺出来是五屏的蓝色链接墙）。用户决定不要标签云，这一段整块删掉 ——
-         列表页在文章列表之后直接进页脚。 */}}
+
+  {{- $isWeekly := and (eq .Kind "section") (eq .Section "weekly") -}}
+  {{- if .Site.Params.showPostCount }}
+  {{- if $isWeekly }}
+  <p><span id="post-count">共 {{ len .Pages }} 期周刊内容</span>，<a href="{{ "weekly/index.xml" | relURL }}">请订阅 RSS</a></p>
+  {{- else }}
+  <p id="post-count">共 {{ len .Pages }} 篇。</p>
+  {{- end }}
+  {{- end }}
+
+  {{ partial "post-list.html" (dict "pages" .Pages "empty" "No posts yet" "desc" (ne .Section "weekly")) }}
 </content>
 {{ end }}

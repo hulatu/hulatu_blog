@@ -1,8 +1,7 @@
 ---
 title: "AI 时代，也应该拥抱英语"
-featured: false
 date: 2026-09-17T08:26:56+08:00
-lastmod: 2026-11-05T21:30:42+08:00
+lastmod: 2026-11-21T23:14:46+08:00
 slug: "embrace-english"
 
 summary: "学好英语，一直都很重要。"

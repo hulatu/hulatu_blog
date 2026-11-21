@@ -12,7 +12,7 @@
           不限定的话会把 about / privacy 之类混进来。
        ⚠️ 标题里的系列前缀（「综述写作之-」「居家流水账-」）剥掉，
           和文章页系列带、归档入口用同一套剥法；完整标题留在 title 属性里。
-       ⚠️ 类名与 partials/custom_head.html 的 09b 段是一份契约。 */ -}}
+       ⚠️ 类名与 custom.css 第 09b 段是一份契约。 */ -}}
 {{ define "main" }}
 {{- $posts := (where site.RegularPages "Type" "in" (slice "posts" "weekly")).ByDate.Reverse -}}
 {{- $seriesNames := slice -}}
@@ -25,7 +25,7 @@
     {{- range $seriesNames }}
     {{- $name := . -}}
     {{- $group := (where $posts "Params.series" $name).ByDate }}
-    <section class="series-group">
+    <section class="series-group" id="{{ $name | anchorize }}">
       <h2 class="series-group-head">{{ $name }}<span class="series-group-count">{{ len $group }} 篇</span></h2>
       <ol class="series-article-list">
         {{- range $i, $p := $group -}}
