@@ -209,6 +209,10 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - **切换有颜色过渡**：`custom_body.html` 在切换前给 `<html>` 加 `.hl-theme-transition`，
   `custom.css` 第 57 段只过渡 `background-color / color / border-color / fill / stroke` 0.3s，
   360ms 后移除类；`prefers-reduced-motion: reduce` 下不加类、不播放。
+- **正文用最深 ink（2026-11-22）**：升级包把 `body` 设为 `--hl-ink-2`（浅 `#374151` / 深 `#C8CDD6`），
+  长文正文偏淡；站点层只在 `<content>` 上覆盖为 `--hl-ink`（浅 `#111315` / 深 `#F3F4F6`），
+  页眉、页脚、日期等元信息仍保持 ink-2，层级不被拉平。对比度：浅色 10.3:1 → 18.6:1，
+  深色 11.7:1 → 17.0:1。改的是 `custom.css` 第 39 段。
 - ⚠️ **与 yinji.org 逐值相同**（2026-10-11 实测）：两站的 `:root` 浅色 13 行 + 深色 9 行
   **一个字节都不差**，因为两边都是上游 Bear Neo 的原样。
   所以用户 2026-10-11 提的「配色参考 yinji」**无需任何改动** —— 本来就一致。

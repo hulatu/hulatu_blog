@@ -1909,6 +1909,14 @@
     --font-size-primary: 18px;
   }
 
+  /* 2026-11-22：正文改用升级包最深的 ink（浅色 #111315 / 深色 #F3F4F6）。
+     升级包只把 `h1–h4 / strong` 设成 ink，`body` 是 ink-2（#374151 / #C8CDD6），
+     用户反馈文章正文偏淡。这里只提深阅读区，页眉、页脚、日期等仍保持 ink-2，
+     层级不被拉平。⚠️ 用 `content` 而不是 `body`，别把整站一起改重。 */
+  content {
+    color: var(--hl-ink);
+  }
+
   /* content 的行高**只在 `assets/css/theme.css` 的 `content` 声明一次**（1.5）。
      这里不再重复写 —— 之前 style.html / theme.css / 本文件三处各写一份，
      改一处不会报错、只会静默漂移。打印行高由 @media print 单独声明。
