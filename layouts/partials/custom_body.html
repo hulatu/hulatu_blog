@@ -20,6 +20,7 @@
   var selectedIdx = 0;
   var currentItems = [];
   var themeTimer = null;
+  var vtSeq = 0;
 
   /* 深浅色按钮的图标：内联 SVG，不依赖系统 emoji 字体。
      dark 时显示太阳（点击回浅色），light 时显示月亮（点击去深色）。 */
@@ -130,9 +131,27 @@
       Math.max(y, window.innerHeight - y)
     );
 
-    var transition = document.startViewTransition(function () {
-      applyTheme(next, true, false);
-    });
+    /* 只在这次切换期间给 <html> 挂 .hl-vt-theme：
+       custom.css 里「关掉根快照默认淡入」的规则都挂在它下面，
+       否则会把第 30 段「跨页转场」的 0.2s 交叉淡入一起干掉。 */
+    document.documentElement.classList.add('hl-vt-theme');
+    var seq = ++vtSeq;
+    var transition;
+    try {
+      transition = document.startViewTransition(function () {
+        applyTheme(next, true, false);
+      });
+    } catch (err) {
+      document.documentElement.classList.remove('hl-vt-theme');
+      applyTheme(next, true, true);
+      spinThemeIcon();
+      return;
+    }
+    /* 连点时浏览器会跳过上一个过渡：只让最后一次收尾移除类，
+       否则旧过渡的 finished 会把新过渡还在用的 .hl-vt-theme 摘掉。 */
+    transition.finished.finally(function () {
+      if (seq === vtSeq) document.documentElement.classList.remove('hl-vt-theme');
+    }).catch(function () {});
 
     transition.ready.then(function () {
       document.documentElement.animate(

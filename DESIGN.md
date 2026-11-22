@@ -43,7 +43,7 @@ description: >
 | 标题锚点 `#` | 默认常显、链接蓝、字号 1em（与标题同大）、`aria-label` 带标题文本、打印隐藏 |
 | 浅色色板 | 升级包：bg **`#FCFCFA`**（2026-11-22 按用户要求改回暖白）/ subtle `#F7F8FA` / hover `#F1F3F6` / text `#111315` / secondary `#374151` / tertiary `#6B7280` / link `#1D4ED8` / border `#E5E7EB` / code `#F6F8FA` |
 | 深色色板 | 升级包：bg `#111214` / subtle `#181A1F` / hover `#20232A` / text `#F3F4F6` / secondary `#C8CDD6` / tertiary `#8B93A1` / link `#60A5FA` / border `#262A33` / code `#16181D`（原 `#161618` 已被覆盖） |
-| 深浅色模式 | **手动开关 + 跟随系统初值**：`data-theme` 写在 `<html>`，右上角 `☾/☀` 切换，`localStorage['hl-theme']` 记住；主题色、giscus 同步 |
+| 深浅色模式 | **手动开关 + 跟随系统初值**：`data-theme` 写在 `<html>`，右上角 `☾/☀` 切换，`localStorage['hl-theme']` 记住；主题色、giscus 同步。**切换时从点击处圆形绽开**（View Transitions API，500ms），图标同拍转一圈；不支持时退回 0.3s 颜色过渡 |
 | 导航 | 首页 / 关于 / 邻居 / 工具 / 周刊 / 文章 / 订阅（7 项） |
 | 内容量 | 113 篇文章 + 30 期周刊 = 143 个内容页（另有 `posts/_index.md`、`weekly/_index.md`，共 145 个 Markdown）；sitemap 163 条；构建 HTML 404 个（以 `find` / `sitemap.xml` 为准，别背数字） |
 | 行高来源 | **只在 `assets/css/theme.css` 的 `content` 声明一次 1.5**；`custom.css` 不再覆盖 |
@@ -74,6 +74,11 @@ description: >
 不再索引正文全文；`/index.json` 从 502 KB / gzip 213 KB 降到 137 KB / gzip 61 KB，
 命令面板按标题 > 章节 > 关键词 > 引用四级匹配。表格表头补 `scope="col"`；
 `publish.sh` 增加 `.git/index.lock`、未完成 rebase 和 `git add` 失败的前置检查。
+
+同日按用户要求把深浅色切换改成**从点击处圆形绽开**（参考 directoryyy.com 的主题切换）：
+View Transitions API + `clip-path: circle()`，500ms、`cubic-bezier(.645,.045,.355,1)`；
+月亮/太阳图标在同一拍转 360°。Firefox / 关闭动效时退回原来的 0.3s 颜色过渡。
+细节见第 2 节「切换动效」与第 8.13 节。
 
 ---
 
@@ -221,9 +226,16 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - **深色有手动开关**：`data-theme="dark|light"` 写在 `<html>`，右上角月亮/太阳 SVG 切换，
   初值读系统设置，选择存 `localStorage['hl-theme']`。`theme.css` / `custom.css`
   里所有 `@media (prefers-color-scheme: …)` 已改成 `[data-theme="…"]`，切换后全站一致。
-- **切换有颜色过渡**：`custom_body.html` 在切换前给 `<html>` 加 `.hl-theme-transition`，
-  `custom.css` 第 57 段只过渡 `background-color / color / border-color / fill / stroke` 0.3s，
-  360ms 后移除类；`prefers-reduced-motion: reduce` 下不加类、不播放。
+- **切换动效（2026-11-22 改）**：优先用 View Transitions API 抓新旧整页快照，
+  从**点击坐标**用 `clip-path: circle()` 绽开到铺满屏幕（`custom.css` 第 57b 段只关掉
+  默认淡入，动画在 `custom_body.html` 里用 WAAPI 驱动：500ms、`cubic-bezier(.645,.045,.355,1)`）。
+  图标在切换期间单独快照、转一圈（55% 段落带回弹，第 57c 段）；按钮中心点用
+  `getBoundingClientRect()` 兜键盘触发。**降级**：`prefers-reduced-motion: reduce` 或
+  不支持 `startViewTransition`（Firefox）时，退回原来的 `.hl-theme-transition` 0.3s 颜色过渡
+  + `#hlThemeIcon` 的 CSS 旋转。⚠️ View Transitions 路径下**不能**再加
+  `.hl-theme-transition`：新快照在过渡起步时抓取，颜色可能还是旧的。⚠️ 第 57b/57c 段的
+  规则全部挂在 `.hl-vt-theme` 下（只在切换期间挂到 `<html>`），否则会把第 30 段跨页转场的
+  0.2s 淡入一起关掉 / 让图标从整页淡入里被单独摘出来。
 - **正文用最深 ink（2026-11-22）**：升级包把 `body` 设为 `--hl-ink-2`（浅 `#374151` / 深 `#C8CDD6`），
   长文正文偏淡；站点层只在 `<content>` 上覆盖为 `--hl-ink`（浅 `#111315` / 深 `#F3F4F6`），
   页眉、页脚、日期等元信息仍保持 ink-2，层级不被拉平。对比度：浅色 10.3:1 → 18.6:1，
@@ -1195,6 +1207,9 @@ CSS 拿不到 location，只能由模板给。
   不喜欢就删掉第 30 段，一行都不用回滚别处。
 - ⚠️ 固定定位的返回顶部按钮会随 root 快照一起淡入淡出 —— 这是**期望行为**，
   不要给它单独 `view-transition-name`，那会出现「按钮不动、内容在淡」的割裂感。
+- **深浅色切换复用同一套 API（2026-11-22）**：`toggleTheme()` 也用 `startViewTransition`，
+  但只在那 500ms 内给 `<html>` 挂 `.hl-vt-theme`；第 57b / 57c 段关默认淡入、图标快照的规则
+  全部限定在这个类下，所以**不会**改动本节 0.2s 跨页淡入，也不会让图标在跨页时被单独摘出。
 
 ### 子站（2026-10-12 全部下线）
 
@@ -1245,7 +1260,7 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/partials/seo_tags.html` | **新增**（2026-10-14）：整份覆盖上游的同名 partial —— ① 删 `<meta name="keywords">` 与 `<meta name="title">`；② 删掉整块微数据（`itemscope` / `itemprop` 那套）；③ 补 `og:image:width` / `height`；④ 换成按页型输出的 JSON-LD；⑤ **2026-10-26 BlogPosting 补 `inLanguage` / `articleSection` / `keywords`** | 上游那份是「HTML 规范还在 2015 年」的写法（见 8.8）。现在全站每页都有 `ld+json`、`keywords` / `itemprop` / `pubdate` 全站归零。⑤ 三个都是**短值**（分类一个词、标签逗号拼接、locale），不破「JSON-LD 不放长文本」这条原则 —— 分类/标签为空时走 `merge` 条件追加，**不能塞空串**，否则富媒体测试会报「字段为空」 |
 | `layouts/partials/og-image.html` | **新增**（2026-10-26）：分享卡片图的**唯一**取值来源 —— 长文页按 `.Slug` 找 `images/og/<slug>.png`，取不到回落 `site.Params.images` 第一张；返回**绝对 URL** | 这段逻辑原本在 `_partials/opengraph.html` 与 `_partials/twitter_cards.html` 各写一份、靠注释提醒「必须逐字一致」；2026-10-26 给 JSON-LD 的 `image` 也用同一张图时正好会变成第三份，于是收成一份。见 8.8 |
 | `layouts/partials/noindex.html` | **新增**（2026-10-26）：`noindex` 判定的**唯一**来源（`tags` / `404` / `.Params.noindex`），返回 bool | 同上：原本 `_default/baseof.html` 与 `sitemap.xml` 各写一份 `or(...)`，漂移的后果是「sitemap 里混进 noindex 页」而构建 0 警告。分类页放行时正好要动它，于是收成一份。见 8.9 |
-| `layouts/partials/custom_body.html` | **新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。`loadIndex()` 里把本站 `t/u/g/h/k/d` 映射成升级包的 `title/url/summary/date/section/headings/keywords` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/h/k/d`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label` |
+| `layouts/partials/custom_body.html` | **新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。**2026-11-22**：`toggleTheme()` 改为从点击处圆形绽开（View Transitions + WAAPI，见第 57b/57c 段的 `.hl-vt-theme` 约定），图标同拍转一圈；保留 `.hl-theme-transition` 作为无 View Transitions 时的降级。`loadIndex()` 里把本站 `t/u/g/h/k/d` 映射成升级包的 `title/url/summary/date/section/headings/keywords` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/h/k/d`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label`。⚠️ `.hl-vt-theme` 用序号 `vtSeq` 防连点时旧过渡提前摘类 |
 | `layouts/shortcodes/projects.html` + `data/projects.toml` | **新增**（2026-11-21）：首页代表作列表。⚠️ **当前未挂载**（用户要求首页去掉该区块），模板与数据保留 | `projects.html` 用 `hugo.Data.projects`（`.Site.Data` 在 0.156 起弃用）。同批加入的 `shortcodes/now.html`、`partials/now-line.html`、`shortcodes/about-mac.html` 已按用户要求删除 |
 | `layouts/index.json` | **新增**（2026-10-26）：首页的 JSON 输出视图，产物 `/index.json` —— 144 篇的 `{t,u,g,h,k,d}`（标题 / 站内路径 / 标签 / h2·h3 章节 / 关键词 / 引用框）。**2026-11-22 起不再索引正文**：标题 > 章节 > 关键词 > 引用四级打分，章节命中显示「章节 · 短语」，关键词命中显示「相关 · 短语」 | 列表页搜索原来只 `title.includes`，搜正文里的词一条都出不来。⚠️ 文件名**必须**是 `index.json`：home 的输出格式按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`，那份带分页变量、结构也不对。⚠️ 体积约 137 KB / gzip 61 KB；命令面板只在呼出时 fetch 一次，别改成进页面就拉。见 8.7 |
 | `layouts/partials/search-box.html`（**已删除**） | 2026-10-26 新增的归档页搜索框 + 过滤脚本，2026-11-03 起只在 `/archive/` 使用；**2026-11-21 晚彻底删除**，连同 `postSearch` 参数与 CSS 47 段的 `.search-hit` 高亮。恢复需从 git 历史取回 | 同一段脚本原本在 `_default/list.html` 与 `_default/archive.html` **各抄一份**，只差计数文案。删除后全站搜索只剩 `custom_body.html` 的命令面板。见 8.7 |

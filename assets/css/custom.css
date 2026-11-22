@@ -3551,35 +3551,41 @@
   57b 黑白切换：从点击处圆形绽开（2026-11-22，对齐 directoryyy.com）
   View Transitions API 抓新旧两张整页快照，关掉默认的交叉淡入，
   只让新快照用 clip-path 从点击点扩成一个铺满屏幕的圆。
-  ⚠️ 动画本身在 custom_body.html 里用 WAAPI 驱动（需要点击坐标），
-     这里只负责让两层快照直接叠加，而不是 plus-lighter 混合。
+  ⚠️ 全部挂在 .hl-vt-theme 下 —— custom_body.html 只在黑白切换期间给
+     <html> 挂这个类。不加限定会把第 30 段「跨页转场」的 0.2s 淡入也关掉。
+  ⚠️ 动画本身在 custom_body.html 里用 WAAPI 驱动（需要点击坐标）。
   */
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
+  html.hl-vt-theme::view-transition-old(root),
+  html.hl-vt-theme::view-transition-new(root) {
     mix-blend-mode: normal;
     animation: none;
   }
 
   /*
   57c 深浅色图标（2026-11-22）
-  - 图标单独快照（view-transition-name），切换时它自己的快照层转一圈；
+  - 只在黑白切换期间给图标挂 view-transition-name，它自己的快照层转一圈；
     实时 DOM 在过渡期间被快照盖住，直接给元素加 CSS 动画看不到。
+  - ⚠️ 名字必须挂在 .hl-vt-theme 下：常驻会让跨页转场时图标从整页淡入里
+    被单独摘出来（第 8.13 节明确不要这种「按钮不动、内容在淡」的割裂感）。
   - 旧图标直接隐去，新图标只由 WAAPI 控制，避免两层图标叠在一起。
   - 不支持 View Transitions 时，JS 退回给 #hlThemeIcon 加 .hl-theme-spin。
   */
   #hlThemeIcon {
     display: inline-flex;
     transform-origin: 50% 50%;
+  }
+
+  html.hl-vt-theme #hlThemeIcon {
     view-transition-name: hl-theme-icon;
   }
 
-  ::view-transition-old(hl-theme-icon) {
+  html.hl-vt-theme::view-transition-old(hl-theme-icon) {
     animation: none;
     mix-blend-mode: normal;
     opacity: 0;
   }
 
-  ::view-transition-new(hl-theme-icon) {
+  html.hl-vt-theme::view-transition-new(hl-theme-icon) {
     animation: none;
     mix-blend-mode: normal;
   }
