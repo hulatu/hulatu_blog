@@ -70,6 +70,11 @@ description: >
 改回暖白 `#FCFCFA`（`theme-color`、`applyTheme`、`manifest.webmanifest` 同步）。
 `scripts/check-html.sh` 的对比度解析同步支持 `:root[data-theme="dark"]`，不再只认媒体查询。
 
+同日搜索索引改成「重点信息索引」：只收标题、h2·h3 章节、description/粗体/「」关键词、引用框，
+不再索引正文全文；`/index.json` 从 502 KB / gzip 213 KB 降到 137 KB / gzip 61 KB，
+命令面板按标题 > 章节 > 关键词 > 引用四级匹配。表格表头补 `scope="col"`；
+`publish.sh` 增加 `.git/index.lock`、未完成 rebase 和 `git add` 失败的前置检查。
+
 ---
 
 # ⚠️ 以下是上游原值（方便对照主题）；当前生效值见第 0 节。
@@ -749,14 +754,17 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 #### 全局命令面板（2026-11-21）
 
 `layouts/partials/custom_body.html`（升级包原版）在任何页面底部输出对话框：
-按 `⌘K` 或 `/` 呼出，搜标题与摘要（摘要取正文前 1000 字），`↑↓` 选择、`Enter` 跳转、`ESC` 关闭。
+按 `⌘K` 或 `/` 呼出，搜标题、章节、关键词与引用框，`↑↓` 选择、`Enter` 跳转、`ESC` 关闭。
 
-- **索引仍是 `layouts/index.json` 的 `/index.json`**，字段 `t/u/g/d/k`。
+- **索引仍是 `layouts/index.json` 的 `/index.json`**，字段 `t/u/g/h/k/d`
+  （标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框）。
   升级包原版读 `{title,url,summary,date,section}`，所以 `custom_body.html` 的
-  `loadIndex()` 里做了一次字段映射（`t→title`、`u→url`、`d→summary`、`g[0]→section`）。
+  `loadIndex()` 里做了一次字段映射（`t→title`、`u→url`、`d→summary`、`g[0]→section`、
+  `h→headings`、`k→keywords`）。匹配顺序：标题 > 章节 > 关键词 > 引用。
   ⚠️ 别把 `/index.json` 换成升级包自带的 `_default/index.json`：本页面板还靠
-  `t/u/g/d/k`，换了会把命令面板的搜索弄坏。
-- 面板**第一次打开时才 fetch 一次**，之后缓存在内存里；索引约 500 KB / gzip 约 215 KB（随文章数浮动）。
+  `t/u/g/h/k/d`，换了会把命令面板的搜索弄坏。
+- 面板**第一次打开时才 fetch 一次**，之后缓存在内存里；索引约 **137 KB / gzip 61 KB**
+  （2026-11-22 起只收标题、章节、关键词、引用，不再索引正文全文）。
 - 空查询展示最近 10 篇 + 「随机读一篇文章」+「切换深浅色」两条快捷指令。
 - `/archive/` 原来那份页内搜索框 2026-11-21 晚**已彻底删除**（partial、`postSearch`
   参数、CSS 47 段的高亮规则都没了），恢复要从 git 历史取回。
@@ -1237,9 +1245,9 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/partials/seo_tags.html` | **新增**（2026-10-14）：整份覆盖上游的同名 partial —— ① 删 `<meta name="keywords">` 与 `<meta name="title">`；② 删掉整块微数据（`itemscope` / `itemprop` 那套）；③ 补 `og:image:width` / `height`；④ 换成按页型输出的 JSON-LD；⑤ **2026-10-26 BlogPosting 补 `inLanguage` / `articleSection` / `keywords`** | 上游那份是「HTML 规范还在 2015 年」的写法（见 8.8）。现在全站每页都有 `ld+json`、`keywords` / `itemprop` / `pubdate` 全站归零。⑤ 三个都是**短值**（分类一个词、标签逗号拼接、locale），不破「JSON-LD 不放长文本」这条原则 —— 分类/标签为空时走 `merge` 条件追加，**不能塞空串**，否则富媒体测试会报「字段为空」 |
 | `layouts/partials/og-image.html` | **新增**（2026-10-26）：分享卡片图的**唯一**取值来源 —— 长文页按 `.Slug` 找 `images/og/<slug>.png`，取不到回落 `site.Params.images` 第一张；返回**绝对 URL** | 这段逻辑原本在 `_partials/opengraph.html` 与 `_partials/twitter_cards.html` 各写一份、靠注释提醒「必须逐字一致」；2026-10-26 给 JSON-LD 的 `image` 也用同一张图时正好会变成第三份，于是收成一份。见 8.8 |
 | `layouts/partials/noindex.html` | **新增**（2026-10-26）：`noindex` 判定的**唯一**来源（`tags` / `404` / `.Params.noindex`），返回 bool | 同上：原本 `_default/baseof.html` 与 `sitemap.xml` 各写一份 `or(...)`，漂移的后果是「sitemap 里混进 noindex 页」而构建 0 警告。分类页放行时正好要动它，于是收成一份。见 8.9 |
-| `layouts/partials/custom_body.html` | **新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。`loadIndex()` 里把本站 `t/u/g/d/k` 映射成升级包的 `title/url/summary/date/section` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/d/k`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label` |
+| `layouts/partials/custom_body.html` | **新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。`loadIndex()` 里把本站 `t/u/g/h/k/d` 映射成升级包的 `title/url/summary/date/section/headings/keywords` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/h/k/d`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label` |
 | `layouts/shortcodes/projects.html` + `data/projects.toml` | **新增**（2026-11-21）：首页代表作列表。⚠️ **当前未挂载**（用户要求首页去掉该区块），模板与数据保留 | `projects.html` 用 `hugo.Data.projects`（`.Site.Data` 在 0.156 起弃用）。同批加入的 `shortcodes/now.html`、`partials/now-line.html`、`shortcodes/about-mac.html` 已按用户要求删除 |
-| `layouts/index.json` | **新增**（2026-10-26）：首页的 JSON 输出视图，产物 `/index.json` —— 143 篇的 `{t,u,g,d,k}`（标题 / 站内路径 / 标签 / 正文纯文本 / 重点关键词）。**2026-11-21 起命令面板开始使用 `k`**：标题 > 关键词 > 摘要三级打分，关键词命中显示「相关 · 短语」 | 列表页搜索原来只 `title.includes`，搜正文里的词一条都出不来。⚠️ 文件名**必须**是 `index.json`：home 的输出格式按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`，那份带分页变量、结构也不对。⚠️ 体积约 500 KB / gzip 约 215 KB（随文章数浮动）；命令面板只在呼出时 fetch 一次，别改成进页面就拉。见 8.7 |
+| `layouts/index.json` | **新增**（2026-10-26）：首页的 JSON 输出视图，产物 `/index.json` —— 144 篇的 `{t,u,g,h,k,d}`（标题 / 站内路径 / 标签 / h2·h3 章节 / 关键词 / 引用框）。**2026-11-22 起不再索引正文**：标题 > 章节 > 关键词 > 引用四级打分，章节命中显示「章节 · 短语」，关键词命中显示「相关 · 短语」 | 列表页搜索原来只 `title.includes`，搜正文里的词一条都出不来。⚠️ 文件名**必须**是 `index.json`：home 的输出格式按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`，那份带分页变量、结构也不对。⚠️ 体积约 137 KB / gzip 61 KB；命令面板只在呼出时 fetch 一次，别改成进页面就拉。见 8.7 |
 | `layouts/partials/search-box.html`（**已删除**） | 2026-10-26 新增的归档页搜索框 + 过滤脚本，2026-11-03 起只在 `/archive/` 使用；**2026-11-21 晚彻底删除**，连同 `postSearch` 参数与 CSS 47 段的 `.search-hit` 高亮。恢复需从 git 历史取回 | 同一段脚本原本在 `_default/list.html` 与 `_default/archive.html` **各抄一份**，只差计数文案。删除后全站搜索只剩 `custom_body.html` 的命令面板。见 8.7 |
 | `layouts/partials/inline-links.html` + `data/inline-links.json` | **新增**（2026-10-26）：渲染层正文内链 —— 词表 `{a: 锚点, u: 目标URL}`，在 `single.html` 的 `$content` 管线上把正文文本节点里的锚点词包成 `<a>`。词表 30 条，全部逐字校验过「确实在别的文章正文里出现过」 | 133 篇里 120 篇正文零内链，影响主题相关性；但挨篇插链接要动 120 个用户手写的 `.md`，不动。详见 8.10 |
 | `layouts/partials/custom_head.html` | CSS 管道 + **升级包完整 `<style>`（`--hl-*` 令牌与所有组件）** + 主题引导脚本 + 图床预连 + 单个 `theme-color` + GoatCounter | 升级包样式最后加载，覆盖站点旧设计；末尾「站点令牌桥接」把 `--bg-color-*` / `--text-color-*` / `--border-color` / `--link-*` 映射到 `--hl-*`，旧组件也换色。⚠️ 管道必须在升级包 `<style>` 之前，否则主题基础排版会被打回上游默认 |
@@ -1455,9 +1463,10 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 `⌘K` / `/` 呼出，`/archive/` 顶部的输入框**已彻底删除**（partial、`postSearch`
 参数、CSS 47 段一并移除，恢复需从 git 历史取回）。
 面板读 `layouts/index.json` 生成的 `/index.json`，`loadIndex()` 把
-`t/u/g/d/k` 映射成 `title/url/summary/date/section/keywords`；
-搜索按**标题 > 关键词（k）> 正文摘要**三级打分（摘要 = 正文前 1000 字），
-同分保持索引里的日期倒序；关键词命中时在右侧胶囊显示「相关 · 命中的短语」。
+`t/u/g/h/k/d` 映射成 `title/url/summary/date/section/headings/keywords`；
+搜索按**标题 > 章节（h）> 关键词（k）> 引用（d）**四级打分，
+章节/关键词命中时在右侧胶囊显示「章节 · …」「相关 · …」，同分保持索引里的日期倒序。
+2026-11-22 起索引只收这四类重点信息（不再收正文全文），体积约 137 KB / gzip 61 KB。
 空查询展示最近 10 篇 +「随机读一篇文章」「切换深浅色」两条快捷指令。
 
 ↑↓ 键盘选择时，如果选中项移出结果列表的可视区，只改 `.hl-cmd-results` 的

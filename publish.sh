@@ -12,6 +12,20 @@ set -uo pipefail
 
 cd "$(dirname "$0")" || exit 1
 
+# ⚠️ 2026-11-22：先查两个会让后面「静默跑偏」的状态（放在最前面，失败就不要再跑同步脚本）。
+#   · .git/index.lock：git add 会直接失败，但旧脚本不检查退出码，
+#     接着打印「没有需要提交」，push/pull 全部被带偏（2026-11-22 真实踩过）。
+#   · 未完成的 rebase：此时提交会落到错误的基线上。
+if [ -e .git/index.lock ]; then
+  echo "!! 发现 .git/index.lock：可能有 Git 进程未退出，或上次操作被中断。" >&2
+  echo "   确认没有 git 进程后执行：rm -f .git/index.lock，再重跑 ./publish.sh" >&2
+  exit 1
+fi
+if [ -d .git/rebase-merge ] || [ -d .git/rebase-apply ]; then
+  echo "!! 仓库里有未完成的 rebase。先 git status 解决冲突（或 git rebase --abort）后再发布。" >&2
+  exit 1
+fi
+
 # 1. 先看状态
 echo "==> 1/5 查看改动状态"
 git status
@@ -108,7 +122,12 @@ else
   echo "       手动补跑：NODE_PATH=/Users/hulatu/.workbuddy-ai/binaries/node/workspace/node_modules node scripts/gen-og.js" >&2
 fi
 
-git add .
+# ⚠️ 2026-11-22：git add 失败必须停下 —— 旧脚本不检查退出码，
+# 失败后仍会打印「没有需要提交」，把 push/pull 全带偏。
+if ! git add -A; then
+  echo "!! git add 失败，已停止（否则未提交的改动会被当成「没有改动」）。" >&2
+  exit 1
+fi
 if git diff --cached --quiet; then
   echo "    没有需要提交的本地改动"
 else

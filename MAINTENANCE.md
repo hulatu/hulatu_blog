@@ -19,7 +19,7 @@
 | 页面 | **404 页 HTML** + `/index.json`（搜索索引，不是 HTML）。2026-11-21 干净构建实测；数字会随发文变化，验收时以 `find public -name '*.html' | wc -l` 为准 |
 | 内容 | **143 个内容页**（113 篇文章 + 30 期周刊；另有 2 个 section index，共 145 个 Markdown）+ 根级独立页与 `/feed/` 两页（订阅源浏览器视图，`noindex`） |
 | 订阅源 | `/index.xml`（文章 20 条）+ `/weekly/index.xml`（周刊 20 条），**都只收文章页**；浏览器直开由 `functions/_middleware.js` 分派到 `/feed/` 那两页，订阅器照旧拿 XML |
-| 站内搜索 | 全站搜索走 ⌘K / `/` 命令面板（`partials/custom_body.html`），读 `/index.json`（`layouts/index.json` 生成，全部内容页，字段 `t/u/g/d/k`），标题 > `k` 关键词 > 摘要三级打分，关键词命中显示「相关 · 短语」。`/archive/` 顶部原来的 `partials/search-box.html` 已于 2026-11-21 晚**彻底删除**（连同 `postSearch` 参数与 CSS 第 47 段高亮样式），恢复需从 git 历史取回。⚠️ 索引只在面板第一次打开时 fetch；别改成进页面或聚焦就拉 |
+| 站内搜索 | 全站搜索走 ⌘K / `/` 命令面板（`partials/custom_body.html`），读 `/index.json`（`layouts/index.json` 生成，全部内容页，字段 `t/u/g/h/k/d` = 标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框），按标题 > 章节 > 关键词 > 引用四级打分，章节与关键词命中显示「章节 · …」「相关 · …」。`/archive/` 顶部原来的 `partials/search-box.html` 已于 2026-11-21 晚**彻底删除**（连同 `postSearch` 参数与 CSS 第 47 段高亮样式），恢复需从 git 历史取回。⚠️ 索引只在面板第一次打开时 fetch；别改成进页面或聚焦就拉 |
 | 词条页 | 标签与分类的词条页数量以 `ls public/tags | wc -l` / `ls public/categories | wc -l` 为准（会随标签合并变化）；标签页 `noindex, follow`，分类页可索引并进 sitemap。索引页 `/tags/` 已关；`/categories/` 2026-11-21 起是正式总览页（普通内容页 `content/category.md`） |
 | sitemap | **163 条**（2026-11-21 实测）= 145 个内容页 + 根级/列表页 + 8 个分类页 + `/categories/` 总览页；与 noindex 页**零交集**。改完以 `grep -c '<loc>' public/sitemap.xml` 为准 |
 | CSS | **外部指纹文件** `/css/main.min.<hash>.css`（theme.css + custom.css 拼接，约 38.5 KB raw / 8.5 KB gzip），`/css/*` 长缓存 |
@@ -252,6 +252,8 @@ sync-image-dims.py       补抓新图尺寸 → data/image-dims.json      ← 20
 gen-og.js                全量重画分享卡 → static/images/og/       ← 2026-10-18 接入
 ```
 
+⚠️ **2026-11-22**：脚本正式跑之前先查 `.git/index.lock` 和未完成的 rebase，发现就立即退出；
+`git add` 失败也会停止（旧版不检查退出码，会打印「没有需要提交」并把 push/pull 带偏）。
 ⚠️ `sync-lastmod.py` 已无可见产出（`lastmod` 只喂 RSS / sitemap），保留调用而已。
 ⚠️ 后两个是「**离线生成、提交进仓库**」的派生数据，**没有构建期钩子**：Hugo 拿不到图床图片的尺寸，也算不出分享卡。漏跑时**构建 0 警告**，只是静默降级（分享卡退回通用图 / `<img>` 缺宽高）。2026-10-18 实测到过真实的漏：129 篇文章只有 127 张卡。
 ⚠️ 为什么**不**放进 `deploy.sh`：`sync-image-dims.py` 要联网抓图床，而「构建零网络依赖」是本站的架构底线（图床挂了也要能构建）。
@@ -398,7 +400,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改 SEO 头（keywords / JSON-LD / og / referrer / theme-color） | `layouts/partials/seo_tags.html`（2026-10-14 新增，整份覆盖上游同名 partial）。⚠️ `theme-color` 现在只有一条 `<meta id="hl-theme-color">`（`custom_head.html`），由 `custom_body.html` 的 `applyTheme()` 在深浅色切换时改；`color-scheme` 与 `input{font-size}` 在第 26 段；`referrer` 在 `baseof.html`。⚠️ 上游那份是「HTML 规范还在 2015 年」的写法，**别回退** |
 | 改分享卡片图 / JSON-LD 的 `image` | **`layouts/partials/og-image.html`**（2026-10-26 起是唯一取值处，`og:image` / `twitter:image` / JSON-LD `image` 三处都调它）。⚠️ 返回的是**绝对 URL**，调用方不要再套 `absURL` |
 | 改分类页的标题 / 描述 | `content/categories/<词>/_index.md`（8 个，2026-10-26 新增）。⚠️ `title` 必须写，否则 `<title>` 会退化成「 \| 胡拉图说」；标签页没有对应文件（它们仍是 noindex） |
-| 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/d/k`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有 `layouts/partials/custom_body.html` 的命令面板。⚠️ 索引 **约 500 KB / gzip 约 215 KB**（随文章数浮动），命令面板只在呼出时 fetch；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > `k` 关键词 > 摘要，改规则要同步 DESIGN 8.7 |
+| 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有 `layouts/partials/custom_body.html` 的命令面板。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（2026-11-22 起只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
 | 改分享卡上的日期 / 作者 / 标签（`article:*`） | `layouts/_partials/opengraph.html`。⚠️ 只对 `posts` / `weekly` 输出，首页与列表页的 `og:type` 是 `website`，挂 `article:*` 非法；⚠️ `article:author` 按协议是**作者主页 URL**（本站指 `/about/`），不是名字 |
 | 改「更新于」的显示条件 / 日期行排版 | `layouts/_default/single.html` 日期行（`$showUpdated`）。⚠️ 判据是「`lastmod` 晚于 `date` **且** 日历日不同」，不是「差 24 小时」——当天发当天改的两个日期长得一样，显示出来是噪音；⚠️ 2026-11-21 起日期行是 flex 一行（`.byline`，`custom.css` 第 39 段），日期、更新、时长、字数之间用间距分开，不用中点串 |
 | 改 Web App Manifest（名称 / 图标 / 主题色） | `static/manifest.webmanifest`。⚠️ 它是**手写 JSON、不能写注释**（加了整份解析失败且静默），所有取舍理由写在 `layouts/partials/favicon.html` 那段注释里；⚠️ `purpose` 别加 `maskable`（图标笔画贴边会被裁）；⚠️ `id` 一旦发布别再改 |
