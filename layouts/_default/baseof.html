@@ -50,7 +50,7 @@
     {{- partial "footer.html" . -}}
   </footer>
 
-  {{- /* 返回顶部：只对长文页输出（判断在 partial 里）。没有阅读进度条。 */ -}}
+  {{- /* 返回顶部：只对长文页输出（判断在 partial 里）。阅读进度条在 single.html 顶部。 */ -}}
   {{- partial "back-top.html" . -}}
 
   {{- /* 代码块复制脚本：只在含代码块的页面加载（判断在 partial 里）。 */ -}}

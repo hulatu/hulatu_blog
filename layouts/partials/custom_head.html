@@ -28,7 +28,7 @@
 {{- end }}
 
 {{- /* 地址栏配色：手动深浅色后由 custom_body.html 的 applyTheme 动态改。 */ -}}
-<meta name="theme-color" id="hl-theme-color" content="#FFFFFF">
+<meta name="theme-color" id="hl-theme-color" content="#FCFCFA">
 
 {{- /* CSS 管道：theme.css 在前、custom.css 在后，压缩 + 指纹。
        ⚠️ 顺序不能反：站点补丁靠后出现覆盖主题。
@@ -84,7 +84,7 @@
 {{- /* 升级包注入的完整样式（原样保留，最后加载，覆盖站点旧设计）。 */ -}}
 <style>
   :root {
-    --hl-bg: #FFFFFF;
+    --hl-bg: #FCFCFA;
     --hl-bg-subtle: #F7F8FA;
     --hl-bg-hover: #F1F3F6;
     --hl-ink: #111315;

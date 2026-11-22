@@ -167,6 +167,15 @@
     margin-bottom: 1.5em;
   }
 
+  /* 2026-11-22：列表项之间留 0.3em 缝（全站 240 个列表项，原来完全贴在一起）。
+     ⚠️ 只给直接子级、且只给**没有 class 的** Markdown 列表：
+        `ul.blog-posts`（归档/周刊 143 行）有自己的行距，不能被这条拉松。
+        嵌套列表也保持紧凑，否则层级会被拉散。 */
+  content > ul:not([class]) > li + li,
+  content > ol:not([class]) > li + li {
+    margin-top: 0.3em;
+  }
+
   /*
   正文第一个元素不带上间距：`content > :first-child` 那条规则已删除。
   ⚠️ 别再把它加回来 —— 没有标题的页面首行会被顶到导航栏下方。
@@ -956,6 +965,21 @@
     margin: 0;
   }
 
+  /* 2026-11-22：表格单元格从主题的 4px 放宽到 0.5em / 0.65em，
+     中文不再贴着边框；表头加粗，数字列等宽对齐。全站 19 个表格。 */
+  content table th,
+  content table td {
+    padding: 0.5em 0.65em;
+  }
+
+  content table th {
+    font-weight: 600;
+  }
+
+  content table {
+    font-variant-numeric: tabular-nums;
+  }
+
   /*
   15 404 页：大号 404 是装饰水印（`aria-hidden`），不是标题。
   ⚠️ 主按钮用链接蓝实底，是这一页唯一的「重」元素。
@@ -1068,7 +1092,7 @@
   /*
   16 返回顶部：滚动驱动动画，零 JS。
   ⚠️ 不支持滚动驱动动画时让它常显 —— 它是功能，不是装饰。
-  ⚠️ 阅读进度条已删除，别再提。
+  ⚠️ 阅读进度条 2026-11-22 按用户要求加回，见 16-b；不再是一刀切删除。
   */
   .back-top {
     position: fixed;
@@ -1144,6 +1168,53 @@
       opacity: 1;
       visibility: visible;
       transform: none;
+    }
+  }
+
+  /*
+  16-b 长文阅读进度条（2026-11-22 加回）：顶部 3px，链接蓝。
+  ⚠️ 只在长文页输出（single.html 的 $longForm：posts + weekly），
+     其他页面没有这个元素，不会白占一条线。
+  ⚠️ 滚动驱动动画，零 JS；不支持时整条隐藏，**不要**退回「常显满格」。
+  ⚠️ `display:none` 必须写在 @supports 外面：否则不支持时 animation 会按
+     0s 直接跳到终态，变成一条常驻蓝线（这是上一版删掉它的原因之一）。
+  */
+  .reading-progress {
+    display: none;
+  }
+
+  @supports (animation-timeline: scroll()) {
+    .reading-progress {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      z-index: 100;
+      pointer-events: none;
+    }
+
+    .reading-progress::before {
+      content: "";
+      display: block;
+      height: 100%;
+      background: var(--link-color);
+      transform: scaleX(0);
+      transform-origin: 0 50%;
+      animation: reading-progress-grow linear both;
+      animation-timeline: scroll(root block);
+    }
+
+    @keyframes reading-progress-grow {
+      from { transform: scaleX(0); }
+      to { transform: scaleX(1); }
+    }
+  }
+
+  @media print {
+    .reading-progress {
+      display: none;
     }
   }
 
@@ -1917,6 +1988,24 @@
     color: var(--hl-ink);
   }
 
+  /*
+  39-b 正文内链：默认带虚线下划线（2026-11-22）
+  升级包只靠链接蓝区分，正文 648 个内链在触屏和长文中不好扫；
+  这里补一层 1px 三级灰虚线，悬停变实线 + 当前色。
+  ⚠️ 排除标题锚点 `#` 和脚注的 `↩︎`：它们本身就是符号，不再叠线。
+  ⚠️ 只作用于 `content.long-form`（文章 / 周刊 / 样式页的正文），
+     归档、分类、系列、工具页的入口链接保持原样，不会被拉花。
+  */
+  content.long-form a:not(.heading-anchor):not(.footnote-ref):not(.footnote-backref) {
+    text-decoration: underline dotted var(--text-color-tertiary);
+    text-decoration-thickness: 1px;
+    text-underline-offset: 3px;
+  }
+
+  content.long-form a:not(.heading-anchor):not(.footnote-ref):not(.footnote-backref):hover {
+    text-decoration: underline solid currentColor;
+  }
+
   /* content 的行高**只在 `assets/css/theme.css` 的 `content` 声明一次**（1.5）。
      这里不再重复写 —— 之前 style.html / theme.css / 本文件三处各写一份，
      改一处不会报错、只会静默漂移。打印行高由 @media print 单独声明。
@@ -2402,9 +2491,9 @@
   */
   .footnotes {
     margin-top: 2.4em;
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1.65;
-    color: var(--text-color-tertiary);
+    color: var(--text-color-secondary);
   }
 
   .footnotes hr {
@@ -2433,7 +2522,11 @@
   }
 
   .footnote-backref {
-    text-decoration: none;
+    /* 2026-11-22：↩︎ 必须自带下划线。它与周围正文的颜色对比只有 1.53:1，
+       只靠蓝色不满足「链接不能只靠颜色区分」（axe link-in-text-block）。 */
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 2px;
   }
 
   .footnote-backref:hover {
@@ -2770,29 +2863,36 @@
   }
 
   /*
-  49 暖纸白 / 日期对齐 / 图片质感：`#fcfcfa` 底、日期行 flex 对齐、图片圆角与描边微调。
-  ⚠️ 改底色要同步 `custom_head.html` 的两条 `theme-color`。
+  49 日期对齐 / 图片质感：日期行 flex 对齐、图片圆角与描边微调。
+  ⚠️ 底色/文字的真正来源是 `custom_head.html` 的 `--hl-*` + 桥接层（最后加载，覆盖这里）。
+     下面这组**字面量兜底**有两个用途：① 桥接层解析前的第一帧；② `scripts/check-html.sh`
+     只读 CSS 文件、不读 HTML 内联样式，没有它就算不出对比度。
+     ⚠️ 改 `--hl-*` 时必须同步这组值，否则发布前检查会和线上不一致。
+  ⚠️ 改底色要同步 `custom_head.html` 的 `theme-color`、`custom_body.html` 的 applyTheme
+     和 `static/manifest.webmanifest` 的 background_color。
   ⚠️ 链接蓝是唯一强调色，不在这次微调范围。
   */
   :root {
-    --bg-color-primary: #fcfcfa;
-    --bg-color-secondary: #f4f3ef;
-    --text-color-primary: #1f1f1c;
-    --text-color-secondary: #4a4a45;
-    --text-color-tertiary: #6e6e68;
-    --border-color: #d9d7cf;
+    --bg-color-primary: #FCFCFA;
+    --bg-color-secondary: #F7F8FA;
+    --text-color-primary: #111315;
+    --text-color-secondary: #374151;
+    --text-color-tertiary: #6B7280;
+    --border-color: #E5E7EB;
+    --link-color: #1D4ED8;
+    --link-visited-color: #1D4ED8;
   }
 
-  
-    :root[data-theme="dark"] {
-      --bg-color-primary: #161618;
-      --bg-color-secondary: #1e1e22;
-      --text-color-primary: #d4d4d8;
-      --text-color-secondary: #b0b0b7;
-      --text-color-tertiary: #96969f;
-      --border-color: #34343a;
-    }
-  
+  :root[data-theme="dark"] {
+    --bg-color-primary: #111214;
+    --bg-color-secondary: #181A1F;
+    --text-color-primary: #F3F4F6;
+    --text-color-secondary: #C8CDD6;
+    --text-color-tertiary: #8B93A1;
+    --border-color: #262A33;
+    --link-color: #60A5FA;
+    --link-visited-color: #60A5FA;
+  }
 
   time,
   .recent-posts time,
@@ -2808,7 +2908,8 @@
 
   content .image-caption figcaption {
     font-style: normal;
-    color: var(--text-color-tertiary);
+    font-size: 0.85em;
+    color: var(--text-color-secondary);
   }
 
   /* 收藏页的两个分组标签（2026-11-21）。用轻量小字，

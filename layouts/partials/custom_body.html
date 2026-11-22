@@ -67,7 +67,7 @@
     if (themeBtn) themeBtn.setAttribute('aria-label', theme === 'dark' ? '切换到浅色模式' : '切换到深色模式');
     /* 手动切换后同步地址栏配色与 giscus 主题（两者原本只认系统）。 */
     var meta = document.getElementById('hl-theme-color');
-    if (meta) meta.setAttribute('content', theme === 'dark' ? '#111214' : '#FFFFFF');
+    if (meta) meta.setAttribute('content', theme === 'dark' ? '#111214' : '#FCFCFA');
     var slot = document.getElementById('giscus-slot');
     if (slot) slot.dataset.theme = theme;
     var frame = document.querySelector('iframe.giscus-frame');

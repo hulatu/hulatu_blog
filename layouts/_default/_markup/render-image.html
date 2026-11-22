@@ -77,5 +77,7 @@
     {{- else }}
     <img src="{{ $src | safeURL }}"{{ $srcsetAttr }} alt="{{ $alt }}"{{ $dim | safeHTMLAttr }}{{ $loadAttr | safeHTMLAttr }} />
     {{- end }}
-    <figcaption>{{ $alt }}</figcaption>
+    {{- /* alt 已经由 <img> 读一次；再放进 figcaption 会被读屏念第二遍。
+           alt 非空时把可见图注从无障碍树里摘掉（视觉不变）。 */}}
+    <figcaption{{ if strings.TrimSpace $alt }} aria-hidden="true"{{ end }}>{{ $alt }}</figcaption>
 </figure>

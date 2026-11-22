@@ -27,7 +27,7 @@ description: >
 
 ---
 
-## 0. 当前状态（2026-11-21，唯一真值）
+## 0. 当前状态（2026-11-22，唯一真值）
 
 > 下面这些是**现在线上生效的值**。后面章节里带日期的旧值都是历史记录，
 > 与这里冲突时以本表为准。样式真值在 `assets/css/theme.css` 与
@@ -41,12 +41,16 @@ description: >
 | 页头站名 | **30px**（与 h1 同档，不再大于文章标题） |
 | 辅助字号 | byline 15px、TOC 14px、文末推荐元信息 13px、页脚 0.8em（14.4px） |
 | 标题锚点 `#` | 默认常显、链接蓝、字号 1em（与标题同大）、`aria-label` 带标题文本、打印隐藏 |
-| 浅色色板 | 升级包：bg `#FFFFFF` / subtle `#F7F8FA` / hover `#F1F3F6` / text `#111315` / secondary `#374151` / tertiary `#6B7280` / link `#1D4ED8` / border `#E5E7EB` / code `#F6F8FA`（原暖纸白 `#fcfcfa` 已被覆盖） |
+| 浅色色板 | 升级包：bg **`#FCFCFA`**（2026-11-22 按用户要求改回暖白）/ subtle `#F7F8FA` / hover `#F1F3F6` / text `#111315` / secondary `#374151` / tertiary `#6B7280` / link `#1D4ED8` / border `#E5E7EB` / code `#F6F8FA` |
 | 深色色板 | 升级包：bg `#111214` / subtle `#181A1F` / hover `#20232A` / text `#F3F4F6` / secondary `#C8CDD6` / tertiary `#8B93A1` / link `#60A5FA` / border `#262A33` / code `#16181D`（原 `#161618` 已被覆盖） |
 | 深浅色模式 | **手动开关 + 跟随系统初值**：`data-theme` 写在 `<html>`，右上角 `☾/☀` 切换，`localStorage['hl-theme']` 记住；主题色、giscus 同步 |
 | 导航 | 首页 / 关于 / 邻居 / 工具 / 周刊 / 文章 / 订阅（7 项） |
 | 内容量 | 113 篇文章 + 30 期周刊 = 143 个内容页（另有 `posts/_index.md`、`weekly/_index.md`，共 145 个 Markdown）；sitemap 163 条；构建 HTML 404 个（以 `find` / `sitemap.xml` 为准，别背数字） |
 | 行高来源 | **只在 `assets/css/theme.css` 的 `content` 声明一次 1.5**；`custom.css` 不再覆盖 |
+| 正文内链 | `content.long-form a` 默认 1px 三级灰虚线（`text-underline-offset: 3px`），悬停变实线 + 当前色；标题锚点、脚注引用/返回排除 |
+| 列表与表格 | 列表项之间 `0.3em`（只给无 class 的直接子级，`ul.blog-posts` 不受影响）；表格单元格 `0.5em 0.65em`、表头 600、数字 tabular |
+| 脚注 / 图注 | 脚注 16px 二级灰；图注 0.85em 二级灰，alt 非空时加 `aria-hidden="true"`（避免读屏把 alt 念两遍） |
+| 阅读进度条 | 长文页（posts + weekly）顶部 3px 链接蓝；`animation-timeline: scroll(root block)`，零 JS；不支持时整条隐藏 |
 
 2026-11-21 新增两个根级页：`/style/`（所有 Markdown 元素的样式样本，`long-form: true`）与 `/map/`（人类可读的站点地图，同时收技术栈、排版、评论与隐私、站史；原 `/colophon/` 当天并入，301 到 `/map/`）。`/about/` 底部新增「写作统计」：文章/周刊数、累计字数、写作天数，以及过去 365 天的发布热力图（`layouts/shortcodes/writing-stats.html` + `custom.css` 第 51 段，纯构建期生成，无 JS）。2026-11-21 当天改版：统计条改成「小标签在上、大数字带单位」，四列之间用发丝线分隔；热力图加月份刻度与范围/有发布天数，配色改成 `--hl-*` 强调色混合（`color-mix`），注脚用虚线分隔；窄屏 2×2 统计 + 月份与格子一起横向滚动。
 
@@ -59,6 +63,12 @@ description: >
 `custom_head.html` 末尾的「站点令牌桥接」里映射到 `--hl-*`，所以旧组件也一起换色。
 **深浅色改为手动开关**：`theme.css` / `custom.css` 里所有 `prefers-color-scheme` 规则
 已改成 `[data-theme="dark|light"]`，切换后全站一致。
+
+2026-11-22 阅读体验七项：正文链接补 1px 虚线；列表项留 0.3em；表格内边距 4px → 0.5em/0.65em；
+脚注 15px 三级灰 → 16px 二级灰；图注 0.8em 三级灰 → 0.85em 二级灰并给 alt 重复的 `figcaption`
+加 `aria-hidden`；长文页加回 3px 阅读进度条（CSS 滚动驱动，零 JS）；浅色底从 `#FFFFFF`
+改回暖白 `#FCFCFA`（`theme-color`、`applyTheme`、`manifest.webmanifest` 同步）。
+`scripts/check-html.sh` 的对比度解析同步支持 `:root[data-theme="dark"]`，不再只认媒体查询。
 
 ---
 
@@ -1351,7 +1361,7 @@ Firefox / Safari 目前仍支持 XSLT，但**这套方案已经不需要任何�
 1. **CSS 管道**：把 `assets/css/theme.css` + `assets/css/custom.css` 拼成 `/css/main.min.<hash>.css`。顺序不能反，站点补丁靠「后出现者胜」覆盖主题。
 2. **升级包主题引导 + 完整样式**：文件开头的 `data-theme` 脚本（防深色闪白），以及末尾原样引入的 `<style>`（`--hl-*` + 组件 + 站点令牌桥接）。这是唯一允许内联大段 CSS 的地方。
 3. **图床预连**：只有当前页 `.Content` 同时含 `img.hulatu.com` 与 `<img` 时才输出 `preconnect` / `dns-prefetch`（不要加 `crossorigin`，`<img>` 走的是 no-cors 连接池）。
-4. **单个 `theme-color`**：`<meta id="hl-theme-color">` 初始 `#FFFFFF`，由 `custom_body.html` 的 `applyTheme()` 在切换时改成 `#111214`。不要再写两条 media 版本 —— 手动切换后它们不会跟。
+4. **单个 `theme-color`**：`<meta id="hl-theme-color">` 初始 `#FCFCFA`，由 `custom_body.html` 的 `applyTheme()` 在切换时改成 `#111214`（浅色回 `#FCFCFA`）。不要再写两条 media 版本 —— 手动切换后它们不会跟。
 5. **GoatCounter**。
 6. **Speculation Rules**：站内预渲染。
 

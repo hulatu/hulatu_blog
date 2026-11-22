@@ -2,6 +2,9 @@
 {{- /* 站点层覆盖：去掉上游只给 blog 段的 if，让 weekly / 根级页也有标题和日期。
        长文页 = posts + weekly；文末导航与评论区都只挂这两类。 */ -}}
 {{- $longForm := and .IsPage (in (slice "posts" "weekly") .Type) -}}
+{{- /* 长文阅读进度条：3px 固定顶栏，纯 CSS 滚动驱动（custom.css 16-b）。
+       只给长文页输出；不支持 animation-timeline 的浏览器整条隐藏。 */ -}}
+{{- if $longForm }}<div class="reading-progress" aria-hidden="true"></div>{{ end }}
 {{- /* byline 用的字数 / 阅读时长 / 更新判据，只算一次。
        汉字 400 字/分、英文 200 词/分，向上取整、最少 1 分钟。 */ -}}
 {{- $hanChars := len (findRE "\\p{Han}" .Plain) -}}

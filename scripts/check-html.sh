@@ -215,13 +215,15 @@ for m in re.finditer(r'content\.post-body\s*\{([^}]*)\}', css_no_print):
         )
 
 # 对比度：按 CSS 顺序合并 :root 变量，分别得到 light / dark 的最终值。
+# 手动深浅色用 :root[data-theme="dark"]；媒体查询写法也保留，兼容旧文件。
 ROOT = re.compile(
-    r'(@media\s*\(prefers-color-scheme\s*:\s*(light|dark)\)\s*\{\s*)?:root\s*\{([^}]*)\}'
+    r'(@media\s*\(prefers-color-scheme\s*:\s*(light|dark)\)\s*\{\s*)?'
+    r':root(?:\[data-theme=["\']?(light|dark)["\']?\])?\s*\{([^}]*)\}'
 )
 palettes = {"light": {}, "dark": {}}
 for m in ROOT.finditer(css_text):
-    mode = m.group(2)
-    decls = dict(re.findall(r'(--[\w-]+)\s*:\s*([^;]+)', m.group(3)))
+    mode = m.group(2) or m.group(3)
+    decls = dict(re.findall(r'(--[\w-]+)\s*:\s*([^;]+)', m.group(4)))
     for key in (["light", "dark"] if not mode else [mode]):
         palettes[key].update({k: v.strip() for k, v in decls.items()})
 
