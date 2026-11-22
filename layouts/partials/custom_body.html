@@ -51,9 +51,14 @@
       .catch(function () { return []; });
   }
 
+  function prefersReducedMotion() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
   function applyTheme(theme, persist, animate) {
-    /* 切换时临时给 <html> 加过渡类，360ms 后移除；首次加载不播放动画。 */
-    if (animate && !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches)) {
+    /* 退回方案：不支持 View Transitions 的浏览器临时给 <html> 加过渡类，
+       360ms 后移除；首次加载不播放动画。 */
+    if (animate && !prefersReducedMotion()) {
       document.documentElement.classList.add('hl-theme-transition');
       if (themeTimer) clearTimeout(themeTimer);
       themeTimer = setTimeout(function () {
@@ -81,9 +86,83 @@
     }
   }
 
-  function toggleTheme() {
+  /* 图标转一整圈（退回方案 / 无 View Transitions 时用）。
+     先移除再强制回流，连续点击也能从头重播；360° 收尾回到原位，
+     不会把月亮留在倒着的角度上。 */
+  function spinThemeIcon() {
+    if (prefersReducedMotion()) return;
+    var icon = document.getElementById('hlThemeIcon');
+    if (!icon) return;
+    icon.classList.remove('hl-theme-spin');
+    void icon.offsetWidth;
+    icon.classList.add('hl-theme-spin');
+  }
+
+  /* 黑白切换：从点击处向外圆形绽开（目录站同款：500ms、同一缓动）。
+     - 点击坐标取 clientX/Y；键盘触发（detail 为 0）时退到按钮中心。
+     - 半径取点击点到四角的最远距离，保证圆一定能铺满整屏。
+     - 不支持 startViewTransition 时退回 applyTheme 的 360ms 颜色过渡。
+     - ⚠️ View Transitions 下不要再加 .hl-theme-transition：新快照在
+       过渡刚起步时抓取，颜色可能还是旧的，绽开出来的会是旧主题。 */
+  function toggleTheme(e) {
     var cur = document.documentElement.getAttribute('data-theme');
-    applyTheme(cur === 'dark' ? 'light' : 'dark', true, true);
+    var next = cur === 'dark' ? 'light' : 'dark';
+
+    if (prefersReducedMotion() || typeof document.startViewTransition !== 'function') {
+      applyTheme(next, true, true);
+      spinThemeIcon();
+      return;
+    }
+
+    var btn = document.getElementById('hlThemeBtn');
+    var x = window.innerWidth / 2;
+    var y = 0;
+    if (e && e.detail > 0 && (e.clientX || e.clientY)) {
+      x = e.clientX;
+      y = e.clientY;
+    } else if (btn) {
+      var rect = btn.getBoundingClientRect();
+      x = rect.left + rect.width / 2;
+      y = rect.top + rect.height / 2;
+    }
+    var radius = Math.hypot(
+      Math.max(x, window.innerWidth - x),
+      Math.max(y, window.innerHeight - y)
+    );
+
+    var transition = document.startViewTransition(function () {
+      applyTheme(next, true, false);
+    });
+
+    transition.ready.then(function () {
+      document.documentElement.animate(
+        {
+          clipPath: [
+            'circle(0px at ' + x + 'px ' + y + 'px)',
+            'circle(' + radius + 'px at ' + x + 'px ' + y + 'px)'
+          ]
+        },
+        {
+          duration: 500,
+          easing: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
+          pseudoElement: '::view-transition-new(root)'
+        }
+      );
+      /* 图标快照单独转一圈：实时 DOM 在过渡期间被快照盖住，
+         直接给图标元素加 CSS 动画是看不见的，必须动它自己的快照层。 */
+      try {
+        document.documentElement.animate(
+          {
+            transform: ['rotate(-360deg) scale(0.55)', 'rotate(0deg) scale(1)']
+          },
+          {
+            duration: 550,
+            easing: 'cubic-bezier(0.645, 0.045, 0.355, 1)',
+            pseudoElement: '::view-transition-new(hl-theme-icon)'
+          }
+        );
+      } catch (err) {}
+    }).catch(function () {});
   }
 
   function openRandomPost() {
