@@ -83,6 +83,12 @@ if [ -n "$PYTHON_BIN" ]; then
   if ! "$PYTHON_BIN" scripts/sync-image-dims.py; then
     echo "    !! 图片尺寸同步失败（可能断网），这次新加的图会缺 width/height（不影响发布）" >&2
   fi
+  # 把篇数 / 文件数 / 体积写进 README 与 MAINTENANCE 第 0 节的自动区块（2026-11-22）。
+  #     文档里不再手写这些数字 —— 以前三份文档各写一个版本，互相矛盾。
+  #     构建统计读上一次 ./deploy.sh 的 public/；只写文档，不碰 content/。
+  if ! "$PYTHON_BIN" scripts/sync-status.py; then
+    echo "    !! 站点统计刷新失败，README / MAINTENANCE 里的数字可能是旧的（不影响发布）" >&2
+  fi
 else
   echo "    !! 跳过发布前脚本（锚点补全 / lastmod 刷新 / 图片尺寸）：没找到可用的 python3" >&2
 fi

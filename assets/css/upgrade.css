@@ -1,0 +1,321 @@
+/* ============================================================
+   升级包样式（2026-11-21 Bear Neo 升级包，原样保留）
+   2026-11-22 从 layouts/partials/custom_head.html 末尾的内联 <style> 搬到这里：
+   每页 4.8 KB、不能缓存 → 拼进 /css/main.min.<hash>.css，和 theme.css / custom.css
+   一起长缓存。
+   ⚠️ 必须排在管道**最后**（custom_head.html 里 slice 的第三项）：
+      它原来是 <link> 之后的内联 <style>，靠「后出现」覆盖站点旧设计；
+      顺序一换，--bg-color-* 桥接就会被 theme.css 的原值盖回去。
+   ⚠️ 新的站点补丁仍然写 custom.css，别往这里加。
+   ============================================================ */
+
+:root {
+  --hl-bg: #FCFCFA;
+  --hl-bg-subtle: #F7F8FA;
+  --hl-bg-hover: #F1F3F6;
+  --hl-ink: #111315;
+  --hl-ink-2: #374151;
+  --hl-mute: #6B7280;
+  --hl-hair: #E5E7EB;
+  --hl-accent: #1D4ED8;
+  --hl-accent-soft: rgba(29, 78, 216, 0.08);
+  --hl-green: #16A34A;
+  --hl-code-bg: #F6F8FA;
+  --hl-shadow: 0 20px 50px -12px rgba(17, 19, 21, 0.18);
+}
+
+[data-theme="dark"] {
+  --hl-bg: #111214;
+  --hl-bg-subtle: #181A1F;
+  --hl-bg-hover: #20232A;
+  --hl-ink: #F3F4F6;
+  --hl-ink-2: #C8CDD6;
+  --hl-mute: #8B93A1;
+  --hl-hair: #262A33;
+  --hl-accent: #60A5FA;
+  --hl-accent-soft: rgba(96, 165, 250, 0.12);
+  --hl-green: #4ADE80;
+  --hl-code-bg: #16181D;
+  --hl-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
+}
+
+html, body {
+  background-color: var(--hl-bg) !important;
+  color: var(--hl-ink-2) !important;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+h1, h2, h3, h4, strong {
+  color: var(--hl-ink);
+}
+
+a {
+  color: var(--hl-accent);
+  text-decoration-thickness: 1px;
+  text-underline-offset: 3px;
+}
+
+hr {
+  border-color: var(--hl-hair);
+}
+
+pre, code {
+  background-color: var(--hl-code-bg);
+  color: var(--hl-ink);
+}
+
+blockquote {
+  border-left-color: var(--hl-hair);
+  color: var(--hl-mute);
+}
+
+/* 文章列表一句话导语（如在 list.html 中添加 .hl-post-desc） */
+.hl-post-desc {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.88em;
+  color: var(--hl-mute);
+  line-height: 1.55;
+}
+
+/* Last Updated：按用户要求不再强调，和 byline 其他项一样是普通灰字。
+   2026-11-21 去掉了升级包的浅蓝底徽章样式。 */
+
+/* 正在折腾与代表作区块 */
+.hl-section {
+  margin: 34px 0 38px;
+}
+
+.hl-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--hl-hair);
+  margin-bottom: 6px;
+}
+
+.hl-section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--hl-ink);
+}
+
+.hl-more-link {
+  font-size: 0.85rem;
+  text-decoration: none;
+}
+
+.hl-project-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.hl-project-item {
+  border-bottom: 1px solid var(--hl-hair);
+  transition: opacity 0.18s ease;
+}
+
+.hl-project-item:last-child {
+  border-bottom: none;
+}
+
+.hl-project-link {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 0;
+  text-decoration: none !important;
+}
+
+.hl-project-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hl-project-name {
+  font-weight: 600;
+  color: var(--hl-ink);
+  transition: color 0.15s ease;
+}
+
+.hl-project-link:hover .hl-project-name {
+  color: var(--hl-accent);
+}
+
+.hl-project-desc {
+  font-size: 0.88em;
+  color: var(--hl-mute);
+  line-height: 1.5;
+}
+
+.hl-tag-pill {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.76em;
+  padding: 2px 7px;
+  border-radius: 4px;
+  background: var(--hl-bg-subtle);
+  color: var(--hl-mute);
+  border: 1px solid var(--hl-hair);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.hl-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+
+/* 顶部工具按钮（搜索 / 深浅色）与页脚随机漫游 */
+.hl-toolbar {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 12px;
+  vertical-align: middle;
+}
+
+.hl-ctrl-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 28px;
+  padding: 0 9px;
+  border-radius: 6px;
+  border: 1px solid var(--hl-hair);
+  background: var(--hl-bg);
+  color: var(--hl-mute);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
+}
+
+.hl-ctrl-btn:hover {
+  border-color: var(--hl-mute);
+  color: var(--hl-ink);
+  background: var(--hl-bg-subtle);
+}
+
+.hl-kbd {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--hl-bg-subtle);
+  border: 1px solid var(--hl-hair);
+}
+
+/* 全局 / 命令面板 */
+.hl-cmd-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(17, 19, 21, 0.42);
+  backdrop-filter: blur(3px);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 12vh 16px 24px;
+  z-index: 9999;
+}
+
+.hl-cmd-overlay.open { display: flex; }
+
+.hl-cmd-dialog {
+  width: 100%;
+  max-width: 520px;
+  background: var(--hl-bg);
+  border: 1px solid var(--hl-hair);
+  border-radius: 12px;
+  box-shadow: var(--hl-shadow);
+  overflow: hidden;
+}
+
+.hl-cmd-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--hl-hair);
+}
+
+.hl-cmd-input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  color: var(--hl-ink);
+  font-size: 15px;
+}
+
+.hl-cmd-results {
+  max-height: 320px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 8px;
+  margin: 0;
+}
+
+.hl-cmd-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 9px 10px;
+  border-radius: 6px;
+  border: none;
+  background: none;
+  color: var(--hl-ink);
+  text-align: left;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.hl-cmd-item:hover,
+.hl-cmd-item.selected {
+  background: var(--hl-bg-hover);
+  color: var(--hl-accent);
+}
+
+.hl-cmd-foot {
+  padding: 8px 14px;
+  border-top: 1px solid var(--hl-hair);
+  background: var(--hl-bg-subtle);
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--hl-mute);
+}
+
+/* ── 站点令牌桥接（2026-11-21 按用户要求完全采用升级包配色）────────
+   把站点原来的暖纸白 / 墨水蓝令牌映射到升级包的 --hl-* 变量，
+   让 custom.css 里的表格、代码块、页脚、TOC 等老组件也一起换色。
+   ⚠️ custom.css 的深色规则已全部改成 [data-theme="dark"]，
+      不再走 prefers-color-scheme —— 否则手动切换会出现半明半暗。
+*/
+:root,
+:root[data-theme="light"] {
+  --bg-color-primary: var(--hl-bg);
+  --bg-color-secondary: var(--hl-bg-subtle);
+  --text-color-primary: var(--hl-ink);
+  --text-color-secondary: var(--hl-ink-2);
+  --text-color-tertiary: var(--hl-mute);
+  --border-color: var(--hl-hair);
+  --link-color: var(--hl-accent);
+  --link-visited-color: var(--hl-accent);
+  color-scheme: light;
+}
+
+:root[data-theme="dark"] {
+  --bg-color-primary: var(--hl-bg);
+  --bg-color-secondary: var(--hl-bg-subtle);
+  --text-color-primary: var(--hl-ink);
+  --text-color-secondary: var(--hl-ink-2);
+  --text-color-tertiary: var(--hl-mute);
+  --border-color: var(--hl-hair);
+  --link-color: var(--hl-accent);
+  --link-visited-color: var(--hl-accent);
+  color-scheme: dark;
+}

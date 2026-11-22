@@ -5,23 +5,24 @@ description: >
   ⚠️ 2026-10-10 晚**整份重写**。本站的视觉体系**不再是自建的「纸账 + 印章」系统** ——
   那一天整站迁移到了上游 hugo-bearneo 主题（`themes/hugo-bearneo/`，27 个文件）。
   ⚠️ **2026-10-14 起不再是「27 个文件逐字节未改」**：`style.html` 是 `assets/css/theme.css`
-  的镜像，两处同步，做过三处登记过的改动 —— ① `content { line-height }` 最终 1.5；
+  的镜像，两处同步，做过四处登记过的改动 —— ① `content { line-height }` 最终 1.5；
   ② 删掉未启用的 upvote 三组规则与两个 `--upvoted-color` 变量（2026-11-03，省 ~260B/页）；
-  ③ visited 链接色与 link 同色（2026-11-21，去掉紫色）。
+  ③ visited 链接色与 link 同色（2026-11-21，去掉紫色）；
+  ④ 深色 `prefers-color-scheme` 改成 `[data-theme="dark"]`（2026-11-21，手动深浅色开关）。
   其余 26 个文件仍与上游逐字节一致（`diff -r` 可验）。改上游一律在第 5 节登记。
   自建的 6 个 CSS 模块 / 6 个 JS 全部删除。
   ⚠️ **2026-11-06 起 CSS 不再内联**：主题 CSS 与站点补丁 CSS 抽成外部文件，
   由 `layouts/partials/custom_head.html` 里的管道拼成一个带内容哈希的文件
-  `/css/main.min.<hash>.css`（约 38.5 KB raw / 8.5 KB gzip，以构建产物为准），全站共用、
+  `/css/main.min.<hash>.css`（体积见 MAINTENANCE.md 第 0 节自动区块），全站共用、
   浏览器长缓存（`static/_headers` 里 `/css/*` 写 1 年 + immutable）。
   主题 CSS 的真值在 `assets/css/theme.css`（复制自
-  `themes/hugo-bearneo/layouts/partials/style.html`，含下面三处登记过的改动；
+  `themes/hugo-bearneo/layouts/partials/style.html`，含上面四处登记过的改动；
   行高与复制源保持同步）；
   站点补丁的真值在 `assets/css/custom.css`（段号与注释原样保留）。
   本文件里的「第 N 段」一律指 `assets/css/custom.css` 第 N 段。
   所以下面登记的令牌**全部是上游主题的真值**，唯一真值在
   `assets/css/theme.css`（不再是主题文件本身 —— 主题文件现在只是复制源）。
-  站点层只在 50 个文件里做了最小偏离，逐条列在正文「站点层偏离」一节。
+  站点层只做了最小偏离（文件数见 MAINTENANCE.md 第 0 节），逐条列在正文「站点层偏离」一节。
   **改样式前先读那一节**：绝大多数视觉问题应该在上游那一份里改，
   而不是在站点层再叠一层规则 —— 那是上一版自建主题最后变得无法维护的原因。
 
@@ -32,6 +33,14 @@ description: >
 > 下面这些是**现在线上生效的值**。后面章节里带日期的旧值都是历史记录，
 > 与这里冲突时以本表为准。样式真值在 `assets/css/theme.css` 与
 > `assets/css/custom.css`；本表只是摘要。
+
+> ⚠️ **2026-11-22 内联代码外置**（每篇文章页 HTML 少约 14 KB）：升级包 `<style>` 从 `custom_head.html` 末尾搬到
+> **`assets/css/upgrade.css`**（拼在 CSS 管道最后，顺序不能换）；三段内联脚本拼成一个长缓存的
+> **`/js/site.min.<hash>.js`**（`<head>` 里 `defer`）—— `custom_body.html` 的脚本 → **`assets/js/palette.js`**、
+> `partials/hello-script.html` → **`assets/js/hello.js`**（原 partial 已删）、`single.html` 末尾的目录显隐 → **`assets/js/toc.js`**。
+> 导航右侧的 `搜索 /` 与 `☾/☀` 改由 **`partials/nav.html` 静态输出**（不再由 JS 追加），首帧图标由 `custom.css` 第 59 段按 `data-theme` 切换。
+> 下文历史记录里出现的「`custom_body.html` 的 applyTheme / toggleTheme / ICON_*」「升级包 `<style>`」一律按这里的新位置理解。
+> 仍保留内联的只有：主题引导脚本（必须同步执行防闪白）、GoatCounter 加载器（含模板变量）、Speculation Rules、JSON-LD，以及上游主题 `toc.html` 的高亮脚本（主题文件不改）。
 
 | 项 | 当前值 |
 | --- | --- |
@@ -45,7 +54,7 @@ description: >
 | 深色色板 | 升级包：bg `#111214` / subtle `#181A1F` / hover `#20232A` / text `#F3F4F6` / secondary `#C8CDD6` / tertiary `#8B93A1` / link `#60A5FA` / border `#262A33` / code `#16181D`（原 `#161618` 已被覆盖） |
 | 深浅色模式 | **手动开关 + 跟随系统初值**：`data-theme` 写在 `<html>`，右上角 `☾/☀` 切换，`localStorage['hl-theme']` 记住；主题色、giscus 同步。**切换时从点击处圆形绽开**（View Transitions API，500ms），图标同拍转一圈；不支持时退回 0.3s 颜色过渡 |
 | 导航 | 首页 / 关于 / 邻居 / 工具 / 周刊 / 文章 / 订阅（7 项） |
-| 内容量 | 113 篇文章 + 30 期周刊 = 143 个内容页（另有 `posts/_index.md`、`weekly/_index.md`，共 145 个 Markdown）；sitemap 163 条；构建 HTML 404 个（以 `find` / `sitemap.xml` 为准，别背数字） |
+| 内容量 | 见 [MAINTENANCE.md 第 0 节](MAINTENANCE.md) 的自动区块（`scripts/sync-status.py` 生成）。本文档其余地方出现的篇数都是写那一段时的实测值 |
 | 行高来源 | **只在 `assets/css/theme.css` 的 `content` 声明一次 1.5**；`custom.css` 不再覆盖 |
 | 正文内链 | `content.long-form a` 默认 1px 三级灰虚线（`text-underline-offset: 3px`），悬停变实线 + 当前色；标题锚点、脚注引用/返回排除 |
 | 列表与表格 | 列表项之间 `0.3em`（只给无 class 的直接子级，`ul.blog-posts` 不受影响）；表格单元格 `0.5em 0.65em`、表头 600、数字 tabular |
@@ -153,7 +162,7 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 > 一句话：**本站的视觉体系 = 上游 Hugo Bear Neo + 2026-11-21 的升级包覆写层**。
 > 升级包用 `--hl-*` 令牌重写了配色与首页 / 关于页组件，并带来手动深浅色；
 > 站点原有的排版、目录、评论、工具页等仍保留，颜色通过「站点令牌桥接」跟随升级包。
-> 这份文档登记 50 个站点层文件与 4 处主题副本改动，免得下一轮改造把已有取舍重做一遍。
+> 这份文档登记全部站点层文件与 4 处主题副本改动，免得下一轮改造把已有取舍重做一遍。
 
 ---
 
@@ -161,7 +170,7 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 
 | 你想做的事 | 去哪儿 |
 | --- | --- |
-| 改升级包配色 / 组件样式 | `layouts/partials/custom_head.html` 末尾的升级包 `<style>`（`--hl-*`）。改站点旧组件的颜色去同一处的「站点令牌桥接」 |
+| 改升级包配色 / 组件样式 | `assets/css/upgrade.css`（`--hl-*`，2026-11-22 前是 `custom_head.html` 末尾的内联 `<style>`）。改站点旧组件的颜色去同一文件末尾的「站点令牌桥接」 |
 | 改正文排版（标题间距、中文字体） | `assets/css/custom.css` 第 02 段（样式），`custom_head.html` 只负责加载 |
 | 改首页 | `layouts/index.html`（结构）+ `content/_index.md`（文案：简介、支持链接、平台入口）。`data/projects.toml` 与 `shortcodes/projects.html` 保留但**当前未挂载** |
 | 改关于页的介绍块 | `content/about.md` 的纯 Markdown 介绍，**没有照片头像、没有 mac 卡片**；页面标题 2026-11-21 起恢复显示 |
@@ -173,7 +182,7 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 | 改「系列」入口 / 总览页 | 入口：`layouts/_default/archive.html` + `custom.css` 第 09 段；总览页：`layouts/_default/series.html` + `content/series.md` + 第 09b 段 |
 | 改链接页（朋友 / 聚合站 / 点评） | `content/roll.md` —— **全站唯一的链接页**，一条平铺 13 项（前 3 朋友、后 10 聚合站，无小标题） |
 | 改导航 | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板** |
-| 改页脚 | `layouts/partials/footer.html` + `hugo.toml` 的 `[params] copyright` / `licenseName` / `licenseURL`；「打个招呼」浮层另见 `partials/hello.html` / `partials/hello-script.html` / `custom.css` 第 48 段；正文里的「写信」通过 `shortcodes/mail-link.html` 复用同一套浮层 |
+| 改页脚 | `layouts/partials/footer.html` + `hugo.toml` 的 `[params] copyright` / `licenseName` / `licenseURL`；「打个招呼」浮层另见 `partials/hello.html` / `assets/js/hello.js` / `custom.css` 第 48 段；正文里的「写信」通过 `shortcodes/mail-link.html` 复用同一套浮层 |
 | 改评论区 | `layouts/partials/giscus.html` + `assets/js/giscus.js` + `custom.css` 第 07 段 |
 | 改订阅源（feed 字段 / 浏览器视图） | ① feed 本身：`layouts/_default/rss.xml`；② 浏览器打开 feed 时那一页：`layouts/partials/feed-view.html` + `content/feed/` + `custom.css` 第 28 段；③ 谁来分派：`functions/_middleware.js`（见第 4 节「订阅源」） |
 | 改 robots / `noindex` | `layouts/_default/baseof.html` 的 robots 分支（见第 5 节） |
@@ -190,7 +199,7 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 ```
 Bear Blog（极简博客服务，Verdana + 720px + 虚线 hr）
       ↓ 社区移植
-hugo-bearneo（上游主题，本站现在用的就是它；`style.html` 有三处登记改动）
+hugo-bearneo（上游主题，本站现在用的就是它；`style.html` 有四处登记改动）
       ↓ 站点层借鉴
 yinji.org（同样基于 hugo-bearneo，是「别人怎么用这个主题」的现成答案）
       ↓
@@ -298,7 +307,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 | 目录面板 | 折叠 36px 宽 / 展开按内容 `max-content`（上限 280px），14px 字、24px 行距；横线两态同一 x（距视口右 10px） | 折叠指示器 + 悬停扁平列表（第 40 段） |
 | 圆角 | 站点旧组件 `4px`；升级包组件 6px / 12px / 16px |
 | 断点 | `800px` | 主题原生那一档（minipic / image-zoom / TOC 整块隐藏） |
-| 断点（站点层） | `1200px` | **桌面侧边目录 TOC 的显示闸门**（第 20 段，>1200px 显示）。手机端目录 2026-11-02 已删除，这一档只服务电脑端；主题原生的 800px 那档仍在管 minipic / image-zoom |
+| 断点（站点层） | `1200px` | **桌面侧边目录 TOC 的显示闸门**（第 20 段，>1200px 显示）。≤1200px 改由正文顶部的折叠目录承担（第 46 段；2026-11-02 删过，2026-11-15 恢复）；主题原生的 800px 那档仍在管 minipic / image-zoom |
 
 ---
 
@@ -442,12 +451,12 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   随后整块删除（`shortcodes/now.html`、`partials/now-line.html`、front matter `now` 均已删）；
   `{{< projects >}}` 也未挂载，`layouts/shortcodes/projects.html` 与 `data/projects.toml`
   还在，加回一行即可恢复。
-- **导航右侧的 `搜索 /` 与 `☾/☀` 是 JS 追加的**（`custom_body.html`），
-  不在 `[[menu.main]]` 里。桌面 1280px 保持一行；390px 时工具栏折到第二行
+- **导航右侧的 `搜索 /` 与 `☾/☀` 由 `partials/nav.html` 静态输出**（2026-11-22 前是 JS 追加的），
+  不在 `[[menu.main]]` 里，事件由 `assets/js/palette.js` 绑定。桌面 1280px 保持一行；390px 时工具栏折到第二行
   （`header nav` 高约 67px），这是接受的行为 —— 7 个菜单项本来就贴着折行临界。
   图标是内联 SVG（月亮 / 太阳），不再用 `☾/☀` 文字，尺寸规则在 `custom.css` 第 56 段。
 - `.hl-section*` / `.hl-project-*` / `.hl-tag-pill` / `.hl-cmd-*` / `.hl-toolbar`
-  样式全部在 `custom_head.html` 末尾的升级包 `<style>` 里（原样，不拆到 custom.css）。
+  样式全部在 `assets/css/upgrade.css` 里（升级包原样，不拆到 custom.css；2026-11-22 前是 `custom_head.html` 末尾的内联 `<style>`）。
   `.hl-project-*` 目前没有调用点（代表作区块未挂载），删掉也不影响构建。
 - 2026-11-21：周刊从 `recent-posts` 移出，单独成块 —— 否则同一期会在首页出现两次。
   周刊块只取 latest 一期，摘要取 front matter 的 `summary`；完整列表在 `/weekly/`。
@@ -468,13 +477,13 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   标点 2026-11-20 由用户从 `·` 改成中文逗号，照现在的实现走。
 - 数字在构建期算：`layouts/shortcodes/home-stats.html` 取 `site.RegularPages`
   的 posts / weekly 数量，天数取最早一篇 post/weekly 到 `now` 的整天数（含当天）。
-  天数由 `.github/workflows/daily-rebuild.yml` 每天 00:10（Asia/Taipei）触发一次
-  Cloudflare Pages 重建来前进；文章/周刊数在发布时自然更新。
+  天数靠每天的构建前进：2026-11-22 起由 `sync-garmin.yml` 每天 00:10（Asia/Taipei）的
+  自动提交触发（原 `daily-rebuild.yml` 与它重复，已删除）；文章/周刊数在发布时自然更新。
   ⚠️ 静态站不每天构建时天数会停在最后一次构建；别为此加前端脚本。
 - 2026-11-20 第二轮：初版是 0.85em 三级灰 + `<br>` 独立一行，用户要求
   「正常显示、连起来」，于是删掉 `.home-stats` 样式和换行，现在就是普通正文。
   **别再给它加样式或分割线。**
-- 数量口径与 `/archive/` 一致：113 + 30 = 143 篇。
+- 数量口径与 `/archive/` 一致：文章 + 周刊。
 
 - `.recent-posts` 的样式在 `custom.css` 第 04 段：
   CSS Grid 两列（定宽日期 + 弹性标题），比上游 `ul.blog-posts` 的 `flex: 0 0 80px` 稳。
@@ -818,7 +827,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 
 - `hugo.toml` 的 `disableKinds = ["taxonomy"]` 仍然关着：关的是 `/categories/` 与 `/tags/` 两个**索引页**，词条页 `/categories/<词>/` 照常生成。**不要打开 taxonomy kind** —— 会把 232 个标签索引页一起放出来。
 - `/categories/` 用普通内容页 `content/category.md`（`layout: "categories"` + `url: "/categories/"`）占位，模板 `layouts/_default/categories.html` 读 `.Site.Taxonomies.categories`。
-- 每行：名称 + 篇数（右对齐）+ 描述；按篇数从多到少。当前 8 个分类共 143 篇。
+- 每行：名称 + 篇数（右对齐）+ 描述；按篇数从多到少。
 - 样式在 `custom.css` 第 58 段：单列、无卡片、无分割线，hover 只把名称变链接蓝。
 - 词条页的标题 / 描述来自 `content/categories/<词>/_index.md`；改描述会同时改这一页和词条页。
 
@@ -1220,7 +1229,7 @@ CSS 拿不到 location，只能由模板给。
 
 ---
 
-## 5. 站点层偏离（50 个文件：layouts/ 48 + assets/js/ 2）+ 改主题副本 4 处
+## 5. 站点层偏离（`layouts/` + `assets/`，文件数见 MAINTENANCE.md 第 0 节）+ 改主题副本 4 处
 
 > ⚠️ **2026-10-14 起多了一类偏离：直接改主题样式。**
 > 生效文件是 `assets/css/theme.css`，`themes/hugo-bearneo/layouts/partials/style.html`
@@ -1260,7 +1269,11 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/partials/seo_tags.html` | **新增**（2026-10-14）：整份覆盖上游的同名 partial —— ① 删 `<meta name="keywords">` 与 `<meta name="title">`；② 删掉整块微数据（`itemscope` / `itemprop` 那套）；③ 补 `og:image:width` / `height`；④ 换成按页型输出的 JSON-LD；⑤ **2026-10-26 BlogPosting 补 `inLanguage` / `articleSection` / `keywords`** | 上游那份是「HTML 规范还在 2015 年」的写法（见 8.8）。现在全站每页都有 `ld+json`、`keywords` / `itemprop` / `pubdate` 全站归零。⑤ 三个都是**短值**（分类一个词、标签逗号拼接、locale），不破「JSON-LD 不放长文本」这条原则 —— 分类/标签为空时走 `merge` 条件追加，**不能塞空串**，否则富媒体测试会报「字段为空」 |
 | `layouts/partials/og-image.html` | **新增**（2026-10-26）：分享卡片图的**唯一**取值来源 —— 长文页按 `.Slug` 找 `images/og/<slug>.png`，取不到回落 `site.Params.images` 第一张；返回**绝对 URL** | 这段逻辑原本在 `_partials/opengraph.html` 与 `_partials/twitter_cards.html` 各写一份、靠注释提醒「必须逐字一致」；2026-10-26 给 JSON-LD 的 `image` 也用同一张图时正好会变成第三份，于是收成一份。见 8.8 |
 | `layouts/partials/noindex.html` | **新增**（2026-10-26）：`noindex` 判定的**唯一**来源（`tags` / `404` / `.Params.noindex`），返回 bool | 同上：原本 `_default/baseof.html` 与 `sitemap.xml` 各写一份 `or(...)`，漂移的后果是「sitemap 里混进 noindex 页」而构建 0 警告。分类页放行时正好要动它，于是收成一份。见 8.9 |
-| `layouts/partials/custom_body.html` | **新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。**2026-11-22**：`toggleTheme()` 改为从点击处圆形绽开（View Transitions + WAAPI，见第 57b/57c 段的 `.hl-vt-theme` 约定），图标同拍转一圈；保留 `.hl-theme-transition` 作为无 View Transitions 时的降级。`loadIndex()` 里把本站 `t/u/g/h/k/d` 映射成升级包的 `title/url/summary/date/section/headings/keywords` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/h/k/d`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label`。⚠️ `.hl-vt-theme` 用序号 `vtSeq` 防连点时旧过渡提前摘类 |
+| `layouts/partials/custom_body.html` | **2026-11-22 起只剩对话框 HTML，脚本搬到 `assets/js/palette.js`，按钮搬到 `partials/nav.html`。** 以下是原始说明：**新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。**2026-11-22**：`toggleTheme()` 改为从点击处圆形绽开（View Transitions + WAAPI，见第 57b/57c 段的 `.hl-vt-theme` 约定），图标同拍转一圈；保留 `.hl-theme-transition` 作为无 View Transitions 时的降级。`loadIndex()` 里把本站 `t/u/g/h/k/d` 映射成升级包的 `title/url/summary/date/section/headings/keywords` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/h/k/d`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label`。⚠️ `.hl-vt-theme` 用序号 `vtSeq` 防连点时旧过渡提前摘类 |
+| `assets/css/upgrade.css` | **新增**（2026-11-22）：升级包原样样式（`--hl-*` 令牌、`.hl-*` 组件、站点令牌桥接），原来是 `custom_head.html` 末尾的内联 `<style>` | 每页 4.8 KB 不能缓存。⚠️ 在 CSS 管道里必须排**最后**（theme → custom → upgrade），它靠「后出现」覆盖旧设计 |
+| `assets/js/palette.js` | **新增**（2026-11-22）：命令面板 / 深浅色切换 / 随机漫游，原 `custom_body.html` 的内联脚本 | 与 `hello.js`、`toc.js` 拼成 `/js/site.min.<hash>.js`，`<head>` 里 `defer`。⚠️ 必须在 `giscus.js` 之前执行（它要读 `applyTheme` 写好的主题），所以别挪到 `<body>` 末尾 |
+| `assets/js/hello.js` | **新增**（2026-11-22）：「问候」/「写信」邮箱浮层，原 `partials/hello-script.html`（已删除） | 拼进全站 site.js，省掉每页 1.5 KB 重复下载 |
+| `assets/js/toc.js` | **新增**（2026-11-22）：右侧目录显隐，原 `_default/single.html` 末尾的内联脚本 | 同上；没有 `div.toc` 的页面直接 return |
 | `layouts/shortcodes/projects.html` + `data/projects.toml` | **新增**（2026-11-21）：首页代表作列表。⚠️ **当前未挂载**（用户要求首页去掉该区块），模板与数据保留 | `projects.html` 用 `hugo.Data.projects`（`.Site.Data` 在 0.156 起弃用）。同批加入的 `shortcodes/now.html`、`partials/now-line.html`、`shortcodes/about-mac.html` 已按用户要求删除 |
 | `layouts/index.json` | **新增**（2026-10-26）：首页的 JSON 输出视图，产物 `/index.json` —— 144 篇的 `{t,u,g,h,k,d}`（标题 / 站内路径 / 标签 / h2·h3 章节 / 关键词 / 引用框）。**2026-11-22 起不再索引正文**：标题 > 章节 > 关键词 > 引用四级打分，章节命中显示「章节 · 短语」，关键词命中显示「相关 · 短语」 | 列表页搜索原来只 `title.includes`，搜正文里的词一条都出不来。⚠️ 文件名**必须**是 `index.json`：home 的输出格式按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`，那份带分页变量、结构也不对。⚠️ 体积约 137 KB / gzip 61 KB；命令面板只在呼出时 fetch 一次，别改成进页面就拉。见 8.7 |
 | `layouts/partials/search-box.html`（**已删除**） | 2026-10-26 新增的归档页搜索框 + 过滤脚本，2026-11-03 起只在 `/archive/` 使用；**2026-11-21 晚彻底删除**，连同 `postSearch` 参数与 CSS 47 段的 `.search-hit` 高亮。恢复需从 git 历史取回 | 同一段脚本原本在 `_default/list.html` 与 `_default/archive.html` **各抄一份**，只差计数文案。删除后全站搜索只剩 `custom_body.html` 的命令面板。见 8.7 |
@@ -1384,11 +1397,11 @@ Firefox / Safari 目前仍支持 XSLT，但**这套方案已经不需要任何�
 1. **CSS 管道**：把 `assets/css/theme.css` + `assets/css/custom.css` 拼成 `/css/main.min.<hash>.css`。顺序不能反，站点补丁靠「后出现者胜」覆盖主题。
 2. **升级包主题引导 + 完整样式**：文件开头的 `data-theme` 脚本（防深色闪白），以及末尾原样引入的 `<style>`（`--hl-*` + 组件 + 站点令牌桥接）。这是唯一允许内联大段 CSS 的地方。
 3. **图床预连**：只有当前页 `.Content` 同时含 `img.hulatu.com` 与 `<img` 时才输出 `preconnect` / `dns-prefetch`（不要加 `crossorigin`，`<img>` 走的是 no-cors 连接池）。
-4. **单个 `theme-color`**：`<meta id="hl-theme-color">` 初始 `#FCFCFA`，由 `custom_body.html` 的 `applyTheme()` 在切换时改成 `#111214`（浅色回 `#FCFCFA`）。不要再写两条 media 版本 —— 手动切换后它们不会跟。
+4. **单个 `theme-color`**：`<meta id="hl-theme-color">` 初始 `#FCFCFA`，由 `assets/js/palette.js` 的 `applyTheme()` 在切换时改成 `#111214`（浅色回 `#FCFCFA`）。不要再写两条 media 版本 —— 手动切换后它们不会跟。
 5. **GoatCounter**。
 6. **Speculation Rules**：站内预渲染。
 
-样式段号（01–57）仍指 `assets/css/custom.css`；升级包组件的 `.hl-*` 在 `custom_head.html` 末尾，不在 custom.css。新的站点补丁继续写 custom.css，不要再往升级包 `<style>` 里加东西。
+样式段号（01–59）仍指 `assets/css/custom.css`；升级包组件的 `.hl-*` 在 `assets/css/upgrade.css`，不在 custom.css。新的站点补丁继续写 custom.css，不要再往 upgrade.css 里加东西。
 
 ⚠️ 别加回 `<link rel=preload as=style>`：它与带 `integrity` + `crossorigin` 的 stylesheet 凭据模式不一致，浏览器会把同一个 CSS 当成两个缓存键、下载两次。
 
@@ -1396,7 +1409,7 @@ Firefox / Safari 目前仍支持 XSLT，但**这套方案已经不需要任何�
 
 ### Do
 
-- **先判断改哪一层**：`theme.css`（上游基础）→ `custom.css`（站点旧补丁）→ `custom_head.html` 末尾的升级包 `<style>`（`.hl-*` 与令牌桥接）。`.hl-*` 组件只改第三层，旧组件只改前两层。
+- **先判断改哪一层**：`theme.css`（上游基础）→ `custom.css`（站点旧补丁）→ `assets/css/upgrade.css`（`.hl-*` 与令牌桥接）。`.hl-*` 组件只改第三层，旧组件只改前两层。
 - 改视觉先问「这是上游的东西还是站点层的？」—— 上游的东西去 `themes/` 改，改完在本文件第 5 节登记。
 - 用 `hr` 就直接写 `<hr>`，它本来就是虚线。
 - 加独立页时记得两个键：`hideDate: true`（不挂日期行）+ `toc: false`（短页面不挂目录）。
@@ -1481,7 +1494,7 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 `t/u/g/h/k/d` 映射成 `title/url/summary/date/section/headings/keywords`；
 搜索按**标题 > 章节（h）> 关键词（k）> 引用（d）**四级打分，
 章节/关键词命中时在右侧胶囊显示「章节 · …」「相关 · …」，同分保持索引里的日期倒序。
-2026-11-22 起索引只收这四类重点信息（不再收正文全文），体积约 137 KB / gzip 61 KB。
+2026-11-22 起索引只收这四类重点信息（不再收正文全文），体积见 MAINTENANCE.md 第 0 节自动区块。
 空查询展示最近 10 篇 +「随机读一篇文章」「切换深浅色」两条快捷指令。
 
 ↑↓ 键盘选择时，如果选中项移出结果列表的可视区，只改 `.hl-cmd-results` 的
@@ -1490,8 +1503,8 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 
 ⚠️ 升级包原版用 `innerHTML` 拼结果项。本站标题全部由作者控制，暂时没有注入面；
 **以后若把评论、外部 RSS 之类不可信文本塞进索引，必须先改成 `textContent`**。
-⚠️ 面板脚本**放在 `</body>` 前的 `custom_body.html` 里**，对话框标记就在它上面，
-所以可以直接 `getElementById`。将来若再加页内输入框，它通常仍在 `<head>` 之后，
+⚠️ 面板脚本 2026-11-22 起是 `assets/js/palette.js`（`<head>` 里 `defer`，DOM 解析完才执行），
+对话框标记仍在 `custom_body.html`，所以可以直接 `getElementById`。将来若再加页内输入框，它通常仍在 `<head>` 之后，
 必须等 `DOMContentLoaded` 再跑，否则 `querySelectorAll` 拿到空列表、打字零反应且零报错。
 这类问题 DOM stub 测不出来，要用真浏览器。
 

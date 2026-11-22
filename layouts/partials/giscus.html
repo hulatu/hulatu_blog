@@ -20,7 +20,7 @@
        同时 summary 从「胶囊按钮」变成一行纯文字 —— 这些都只是 CSS 的事，
        下面这 5 个 id 一个都没动，assets/js/giscus.js 不用改。
 
-       ⚠️ 主题：`custom_body.html` 的 `applyTheme()` 会在首次加载和每次手动切换时
+       ⚠️ 主题：`assets/js/palette.js` 的 `applyTheme()` 会在首次加载和每次手动切换时
           写 `#giscus-slot.dataset.theme`（light/dark）并给已加载的 iframe 发
           `setConfig`。giscus.js 注入脚本时会把 dataset 原样复制成 `data-*`。
           所以下面的 `preferred_color_scheme` **只是无 JS 时的兜底**，

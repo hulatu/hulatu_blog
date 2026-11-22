@@ -3,7 +3,7 @@ title: "剪辑生活 Vlog"
 categories: ["记录"]
 tags: ["Vlog", "剪辑", "生活"]
 date: 2026-01-10T22:07:55+08:00
-lastmod: 2026-11-21T23:14:46+08:00
+lastmod: 2026-09-20T23:58:48+08:00
 draft: false
 summary: "用视频分享生活，是一个不那么轻松的过程。"
 description: "用 iMovie 剪完自己的日常 Vlog，成就感满满。但也发现，用视频分享生活和看别人的视频完全是两回事。记录这次剪辑的感受。"

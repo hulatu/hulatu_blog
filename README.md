@@ -9,7 +9,7 @@
 <br>
 
 [![内容](https://img.shields.io/static/v1?label=%E5%86%85%E5%AE%B9&message=113%20%E7%AF%87&color=1b1917&style=flat-square)](https://hulatu.com/archive/)
-[![周刊](https://img.shields.io/static/v1?label=%E5%91%A8%E5%88%8A&message=30%20%E6%9C%9F&color=c0392b&style=flat-square)](https://hulatu.com/weekly/)
+[![周刊](https://img.shields.io/static/v1?label=%E5%91%A8%E5%88%8A&message=31%20%E6%9C%9F&color=c0392b&style=flat-square)](https://hulatu.com/weekly/)
 [![Hugo](https://img.shields.io/static/v1?label=Hugo&message=0.170&color=ff4088&style=flat-square&logo=hugo&logoColor=white)](https://gohugo.io/)
 [![部署](https://img.shields.io/static/v1?label=%E9%83%A8%E7%BD%B2&message=Cloudflare%20Pages&color=f38020&style=flat-square&logo=cloudflare&logoColor=white)](#-发布)
 [![RSS](https://img.shields.io/static/v1?label=%E8%AE%A2%E9%98%85&message=RSS%20%E5%85%A8%E6%96%87&color=e8892e&style=flat-square&logo=rss&logoColor=white)](https://hulatu.com/index.xml)
@@ -27,7 +27,9 @@
 >
 > 更深入的两份：**[MAINTENANCE.md](MAINTENANCE.md)**（文件地图、坑、验收清单）、
 > **[DESIGN.md](DESIGN.md)**（视觉规范与站点层每个文件的偏离）。
-> **当前数值以 DESIGN.md 第 0 节为准，操作步骤以 MAINTENANCE.md 为准。**
+> **视觉数值（字号 / 颜色 / 行高）以 DESIGN.md 第 0 节为准；篇数、文件数、体积等统计只看
+> MAINTENANCE.md 第 0 节的自动区块（`scripts/sync-status.py` 生成）；操作步骤以 MAINTENANCE.md 为准。**
+> 三份文档里其他地方出现的数字，都是写那一段时的实测值。
 
 ## 📑 目录
 
@@ -48,7 +50,7 @@
 | --- | --- |
 | 🌐 **线上地址** | <https://hulatu.com/> |
 | 🧱 **框架** | [Hugo](https://gohugo.io/) `0.170.0`（0.170 起无 extended 版） |
-| 🎨 **主题** | 上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo) 的副本（`themes/` 里 27 个文件，只有 `style.html` 三处登记改动：正文行高 1.5、visited 与 link 同色、删掉未启用的 upvote CSS；其余逐字节未改） |
+| 🎨 **主题** | 上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo) 的副本（只有 `style.html` 四处登记改动：正文行高 1.5、visited 与 link 同色、删掉未启用的 upvote CSS、深色改用 `[data-theme]`；其余逐字节未改。生效副本是 `assets/css/theme.css`） |
 | ☁️ **托管** | Cloudflare Pages（Git 集成，push 即自动构建） |
 | 💬 **评论** | giscus（GitHub Discussions，只挂长文页） |
 | 📊 **统计** | GoatCounter（无 Cookie） |
@@ -78,7 +80,7 @@
 | --- | --- | --- |
 | 🌗 深浅色 | 默认跟随系统，右上角 `☾/☀` 可手动切换（点击处圆形绽开、图标转一圈），选择存 LocalStorage | 2026-11-21 升级包要求；只记一个键 `hl-theme`。动效 2026-11-22 加，参考 directoryyy.com，Firefox / 关闭动效时退回 0.3s 颜色过渡 |
 | 🔍 搜索 | 全站 `⌘K` / `/` 命令面板；`/archive/` 顶部搜索框 2026-11-21 已彻底删除 | 面板读 `/index.json`（标题 / 章节 / 关键词 / 引用）；归档只留计数与随机入口 |
-| 📖 目录 | 只在 **>1200px** 的桌面端，平时隐形、悬停显形 | 手机端折叠目录 2026-11-02 已删除，不恢复 |
+| 📖 目录 | **>1200px** 右侧悬浮（平时隐形、悬停显形）；**≤1200px** 正文顶部折叠（原生 `<details>`） | 手机端折叠目录 2026-11-02 删过，2026-11-15 恢复 |
 | 🖼 图片放大 | **零 JS**：checkbox + `--zoom-src` 背景图 | 每张图在 DOM 里只占 1 个节点，放大时内联图不离流、零回流 |
 | ⬆️ 返回顶部 | 纯 CSS 滚动驱动动画，零 JS | 只挂长文页 |
 | 🔗 标题锚点 | 只在文章页输出可点的 `#` | 独立页模板层就不输出 |
@@ -122,12 +124,12 @@ Blog/
 ├── hugo.toml                 # 站点配置：导航 / 参数 / permalinks / 高亮 / 版本约束
 ├── content/
 │   ├── _index.md             # 首页文案（招呼、题记、简介、平台入口）
-│   ├── posts/                # 109 篇文章
-│   ├── weekly/               # 28 期周刊（单独开了 RSS 输出）
+│   ├── posts/                # 文章
+│   ├── weekly/               # 周刊（单独开了 RSS 输出）
 │   ├── feed/                 # 订阅源「浏览器视图」的两个壳
 │   ├── about / archive / roll / series / featured / run / donate / wechat / privacy
 │   └── categories/           # 8 个分类
-├── layouts/                  # ★ 站点层覆盖（40 个文件），主题一律不改
+├── layouts/                  # ★ 站点层覆盖，主题一律不改
 │   ├── index.html            #   首页
 │   ├── _default/             #   baseof / single / list / rss / archive / run / series / featured
 │   ├── partials/post-list.html # 列表本体，list/archive 共用
@@ -135,13 +137,14 @@ Blog/
 │   ├── partials/             #   nav / footer / custom_head / giscus / seo_tags / breadcrumbs …
 │   └── _markup/              #   render-heading（标题锚点）/ render-link / render-image
 ├── themes/hugo-bearneo/      # ★ 上游主题副本，**别随手改**
-├── assets/js/                # giscus.js / code-copy.js（只在需要的页加载）
+├── assets/css/               # theme → custom → upgrade 三层，按序拼成一个 /css/main.min.<hash>.css
+├── assets/js/                # palette / hello / toc 拼成全站 site.js；giscus / code-copy 只在需要的页加载
 ├── data/
 │   ├── runs.json             # 跑步数据（/run/ 在读）
 │   └── image-dims.json       # 正文图片真实宽高
 ├── static/                   # 原样发布：_headers / _redirects / 图标 / images
 ├── functions/_middleware.js  # Cloudflare Pages Functions：订阅源内容协商
-├── scripts/                  # 13 个脚本：发布前检查、链接检查、Garmin 同步、图床尺寸 …
+├── scripts/                  # 脚本：发布前检查、链接检查、Garmin 同步、图床尺寸 …
 ├── archetypes/               # hugo new 的模板（posts / weekly）
 ├── publish.sh                # 一键发布：补锚点 → 刷 lastmod → 提交 → 推
 ├── deploy.sh                 # 本地干净构建，不部署
@@ -196,7 +199,7 @@ hugo new content/posts/文章名.md           # 周刊：hugo new content/weekly
 | `slug` | 决定 URL 最后一段 |
 | `series` | **在用**：文章页「系列坐标带」+ `/archive/` 入口 + `/series/` 总览都读它（一篇只能属于一个系列） |
 | `tags` | 标签行 + 归档页标签云 |
-| `categories` | 面包屑第三段（**周刊刻意不加**） |
+| `categories` | 文章面包屑的第三段 + `/categories/<词>/` 词条页。周刊也写 `["周刊"]`（词条页要用），只是面包屑模板对周刊跳过这一段（分类名与栏目名重复） |
 
 日常一条命令：
 
@@ -241,25 +244,25 @@ feed 本身是**纯 XML**（顶部没有 `<?xml-stylesheet?>`）。浏览器直�
 | 工作流 | 做什么 |
 | --- | --- |
 | `build.yml` | push / PR 时用**同一个 Hugo 版本**构建主站，并检查中文标题锚点 —— 把「本地没事、平台构建失败」挡在推送前 |
-| `sync-garmin.yml` | 每天 22:00（Asia/Taipei）拉一次跑步数据，写进 `data/runs.json` |
-| `daily-rebuild.yml` | 每天 00:10（Asia/Taipei）调用 Cloudflare Pages Deploy Hook，让首页「运行 N 天」每天自动更新。⚠️ 需要仓库 secret `CLOUDFLARE_DEPLOY_HOOK`（配置步骤见文件头注释） |
+| `sync-garmin.yml` | 每天 00:10（Asia/Taipei）拉一次跑步数据（前一整天的记录），写进 `data/runs.json`。每次都会提交，所以它也是**全站每天的重建来源**（首页「运行 N 天」、写作统计靠它前进；原 `daily-rebuild.yml` 2026-11-22 删除） |
 
 ## 🧭 站点现状
 
 <details>
-<summary><b>点开看具体数字（截至 2026-11-21；以 DESIGN.md 第 0 节为准）</b></summary>
+<summary><b>点开看具体数字（脚本自动生成）</b></summary>
 
-| 项 | 数量 |
+<!-- status:begin（scripts/sync-status.py 自动生成，别手改） -->
+完整统计见 [MAINTENANCE.md 第 0 节](MAINTENANCE.md)。
+
+| 项 | 当前值 |
 | --- | --- |
-| 文章（`content/posts/`） | 113 篇 |
-| 周刊（`content/weekly/`） | 30 期 |
-| 合计 | **143 个内容页**（另有 2 个 section index，共 145 个 Markdown）—— 周刊也走 `/posts/:year/:month/:day/:slug/` |
-| 分类 | 8 个（健康 / 周刊 / 学习科研 / 工具 / 思考 / 记录 / 运动 / 饮食） |
-| 标签词条页 | 以 `ls public/tags | wc -l` 为准（标签会增删，别背数字） |
-| 系列 | 3 组（跑步 14 / 综述写作 5 / 居家流水账 4） |
-| 草稿 | 0 |
-| 产出 HTML | 403 个文件（Hugo 报 408 页，含 XML / JSON 输出） |
-| 首页体积 | 10727 B，gzip 4434 B |
+| 内容 | 文章 **113** 篇 + 周刊 **31** 期 = **144** 个内容页（另有 2 个 section index，共 146 个 Markdown）；草稿 0 篇 |
+| 分类 | 8 个：思考 40 / 周刊 31 / 工具 22 / 记录 19 / 运动 13 / 学习科研 10 / 饮食 5 / 健康 4 |
+| 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
+| 产出 HTML | 408 个 |
+| sitemap | 164 条 |
+| 文章页 HTML | 中位数 23.8 KB，gzip 9.0 KB |
+<!-- status:end -->
 
 - 每页都有 JSON-LD（首页 `WebSite` / 文章页 `BlogPosting` / 独立页与 404 `WebPage` /
   section 与词条 `CollectionPage`）。

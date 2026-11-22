@@ -145,7 +145,7 @@ disableKinds = ["taxonomy"]
 
 # 只有 home 与周刊出 feed；taxonomy/term 压回 HTML-only。
 [outputs]
-  # home 的 JSON 是搜索索引（约 500 KB / gzip 215 KB，随文章数浮动，以产物为准）。
+  # home 的 JSON 是搜索索引（体积见 MAINTENANCE.md 第 0 节的自动区块）。
   home = ["HTML", "RSS", "JSON"]
   section = ["HTML"]
   taxonomy = ["HTML"]

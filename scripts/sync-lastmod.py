@@ -110,8 +110,17 @@ LINE_BREAK = re.compile(r"\r\n|\r|\n")
 # 「判断有没有实质改动」时要连它一起抹掉的字段：
 #   lastmod —— 被刷新的对象本身；
 #   series  —— 只影响归档页的分组（2026-10-05 新增），补一个字段不算内容修订。
+#   featured / comments —— 精选标记与评论开关（2026-11-22 新增）：2026-11-05 给 136 篇
+#                加 featured、2026-11-21 又删掉，两次都把全站 lastmod 刷成了发布时刻。
 # 正文、标题、摘要、tags、categories 照旧参与比较 —— 那些是真改动。
-IGNORED_FIELDS = ("lastmod", "series")
+IGNORED_FIELDS = ("lastmod", "series", "featured", "comments")
+
+# 批量保险（2026-11-22 新增）：一次要刷新超过这么多篇时**一篇都不写**，直接退出。
+# 一次提交里真正改了十几篇正文几乎不可能是「内容修订」，多半是全站维护（改字段、
+# 换图床、调标题层级）。历史上 2026-09-28 / 10-13 / 10-26 / 11-05 / 11-21 五次误刷
+# 都是这种情况，11-21 那次 143/144 篇一起显示「更新于」。
+# 确实要批量刷新时加 --bulk-ok。publish.sh 对本脚本的失败只告警、不阻断发布。
+BULK_LIMIT = 10
 
 
 def without_lastmod(text: str) -> str:
@@ -187,6 +196,7 @@ def main() -> int:
     parser.add_argument("files", nargs="*", help="指定文件；不给就取 git 里改动过的 content/ 文件")
     parser.add_argument("--dry-run", action="store_true", help="只打印会刷哪些，不改文件")
     parser.add_argument("--force", action="store_true", help="指定文件时忽略「内容没实质改动」直接刷")
+    parser.add_argument("--bulk-ok", action="store_true", help=f"允许一次刷新超过 {BULK_LIMIT} 篇（批量保险）")
     args = parser.parse_args()
 
     stamp = datetime.now(TZ).strftime("%Y-%m-%dT%H:%M:%S+08:00")
@@ -200,6 +210,7 @@ def main() -> int:
         targets = changed_content_files()
 
     touched: list[Path] = []
+    pending: list[tuple[Path, str, str]] = []
     skipped: list[str] = []
     ignorable: list[str] = []
 
@@ -245,9 +256,23 @@ def main() -> int:
         if args.dry_run:
             print(f"    会刷新 lastmod：{rel_path}")
         else:
-            path.write_text(updated, encoding="utf-8")
-            print(f"    已刷新 lastmod：{rel_path} → {stamp}")
+            pending.append((path, updated, rel_path))
         touched.append(path)
+
+    # 批量保险：先攒齐再写，超过上限一篇都不动（见 BULK_LIMIT 的注释）。
+    if len(touched) > BULK_LIMIT and not args.bulk_ok and not args.dry_run:
+        print(
+            f"    !! 这次要刷新 {len(touched)} 篇的 lastmod，超过上限 {BULK_LIMIT}，一篇都没改。\n"
+            "       多半是全站维护（改字段 / 换图床 / 调标题），不是内容修订。\n"
+            "       确认要批量刷新：python3 scripts/sync-lastmod.py --bulk-ok",
+            file=sys.stderr,
+        )
+        for path in touched[:15]:
+            print(f"      {path.relative_to(ROOT).as_posix()}", file=sys.stderr)
+        return 1
+    for path, updated, rel_path in pending:
+        path.write_text(updated, encoding="utf-8")
+        print(f"    已刷新 lastmod：{rel_path} → {stamp}")
 
     if not touched:
         print("    没有需要刷新 lastmod 的文章")

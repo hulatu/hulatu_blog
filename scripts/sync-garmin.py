@@ -12,11 +12,13 @@
 手动触发 GitHub Actions 同步（见 .github/workflows/sync-garmin.yml）。
 
 环境变量：
-    GARMIN_EMAIL      Garmin 账号邮箱（必填）
-    GARMIN_PASSWORD   Garmin 密码（必填）
+    GARMIN_EMAIL      Garmin 账号邮箱（仅本机兜底用；CI 不再提供）
+    GARMIN_PASSWORD   Garmin 密码（仅本机兜底用；CI 不再提供）
     GARMIN_REGION     可选，cn 表示中国区账号（garmin.cn），不设时自动从令牌识别
-    GARMINTOKENS      可选但推荐。登录令牌（scripts/garmin-token.py 生成），优先使用
+    GARMINTOKENS      登录令牌（scripts/garmin-token.py 生成），优先使用；CI 里必填
     GARMIN_MFA_CODE   可选，账号开启两步验证时填当前验证码
+    GARMIN_TOKEN_ONLY 设为 1 时只允许令牌登录，令牌缺失或无效直接失败、不回退密码
+                      （2026-11-22 起 GitHub Actions 里设为 1）
     GARMIN_TYPES      可选，要同步的运动类型，逗号分隔，默认 running
     GARMIN_LIMIT      可选，每次最多拉取多少条，默认 100
 """
@@ -26,13 +28,16 @@ from __future__ import annotations
 import json
 import os
 import sys
+import time
 import base64
-from datetime import date, datetime, timedelta
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA_FILE = ROOT / "data" / "runs.json"
-PROFILE_RUN_SUMMARY_FILE = ROOT / "sites" / "profile" / "data" / "run_summary.json"
+# 2026-11-22：`updated` 固定写台北时间（与 sync-lastmod.py 同一口径）。GitHub 的机器是 UTC，
+# 同步挪到 00:10（Asia/Taipei）之后，UTC 时间正好还是前一天，/run/ 上的「数据更新于」会差一天。
+TZ = timezone(timedelta(hours=8))
 
 
 def _token_text_indicates_cn(token_text: str) -> bool:
@@ -316,10 +321,22 @@ def main() -> None:
         if _token_text_indicates_cn(tokens):
             is_cn = True
 
+    # 2026-11-22：CI（GARMIN_TOKEN_ONLY=1）只认令牌，缺了就直接失败，不回退密码 ——
+    # workflow 里已经不再注入账号密码，回退也只会得到一句更难懂的错误。
+    token_only = os.environ.get("GARMIN_TOKEN_ONLY", "").strip() == "1"
+    if token_only:
+        email, password = "", ""
+        if not use_local_store and len(tokens) < 100:
+            sys.exit(
+                "GARMINTOKENS 缺失或不完整（正常令牌是很长的一串 JSON）。\n"
+                "在本机运行 python3 scripts/garmin-token.py，把打印出来的整段 JSON\n"
+                "更新到 GitHub 仓库 Settings → Secrets and variables → Actions → GARMINTOKENS。"
+            )
+
     if not use_local_store and not tokens and (not email or not password):
         sys.exit("缺少登录信息：请先运行 python3 scripts/garmin-token.py 生成本机令牌，"
                  "或设置 GARMIN_EMAIL + GARMIN_PASSWORD / GARMINTOKENS。")
-    if tokens and len(tokens) < 100:
+    if tokens and len(tokens) < 100 and not token_only:
         print("警告：GARMINTOKENS 看起来不完整（正常令牌是很长的一串），将回退到账号密码登录。")
 
     allowed_types = {
@@ -343,7 +360,18 @@ def main() -> None:
             raise RuntimeError("账号开启了双重验证，请把当前验证码填入 GARMIN_MFA_CODE 后重试")
         return code
 
-    try:
+    def cause_chain(exc: BaseException) -> str:
+        """把 garminconnect 包在外面的异常一层层拆开，露出真正的原因（429 / 401 / 超时…）。
+        2026-11-22：它会把「接口连续 3 次没响应」也报成 AuthenticationError
+        （Failed to retrieve social profile），只看最外层分不清是令牌坏了还是 Garmin 在限流。"""
+        parts, seen = [], set()
+        while exc is not None and id(exc) not in seen:
+            seen.add(id(exc))
+            parts.append(f"{type(exc).__name__}: {exc}")
+            exc = exc.__cause__ or exc.__context__
+        return "\n    ← ".join(parts)
+
+    def do_login():
         # 始终带上账号密码作为兜底；有令牌时优先用令牌
         client = Garmin(
             email=email or None,
@@ -362,17 +390,40 @@ def main() -> None:
         else:
             print("使用账号密码登录……")
             client.login()
-    except GarminConnectAuthenticationError as exc:
-        msg = str(exc)
-        if "Username and password are required" in msg:
-            sys.exit(
-                "登录信息无效：GARMINTOKENS 不是有效的令牌，且 GARMIN_EMAIL/GARMIN_PASSWORD "
-                "为空或不被接受。请检查 GitHub Secrets：令牌必须是 garmin-token.py 打印的完整字符串；"
-                "账号密码必须能用浏览器登录 garmin.cn。"
-            )
-        sys.exit(f"Garmin 登录失败（请检查账号密码/验证码）：{msg}")
-    except Exception as exc:
-        sys.exit(f"Garmin 登录失败：{exc}")
+        return client
+
+    # 2026-11-22：令牌登录失败时隔 90 秒再试一次。Garmin 的接口偶尔连续拒绝几次
+    # （实测：同一个令牌 22:38 成功、23:09 失败），多数是临时限流，不是令牌坏了。
+    # 账号密码登录不重试 —— 连续输错密码可能触发账号锁定。
+    attempts = 2 if (use_local_store or tokens) else 1
+    client = None
+    for attempt in range(1, attempts + 1):
+        try:
+            client = do_login()
+            break
+        except Exception as exc:
+            detail = cause_chain(exc)
+            if attempt < attempts:
+                print(f"登录失败（第 {attempt} 次），90 秒后重试：\n    {detail}", flush=True)
+                time.sleep(90)
+                continue
+            msg = str(exc)
+            if not isinstance(exc, GarminConnectAuthenticationError):
+                sys.exit(f"Garmin 登录失败：\n    {detail}")
+            if token_only:
+                sys.exit(
+                    f"令牌登录连续 {attempts} 次失败：\n    {detail}\n"
+                    "· 原因里有 429 / Too Many Requests / timeout：Garmin 临时限流，过一会儿再手动 Run workflow 即可，令牌不用动；\n"
+                    "· 原因里有 401 / Unauthorized / expired：令牌失效，在本机运行 python3 scripts/garmin-token.py 重新生成，\n"
+                    "  把整段 JSON 更新到 GitHub Secret GARMINTOKENS。"
+                )
+            if "Username and password are required" in msg:
+                sys.exit(
+                    "登录信息无效：GARMINTOKENS 不是有效的令牌，且 GARMIN_EMAIL/GARMIN_PASSWORD "
+                    "为空或不被接受。请检查 GitHub Secrets：令牌必须是 garmin-token.py 打印的完整字符串；"
+                    "账号密码必须能用浏览器登录 garmin.cn。"
+                )
+            sys.exit(f"Garmin 登录失败（请检查账号密码/验证码）：\n    {detail}")
 
     try:
         activities = client.get_activities(0, limit)
@@ -407,7 +458,9 @@ def main() -> None:
         added += 1
 
     merged = sorted(merged_rows, key=lambda x: (x["date"], x["id"]))
-    data["updated"] = datetime.now().astimezone().isoformat(timespec="seconds")
+    # `updated` = 最近一次**成功**同步的时间（/run/ 上的「数据更新于」）。
+    # 每日提交（→ 每日重建）不靠它：workflow 里有一步无论同步成败都会写 `checked`，见 sync-garmin.yml。
+    data["updated"] = datetime.now(TZ).isoformat(timespec="seconds")
     data["activities"] = [add_pace(item) for item in merged]
     data["stats"] = compute_stats(data["activities"])
 
@@ -416,19 +469,8 @@ def main() -> None:
         json.dumps(data, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
     )
 
-    totals = data.get("stats", {}).get("totals", {})
-    profile_summary = {
-        "count": totals.get("count", len(merged)),
-        "distance_km": totals.get("distance_km", 0),
-        "avg_pace": totals.get("pace") or "—",
-        "latest_date": totals.get("latest_date") or (merged[-1]["date"] if merged else ""),
-        "updated": (merged[-1]["date"] if merged else datetime.now().date().isoformat()),
-    }
-    PROFILE_RUN_SUMMARY_FILE.parent.mkdir(parents=True, exist_ok=True)
-    PROFILE_RUN_SUMMARY_FILE.write_text(
-        json.dumps(profile_summary, ensure_ascii=False, indent=2) + "\n",
-        encoding="utf-8",
-    )
+    # 2026-11-22：删掉了给 profile 子站写 sites/profile/data/run_summary.json 的那段 ——
+    # 子站 2026-10-12 已下线，每次同步都会把已删除的 sites/ 目录重新建出来。
     print(f"同步完成：新增 {added} 条，共 {len(merged)} 条跑步记录")
 
 

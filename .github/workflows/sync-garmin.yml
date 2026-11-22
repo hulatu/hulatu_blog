@@ -3,8 +3,18 @@ name: 同步 Garmin 跑步数据
 on:
   workflow_dispatch:
   schedule:
-    # 每天 22:00（Asia/Taipei）= 14:00 UTC
-    - cron: "0 14 * * *"
+    # 每天 00:10（Asia/Taipei）= 前一天 16:10 UTC（台湾无夏令时，全年不变）。
+    # 2026-11-22 由 22:00（`0 14 * * *`）改到零点后：首页「运行 N 天」过零点就 +1，
+    #   同步的也正好是刚结束那一整天的跑步。代价：白天跑的要到次日 00:10 才上 /run/
+    #   （原来当晚 22:00 就有）；想立刻看到就在 Actions 里手动 Run workflow。
+    # 为什么是 :10 不是 :00：GitHub 的定时任务在整点最拥挤，常延迟、偶尔直接跳过。
+    # ⚠️ 2026-11-22 起它也是全站**每天唯一的重建来源**：下面「记录本次同步」那一步无论
+    #    Garmin 成败都会写 runs.json 的 `checked` → 必有一次提交 → Cloudflare Pages 跟着构建。
+    #    （Garmin 偶尔会拒绝登录；如果失败就不提交，首页天数会跟着停一天。）
+    #    首页「运行 N 天」、/about/ 的写作天数与 365 天热力图、404 的随机一篇都靠这次构建前进。
+    #    原来的 daily-rebuild.yml（Deploy Hook）与它重复，已删除。
+    #    停掉这个 workflow 或改了 cron，记得这几处会跟着停在最后一次构建。
+    - cron: "10 16 * * *"
 
 permissions:
   contents: write
@@ -25,20 +35,57 @@ jobs:
         with:
           python-version: "3.12"
 
+      # 2026-11-22：锁版本。这个 job 有 contents: write，又能读到 Garmin 令牌，
+      # 不能让上游一次破坏性更新（或被投毒的新版本）在每天的定时任务里自动装进来。
+      # 升级：本机先 `pip install garminconnect==新版本 && python3 scripts/sync-garmin.py`
+      # 跑通，再改这里的版本号。
       - name: 安装依赖
-        run: pip install --upgrade garminconnect
+        run: pip install "garminconnect==0.3.20"
 
+      # 2026-11-22：CI 只用令牌登录，不再注入账号密码与两步验证码。
+      #   · 有 GARMINTOKENS 时脚本本来就只走令牌，密码从没被用到，只是多一份泄露面；
+      #   · 密码泄露 = 整个 Garmin 账号；令牌泄露可以单独作废（改密码即失效）；
+      #   · GARMIN_MFA_CODE 是一次性验证码，存成固定 Secret 本身没有意义。
+      # 令牌失效时这个 job 会红灯：本机跑 `python3 scripts/garmin-token.py`，
+      # 把打印出来的整段 JSON 更新到 Secret GARMINTOKENS 即可。
+      # ⚠️ 仓库 Settings → Secrets 里的 GARMIN_EMAIL / GARMIN_PASSWORD / GARMIN_MFA_CODE
+      #    确认这里跑通后可以删掉（GARMIN_REGION 保留，可选）。
+      # continue-on-error：Garmin 失败时后面两步照跑（保证每天有提交 → 每天重建），
+      # 最后一步再把 job 标红，GitHub 照常发失败通知。
       - name: 拉取最新跑步记录
+        id: sync
+        continue-on-error: true
         env:
-          GARMIN_EMAIL: ${{ secrets.GARMIN_EMAIL }}
-          GARMIN_PASSWORD: ${{ secrets.GARMIN_PASSWORD }}
-          GARMIN_MFA_CODE: ${{ secrets.GARMIN_MFA_CODE }}
           GARMINTOKENS: ${{ secrets.GARMINTOKENS }}
           GARMIN_REGION: ${{ secrets.GARMIN_REGION }}
+          GARMIN_TOKEN_ONLY: "1"
         run: python3 scripts/sync-garmin.py
 
+      # `checked` = 最近一次**尝试**同步的时间，`last_sync_ok` = 那次成没成功；
+      # `updated`（/run/ 上的「数据更新于」）仍只在成功时由脚本改写，不会被这一步误刷。
+      - name: 记录本次同步（成败都写，保证每天有一次提交）
+        if: always()
+        env:
+          SYNC_OUTCOME: ${{ steps.sync.outcome }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib
+          from datetime import datetime, timedelta, timezone
+          p = pathlib.Path("data/runs.json")
+          d = json.loads(p.read_text(encoding="utf-8"))
+          d["checked"] = datetime.now(timezone(timedelta(hours=8))).isoformat(timespec="seconds")
+          d["last_sync_ok"] = os.environ.get("SYNC_OUTCOME") == "success"
+          p.write_text(json.dumps(d, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+          PY
+
+      # 2026-11-22：第三方 Action 固定到 commit SHA（tag 可以被改指向，SHA 不行）。
+      # 这一步拿着 contents: write 往仓库推提交，是全站权限最大的第三方代码。
+      # 升级：在 https://github.com/stefanzweifel/git-auto-commit-action/releases
+      # 找到新版本的 tag，用 `git ls-remote https://github.com/stefanzweifel/git-auto-commit-action refs/tags/vX.Y.Z`
+      # 取 SHA 替换，后面的注释同步改。
       - name: 提交数据变更
-        uses: stefanzweifel/git-auto-commit-action@v7
+        if: always()
+        uses: stefanzweifel/git-auto-commit-action@d0b01107b5db882071f96de5dd4b54961ea93f4c # v7.2.1
         with:
           commit_message: "Auto Update: 同步 Garmin 跑步数据"
           # 脚本只写这一个文件。⚠️ 2026-10-12 前这里还带
@@ -46,3 +93,9 @@ jobs:
           # 那个子站已整体删除，文件不存在 —— 留着会让 git-auto-commit 报错。
           # 主站 `/run/` 页与子站一样直接读根目录的 `data/runs.json`，从来没有副本。
           file_pattern: data/runs.json
+
+      - name: 同步失败时标红
+        if: steps.sync.outcome == 'failure'
+        run: |
+          echo "::error::Garmin 同步失败（今天的提交与重建已照常完成，跑步数据停在上一次）。原因见「拉取最新跑步记录」那一步的日志。"
+          exit 1

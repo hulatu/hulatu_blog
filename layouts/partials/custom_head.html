@@ -11,8 +11,8 @@
 </script>
 
 {{- /* 站点头部：CSS 管道 + 升级包覆写 + 预连 + theme-color + GoatCounter。
-       样式分两层：assets/css/{theme,custom}.css 走下面的管道；
-       文件末尾的 <style> 是升级包原样样式（--hl-* 令牌 + 组件），最后加载。
+       样式三层都走下面的管道：assets/css/theme.css → custom.css → upgrade.css
+       （升级包原样样式，--hl-* 令牌 + 组件；2026-11-22 前是文件末尾的内联 <style>）。
        ⚠️ 新的站点补丁仍然写 custom.css；别在管道之前插样式。
        style.html 的空覆盖压掉主题内联样式。 */ -}}
 {{- /* giscus 的连接提示由 assets/js/giscus.js 在接近评论区时动态加入。 */ -}}
@@ -27,22 +27,42 @@
   {{- end -}}
 {{- end }}
 
-{{- /* 地址栏配色：手动深浅色后由 custom_body.html 的 applyTheme 动态改。 */ -}}
+{{- /* 地址栏配色：手动深浅色后由 assets/js/palette.js 的 applyTheme 动态改。 */ -}}
 <meta name="theme-color" id="hl-theme-color" content="#FCFCFA">
 
 {{- /* CSS 管道：theme.css 在前、custom.css 在后，压缩 + 指纹。
        ⚠️ 顺序不能反：站点补丁靠后出现覆盖主题。
        ⚠️ 别再加载 preload as=style：凭据模式与 stylesheet 不一致会让 CSS 下两次。 */ -}}
+{{- /* 2026-11-22：第三项 upgrade.css 是原来文件末尾的内联升级包 <style>，必须排最后。 */ -}}
 {{- $themeCSS := resources.Get "css/theme.css" -}}
 {{- $customCSS := resources.Get "css/custom.css" -}}
-{{- $css := slice $themeCSS $customCSS | resources.Concat "css/main.css" | minify | fingerprint -}}
+{{- $upgradeCSS := resources.Get "css/upgrade.css" -}}
+{{- $css := slice $themeCSS $customCSS $upgradeCSS | resources.Concat "css/main.css" | minify | fingerprint -}}
 <link rel="stylesheet" href="{{ $css.RelPermalink }}" integrity="{{ $css.Data.Integrity }}" crossorigin="anonymous">
+
+{{- /* 全站脚本（2026-11-22）：原来每页内联约 10 KB 的三段脚本拼成一个长缓存文件。
+         assets/js/palette.js  搜索面板 / 深浅色切换 / 随机漫游（原 custom_body.html）
+         assets/js/hello.js    「问候」/「写信」邮箱浮层（原 partials/hello-script.html）
+         assets/js/toc.js      右侧目录显隐（原 _default/single.html 末尾）
+       ⚠️ 放在 <head> 并用 defer：既不阻塞渲染，又保证它比正文里的 giscus.js /
+          code-copy.js（同为 defer）**先执行** —— giscus 注入时要读 applyTheme
+          写好的 #giscus-slot.dataset.theme。挪到 <body> 末尾会打乱这个顺序。
+       ⚠️ 三个文件都自带「找不到元素就 return」的守卫，所以全站共用一份没问题。
+       ⚠️ 主题初值仍由上面那段内联脚本设置（必须同步执行，否则深色闪白）。 */ -}}
+{{- $siteJS := slice (resources.Get "js/palette.js") (resources.Get "js/hello.js") (resources.Get "js/toc.js") | resources.Concat "js/site.js" | minify | fingerprint -}}
+<script src="{{ $siteJS.RelPermalink }}" integrity="{{ $siteJS.Data.Integrity }}" crossorigin="anonymous" defer></script>
+{{- /* 没有 JS 时，页头的「搜索 / 深浅色」按钮点了没反应，直接藏掉。 */ -}}
+<noscript><style>.hl-toolbar{display:none}</style></noscript>
 
 {{- /* GoatCounter：空闲 / 首次滚动 / 首次指针按下才加载，并跳过预渲染页面。 */ -}}
 {{- with site.Params.analytics -}}
   {{- with .goatcounter -}}
     <script>
       (function () {
+        /* 2026-11-22：尊重「请勿跟踪」/ Global Privacy Control —— 走了同源代理之后，
+           拦截插件已经拦不住统计，这是读者唯一的退出方式（/privacy/ 里写明了）。
+           ⚠️ 删掉这一行前先改隐私页。 */
+        if (navigator.doNotTrack === "1" || window.doNotTrack === "1" || navigator.globalPrivacyControl === true) return;
         var loaded = false;
         function load() {
           if (loaded) return;
@@ -80,317 +100,4 @@
        ⚠️ 别写 /**（URLPattern 里 ** 是跨段通配，语义不同）。 */ -}}
 <script type="speculationrules">{"prerender":[{"where":{"href_matches":"/*"},"eagerness":"moderate"}]}</script>
 
-
-{{- /* 升级包注入的完整样式（原样保留，最后加载，覆盖站点旧设计）。 */ -}}
-<style>
-  :root {
-    --hl-bg: #FCFCFA;
-    --hl-bg-subtle: #F7F8FA;
-    --hl-bg-hover: #F1F3F6;
-    --hl-ink: #111315;
-    --hl-ink-2: #374151;
-    --hl-mute: #6B7280;
-    --hl-hair: #E5E7EB;
-    --hl-accent: #1D4ED8;
-    --hl-accent-soft: rgba(29, 78, 216, 0.08);
-    --hl-green: #16A34A;
-    --hl-code-bg: #F6F8FA;
-    --hl-shadow: 0 20px 50px -12px rgba(17, 19, 21, 0.18);
-  }
-
-  [data-theme="dark"] {
-    --hl-bg: #111214;
-    --hl-bg-subtle: #181A1F;
-    --hl-bg-hover: #20232A;
-    --hl-ink: #F3F4F6;
-    --hl-ink-2: #C8CDD6;
-    --hl-mute: #8B93A1;
-    --hl-hair: #262A33;
-    --hl-accent: #60A5FA;
-    --hl-accent-soft: rgba(96, 165, 250, 0.12);
-    --hl-green: #4ADE80;
-    --hl-code-bg: #16181D;
-    --hl-shadow: 0 24px 60px -12px rgba(0, 0, 0, 0.65);
-  }
-
-  html, body {
-    background-color: var(--hl-bg) !important;
-    color: var(--hl-ink-2) !important;
-    transition: background-color 0.2s ease, color 0.2s ease;
-  }
-
-  h1, h2, h3, h4, strong {
-    color: var(--hl-ink);
-  }
-
-  a {
-    color: var(--hl-accent);
-    text-decoration-thickness: 1px;
-    text-underline-offset: 3px;
-  }
-
-  hr {
-    border-color: var(--hl-hair);
-  }
-
-  pre, code {
-    background-color: var(--hl-code-bg);
-    color: var(--hl-ink);
-  }
-
-  blockquote {
-    border-left-color: var(--hl-hair);
-    color: var(--hl-mute);
-  }
-
-  /* 文章列表一句话导语（如在 list.html 中添加 .hl-post-desc） */
-  .hl-post-desc {
-    display: block;
-    margin-top: 2px;
-    font-size: 0.88em;
-    color: var(--hl-mute);
-    line-height: 1.55;
-  }
-
-  /* Last Updated：按用户要求不再强调，和 byline 其他项一样是普通灰字。
-     2026-11-21 去掉了升级包的浅蓝底徽章样式。 */
-
-  /* 正在折腾与代表作区块 */
-  .hl-section {
-    margin: 34px 0 38px;
-  }
-
-  .hl-section-head {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    padding-bottom: 8px;
-    border-bottom: 1px solid var(--hl-hair);
-    margin-bottom: 6px;
-  }
-
-  .hl-section-title {
-    font-size: 0.95rem;
-    font-weight: 600;
-    margin: 0;
-    color: var(--hl-ink);
-  }
-
-  .hl-more-link {
-    font-size: 0.85rem;
-    text-decoration: none;
-  }
-
-  .hl-project-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .hl-project-item {
-    border-bottom: 1px solid var(--hl-hair);
-    transition: opacity 0.18s ease;
-  }
-
-  .hl-project-item:last-child {
-    border-bottom: none;
-  }
-
-  .hl-project-link {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 12px 0;
-    text-decoration: none !important;
-  }
-
-  .hl-project-main {
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
-  }
-
-  .hl-project-name {
-    font-weight: 600;
-    color: var(--hl-ink);
-    transition: color 0.15s ease;
-  }
-
-  .hl-project-link:hover .hl-project-name {
-    color: var(--hl-accent);
-  }
-
-  .hl-project-desc {
-    font-size: 0.88em;
-    color: var(--hl-mute);
-    line-height: 1.5;
-  }
-
-  .hl-tag-pill {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 0.76em;
-    padding: 2px 7px;
-    border-radius: 4px;
-    background: var(--hl-bg-subtle);
-    color: var(--hl-mute);
-    border: 1px solid var(--hl-hair);
-    white-space: nowrap;
-    flex-shrink: 0;
-  }
-
-  .hl-mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
-
-  /* 顶部工具按钮（搜索 / 深浅色）与页脚随机漫游 */
-  .hl-toolbar {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    margin-left: 12px;
-    vertical-align: middle;
-  }
-
-  .hl-ctrl-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    height: 28px;
-    padding: 0 9px;
-    border-radius: 6px;
-    border: 1px solid var(--hl-hair);
-    background: var(--hl-bg);
-    color: var(--hl-mute);
-    font-size: 12.5px;
-    cursor: pointer;
-    transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease;
-  }
-
-  .hl-ctrl-btn:hover {
-    border-color: var(--hl-mute);
-    color: var(--hl-ink);
-    background: var(--hl-bg-subtle);
-  }
-
-  .hl-kbd {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: 11px;
-    padding: 0 4px;
-    border-radius: 3px;
-    background: var(--hl-bg-subtle);
-    border: 1px solid var(--hl-hair);
-  }
-
-  /* 全局 / 命令面板 */
-  .hl-cmd-overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(17, 19, 21, 0.42);
-    backdrop-filter: blur(3px);
-    display: none;
-    align-items: flex-start;
-    justify-content: center;
-    padding: 12vh 16px 24px;
-    z-index: 9999;
-  }
-
-  .hl-cmd-overlay.open { display: flex; }
-
-  .hl-cmd-dialog {
-    width: 100%;
-    max-width: 520px;
-    background: var(--hl-bg);
-    border: 1px solid var(--hl-hair);
-    border-radius: 12px;
-    box-shadow: var(--hl-shadow);
-    overflow: hidden;
-  }
-
-  .hl-cmd-input-wrap {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border-bottom: 1px solid var(--hl-hair);
-  }
-
-  .hl-cmd-input {
-    flex: 1;
-    border: none;
-    outline: none;
-    background: transparent;
-    color: var(--hl-ink);
-    font-size: 15px;
-  }
-
-  .hl-cmd-results {
-    max-height: 320px;
-    overflow-y: auto;
-    list-style: none;
-    padding: 8px;
-    margin: 0;
-  }
-
-  .hl-cmd-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-    padding: 9px 10px;
-    border-radius: 6px;
-    border: none;
-    background: none;
-    color: var(--hl-ink);
-    text-align: left;
-    font-size: 14px;
-    cursor: pointer;
-    text-decoration: none;
-  }
-
-  .hl-cmd-item:hover,
-  .hl-cmd-item.selected {
-    background: var(--hl-bg-hover);
-    color: var(--hl-accent);
-  }
-
-  .hl-cmd-foot {
-    padding: 8px 14px;
-    border-top: 1px solid var(--hl-hair);
-    background: var(--hl-bg-subtle);
-    display: flex;
-    justify-content: space-between;
-    font-size: 12px;
-    color: var(--hl-mute);
-  }
-
-  /* ── 站点令牌桥接（2026-11-21 按用户要求完全采用升级包配色）────────
-     把站点原来的暖纸白 / 墨水蓝令牌映射到升级包的 --hl-* 变量，
-     让 custom.css 里的表格、代码块、页脚、TOC 等老组件也一起换色。
-     ⚠️ custom.css 的深色规则已全部改成 [data-theme="dark"]，
-        不再走 prefers-color-scheme —— 否则手动切换会出现半明半暗。
-  */
-  :root,
-  :root[data-theme="light"] {
-    --bg-color-primary: var(--hl-bg);
-    --bg-color-secondary: var(--hl-bg-subtle);
-    --text-color-primary: var(--hl-ink);
-    --text-color-secondary: var(--hl-ink-2);
-    --text-color-tertiary: var(--hl-mute);
-    --border-color: var(--hl-hair);
-    --link-color: var(--hl-accent);
-    --link-visited-color: var(--hl-accent);
-    color-scheme: light;
-  }
-
-  :root[data-theme="dark"] {
-    --bg-color-primary: var(--hl-bg);
-    --bg-color-secondary: var(--hl-bg-subtle);
-    --text-color-primary: var(--hl-ink);
-    --text-color-secondary: var(--hl-ink-2);
-    --text-color-tertiary: var(--hl-mute);
-    --border-color: var(--hl-hair);
-    --link-color: var(--hl-accent);
-    --link-visited-color: var(--hl-accent);
-    color-scheme: dark;
-  }
-</style>
+{{- /* 升级包样式 2026-11-22 起在 assets/css/upgrade.css（见上面的 CSS 管道），这里不再内联。 */ -}}

@@ -30,6 +30,8 @@ draft: false
 
 本站使用 GoatCounter 进行隐私友好的轻量访问统计，用于了解文章的浏览情况。它不记录是谁访问的，也不需要登录，默认不依赖 Cookie。
 
+统计请求会先发到本站的 `hulatu.com/stats/`，再由本站转发给 GoatCounter。转发时只带上页面地址、来源页（Referer）和浏览器标识（User-Agent），用来区分来源与设备；你的 IP 地址不会被转发，GoatCounter 看到的是 Cloudflare 的地址。因为请求走的是本站域名，部分广告 / 隐私拦截插件不会拦截它。如果你不希望被统计，可以在浏览器里开启「请勿跟踪」或 Global Privacy Control，或者直接屏蔽 `hulatu.com/stats/*`。
+
 - GoatCounter：<https://www.goatcounter.com/help/privacy>
 
 ### 评论系统 giscus
@@ -44,6 +46,12 @@ draft: false
 ### 图片与静态资源
 
 文章图片主要托管在自有域名 `img.hulatu.com`，属于本站自有资源，不向第三方传输你的浏览信息。
+
+### 嵌入视频
+
+少数文章嵌入了腾讯视频的播放器（`v.qq.com`）。打开这些文章时，浏览器会向腾讯视频请求播放器，腾讯可能记录访问信息并设置自己的 Cookie。没有嵌入视频的文章不会产生这类请求。
+
+- 腾讯隐私政策：<https://privacy.qq.com/>
 
 ### 外链
 

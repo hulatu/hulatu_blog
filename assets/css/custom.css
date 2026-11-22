@@ -2868,7 +2868,7 @@
      下面这组**字面量兜底**有两个用途：① 桥接层解析前的第一帧；② `scripts/check-html.sh`
      只读 CSS 文件、不读 HTML 内联样式，没有它就算不出对比度。
      ⚠️ 改 `--hl-*` 时必须同步这组值，否则发布前检查会和线上不一致。
-  ⚠️ 改底色要同步 `custom_head.html` 的 `theme-color`、`custom_body.html` 的 applyTheme
+  ⚠️ 改底色要同步 `custom_head.html` 的 `theme-color`、`assets/js/palette.js` 的 applyTheme
      和 `static/manifest.webmanifest` 的 background_color。
   ⚠️ 链接蓝是唯一强调色，不在这次微调范围。
   */
@@ -3515,7 +3515,7 @@
   /*
   56 深浅色按钮图标（2026-11-21）
   用内联 SVG 替换 ☾/☀ 文字：月亮/太阳在不同系统字体里大小与基线不一致。
-  ⚠️ 图标由 custom_body.html 的 ICON_MOON / ICON_SUN 注入，尺寸在这里统一。
+  ⚠️ 图标由 assets/js/palette.js 的 ICON_MOON / ICON_SUN 注入（首帧由 nav.html 静态输出，见第 59 段），尺寸在这里统一。
   */
   .hl-theme-svg {
     display: block;
@@ -3526,7 +3526,7 @@
 
   /*
   57 深浅色切换过渡（2026-11-21）
-  只在 custom_body.html 给 <html> 临时加 .hl-theme-transition 的那 360ms 内生效，
+  只在 assets/js/palette.js 给 <html> 临时加 .hl-theme-transition 的那 360ms 内生效，
   避免给全站每个元素常驻 transition（会影响 hover / 滚动性能）。
   ⚠️ 只过渡颜色类属性，不过渡 transform / box-shadow，避免布局抖动。
   ⚠️ prefers-reduced-motion 下整段不生效，JS 也不会加类。
@@ -3551,9 +3551,9 @@
   57b 黑白切换：从点击处圆形绽开（2026-11-22，对齐 directoryyy.com）
   View Transitions API 抓新旧两张整页快照，关掉默认的交叉淡入，
   只让新快照用 clip-path 从点击点扩成一个铺满屏幕的圆。
-  ⚠️ 全部挂在 .hl-vt-theme 下 —— custom_body.html 只在黑白切换期间给
+  ⚠️ 全部挂在 .hl-vt-theme 下 —— assets/js/palette.js 只在黑白切换期间给
      <html> 挂这个类。不加限定会把第 30 段「跨页转场」的 0.2s 淡入也关掉。
-  ⚠️ 动画本身在 custom_body.html 里用 WAAPI 驱动（需要点击坐标）。
+  ⚠️ 动画本身在 assets/js/palette.js 里用 WAAPI 驱动（需要点击坐标）。
   */
   html.hl-vt-theme::view-transition-old(root),
   html.hl-vt-theme::view-transition-new(root) {
@@ -3663,3 +3663,15 @@
     line-height: 1.6;
     color: var(--text-color-secondary);
   }
+
+/*
+  59 页头「深浅色」按钮的静态图标（2026-11-22）
+  partials/nav.html 同时输出月亮和太阳，脚本加载前按 data-theme 只显示一个
+  （data-theme 由 <head> 里的内联引导脚本同步写好，所以第一帧就是对的）。
+  palette.js 的 applyTheme 运行后会把 #hlThemeIcon 换成不带这两个类的单个图标，
+  这两条规则随即不再命中。
+*/
+:root[data-theme="dark"] #hlThemeIcon .hl-i-moon,
+:root:not([data-theme="dark"]) #hlThemeIcon .hl-i-sun {
+  display: none;
+}

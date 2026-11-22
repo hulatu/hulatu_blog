@@ -9,7 +9,7 @@
   ⚠️ 分隔符一律用 `.`，不用 `·`；每块自带结尾 <br />，搬动时别丢。
   ⚠️ 开往 / 虫洞只放页脚，别挪进导航或正文。
   ⚠️ 「问候」浮层的标记 / 脚本 / 样式分别在 partials/hello.html、
-     partials/hello-script.html、custom.css 第 48 段，三处一起改。
+     assets/js/hello.js、custom.css 第 48 段，三处一起改。
 */}}
 <!-- 第 1 行：订阅 / 邮件 + 开往 / 虫洞 + 隐私 / 网站地图
      2026-11-21：按用户要求把「隐私 / 网站地图」从末行挪到这里，
@@ -41,4 +41,4 @@
 
 <!-- 「打个招呼」浮层的脚本：只在真的渲染了 hello 时加载一次。
      交互与理由见 partials/hello.html 文件头与 custom.css 第 48 段。 -->
-{{ if $showHello }}{{ partial "hello-script.html" . }}{{ end }}
+{{- /* 「问候」浮层的脚本 2026-11-22 起在 assets/js/hello.js（拼进全站 site.js），这里不再内联。 */ -}}

@@ -216,16 +216,32 @@ for m in re.finditer(r'content\.post-body\s*\{([^}]*)\}', css_no_print):
 
 # 对比度：按 CSS 顺序合并 :root 变量，分别得到 light / dark 的最终值。
 # 手动深浅色用 :root[data-theme="dark"]；媒体查询写法也保留，兼容旧文件。
+# 2026-11-22：升级包样式（assets/css/upgrade.css）拼进外链 CSS 之后，这里才第一次
+#   读到真正生效的配色 —— 之前它在内联 <style> 里，检查一直在比 theme.css 的旧值。
+#   为此补了两件事：① 认不带 :root 的 `[data-theme=dark]{…}`（升级包 --hl-* 深色就这么写）；
+#   ② 解析 var(--x) 引用（--text-color-* 现在都是 var(--hl-*) 的桥接），否则全部被跳过。
 ROOT = re.compile(
     r'(@media\s*\(prefers-color-scheme\s*:\s*(light|dark)\)\s*\{\s*)?'
-    r':root(?:\[data-theme=["\']?(light|dark)["\']?\])?\s*\{([^}]*)\}'
+    r'(?::root(?:\[data-theme=["\']?(light|dark)["\']?\])?'
+    r'|(?<![\w.#\])-])\[data-theme=["\']?(light|dark)["\']?\])\s*\{([^}]*)\}'
 )
 palettes = {"light": {}, "dark": {}}
 for m in ROOT.finditer(css_text):
-    mode = m.group(2) or m.group(3)
-    decls = dict(re.findall(r'(--[\w-]+)\s*:\s*([^;]+)', m.group(4)))
+    mode = m.group(2) or m.group(3) or m.group(4)
+    decls = dict(re.findall(r'(--[\w-]+)\s*:\s*([^;]+)', m.group(5)))
     for key in (["light", "dark"] if not mode else [mode]):
         palettes[key].update({k: v.strip() for k, v in decls.items()})
+
+
+def resolve(pal, value, depth=0):
+    """把 var(--x) / var(--x, 兜底) 展开成最终值；最多跟 10 层，防循环引用。"""
+    while value and depth < 10:
+        vm = re.fullmatch(r'var\(\s*(--[\w-]+)\s*(?:,\s*([^)]*))?\)', value.strip())
+        if not vm:
+            return value.strip()
+        value = pal.get(vm.group(1)) or vm.group(2)
+        depth += 1
+    return value
 
 
 def luminance(hex_color):
@@ -251,11 +267,11 @@ def contrast(fg, bg):
 
 
 for mode, pal in palettes.items():
-    bg = pal.get("--bg-color-primary")
+    bg = resolve(pal, pal.get("--bg-color-primary"))
     for var in ("--text-color-primary", "--text-color-secondary",
                 "--text-color-tertiary", "--link-color"):
-        fg = pal.get(var)
-        if not bg or not fg or not fg.startswith("#"):
+        fg = resolve(pal, pal.get(var))
+        if not bg or not fg or not fg.startswith("#") or not bg.startswith("#"):
             continue
         ratio = contrast(fg, bg)
         if ratio is not None and ratio < 4.5:

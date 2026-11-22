@@ -5,31 +5,55 @@
 
 ---
 
-## 0. 现状速览（2026-11-21）
+## 0. 现状速览
 
-> 当前生效的字号 / 颜色 / 行高以 [DESIGN.md 第 0 节](DESIGN.md) 为唯一真值；
-> 本表只列工程口径；带日期的数字是实测时的值，会随内容变化。
+> 当前生效的字号 / 颜色 / 行高以 [DESIGN.md 第 0 节](DESIGN.md) 为唯一真值。
+> **会随内容变化的数字只写在下面这个自动区块里**（`scripts/sync-status.py` 生成，`publish.sh` 发布前自动刷新）；
+> 区块下面那张手写表只讲口径和约定，不再写数量。
+
+<!-- status:begin（scripts/sync-status.py 自动生成，别手改） -->
+源码统计每次重算；构建统计取自上一次干净构建（`./deploy.sh`）的 `public/`。这里之外出现的数字都是带日期的历史记录。
+
+| 项 | 当前值 |
+| --- | --- |
+| 内容 | 文章 **113** 篇 + 周刊 **31** 期 = **144** 个内容页（另有 2 个 section index，共 146 个 Markdown）；草稿 0 篇 |
+| 分类 | 8 个：思考 40 / 周刊 31 / 工具 22 / 记录 19 / 运动 13 / 学习科研 10 / 饮食 5 / 健康 4 |
+| 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
+| 根级独立页 | 15 个（`content/*.md`，不含首页 `_index.md`） |
+| 站点层 | `layouts/` 47 个文件 + `assets/js/` 5 个 + `assets/css/` 3 个 |
+| 主题副本 | `themes/hugo-bearneo/` 27 个文件 |
+| 脚本 | `scripts/` 15 个；GitHub Actions 2 个 |
+| 301 | `static/_redirects` 17 条 |
+| 产出 HTML | 408 个 |
+| sitemap | 164 条 |
+| 标签词条页 | 235 个（`noindex`） |
+| CSS | `/css/main.min.*.css` 49.1 KB，gzip 10.3 KB |
+| 全站 JS | `/js/site.min.*.js` 9.5 KB，gzip 3.6 KB |
+| 搜索索引 | `/index.json` 139.1 KB，gzip 61.5 KB |
+| 文章页 HTML | 中位数 23.8 KB，gzip 9.0 KB |
+| 首页 HTML | 9.9 KB，gzip 4.2 KB |
+<!-- status:end -->
 
 | 项 | 值 |
 | --- | --- |
 | Hugo | `0.170.0`（本机 / GitHub Actions / Cloudflare 三边一致；**0.170 起没有 extended 版了**，别再装 `Hugo.Hugo.Extended`） |
-| 主题 | `themes/hugo-bearneo/`，27 个文件；`style.html` 是 `assets/css/theme.css` 的镜像，有 **3 处登记改动**（正文行高 1.5、visited 与 link 同色、删除未启用的 upvote CSS），其余逐字节未改（`diff -r` 验过） |
+| 主题 | `themes/hugo-bearneo/`；`style.html` 是 `assets/css/theme.css` 的镜像，有 **4 处登记改动**（正文行高 1.5、visited 与 link 同色、删除未启用的 upvote CSS、深色改用 `[data-theme]`），其余逐字节未改（`diff -r` 验过） |
 | 代码高亮 | `[markup.highlight] noClasses = false`（**必须是 false**）+ 站点层第 12 段配色 |
-| 站点层 | **50 个文件** = `layouts/` × 48 + `assets/js/` × 2；另有 `data/` 下的词表与站点数据。逐文件用途见 DESIGN.md 第 5 节 |
-| 页面 | **404 页 HTML** + `/index.json`（搜索索引，不是 HTML）。2026-11-21 干净构建实测；数字会随发文变化，验收时以 `find public -name '*.html' | wc -l` 为准 |
-| 内容 | **143 个内容页**（113 篇文章 + 30 期周刊；另有 2 个 section index，共 145 个 Markdown）+ 根级独立页与 `/feed/` 两页（订阅源浏览器视图，`noindex`） |
+| 站点层 | `layouts/` + `assets/js/` + `assets/css/`（个数见上面的自动区块）；另有 `data/` 下的词表与站点数据。逐文件用途见 DESIGN.md 第 5 节 |
+| 页面 | HTML 页 + `/index.json`（搜索索引，不是 HTML）。个数见上面的自动区块，或 `find public -name '*.html' | wc -l` |
+| 内容 | 文章 + 周刊（数量见上面的自动区块）+ 根级独立页与 `/feed/` 两页（订阅源浏览器视图，`noindex`） |
 | 订阅源 | `/index.xml`（文章 20 条）+ `/weekly/index.xml`（周刊 20 条），**都只收文章页**；浏览器直开由 `functions/_middleware.js` 分派到 `/feed/` 那两页，订阅器照旧拿 XML |
-| 站内搜索 | 全站搜索走 ⌘K / `/` 命令面板（`partials/custom_body.html`），读 `/index.json`（`layouts/index.json` 生成，全部内容页，字段 `t/u/g/h/k/d` = 标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框），按标题 > 章节 > 关键词 > 引用四级打分，章节与关键词命中显示「章节 · …」「相关 · …」。`/archive/` 顶部原来的 `partials/search-box.html` 已于 2026-11-21 晚**彻底删除**（连同 `postSearch` 参数与 CSS 第 47 段高亮样式），恢复需从 git 历史取回。⚠️ 索引只在面板第一次打开时 fetch；别改成进页面或聚焦就拉 |
+| 站内搜索 | 全站搜索走 ⌘K / `/` 命令面板（脚本 `assets/js/palette.js`，对话框 `partials/custom_body.html`），读 `/index.json`（`layouts/index.json` 生成，全部内容页，字段 `t/u/g/h/k/d` = 标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框），按标题 > 章节 > 关键词 > 引用四级打分，章节与关键词命中显示「章节 · …」「相关 · …」。`/archive/` 顶部原来的 `partials/search-box.html` 已于 2026-11-21 晚**彻底删除**（连同 `postSearch` 参数与 CSS 第 47 段高亮样式），恢复需从 git 历史取回。⚠️ 索引只在面板第一次打开时 fetch；别改成进页面或聚焦就拉 |
 | 词条页 | 标签与分类的词条页数量以 `ls public/tags | wc -l` / `ls public/categories | wc -l` 为准（会随标签合并变化）；标签页 `noindex, follow`，分类页可索引并进 sitemap。索引页 `/tags/` 已关；`/categories/` 2026-11-21 起是正式总览页（普通内容页 `content/category.md`） |
-| sitemap | **163 条**（2026-11-21 实测）= 145 个内容页 + 根级/列表页 + 8 个分类页 + `/categories/` 总览页；与 noindex 页**零交集**。改完以 `grep -c '<loc>' public/sitemap.xml` 为准 |
-| CSS | **外部指纹文件** `/css/main.min.<hash>.css`（theme.css + custom.css 拼接，约 38.5 KB raw / 8.5 KB gzip），`/css/*` 长缓存 |
-| JS | giscus（指纹化长缓存）+ 代码块复制按钮；另有两段内联脚本（页脚问候、⌘K 跳转） |
+| sitemap | 构成 = 内容页 + 根级/列表页 + 分类词条页 + `/categories/` 总览页；与 noindex 页**零交集**。条数见上面的自动区块，或 `grep -c '<loc>' public/sitemap.xml` |
+| CSS | **外部指纹文件** `/css/main.min.<hash>.css`（theme.css + custom.css + upgrade.css 按序拼接，体积见上面的自动区块），`/css/*` 长缓存 |
+| JS | **全站 `/js/site.min.<hash>.js`**（2026-11-22：`assets/js/palette.js` + `hello.js` + `toc.js` 拼接，`<head>` 里 defer，`/js/*` 长缓存）+ giscus + 代码块复制按钮（后两个按需加载）。内联只剩主题引导、GoatCounter 加载器、Speculation Rules 与 JSON-LD |
 | 构建 | 干净构建 **0 警告** |
-| URL | 文章与周刊都落在 `/posts/…`；301 共 **17 条**（`static/_redirects`）：6 条 slug 兜底 + 4 条分页 + `/now/` + `/friends/` `/links/` + `/media/` `/stats/` + `/tags/` + `/colophon/` → `/map/`（`/categories/` 2026-11-21 起不再 301） |
+| URL | 文章与周刊都落在 `/posts/…`；301 规则（`static/_redirects`，条数见上面的自动区块）：6 条 slug 兜底 + 4 条分页 + `/now/` + `/friends/` `/links/` + `/media/` `/stats/` + `/tags/` + `/colophon/` → `/map/`（`/categories/` 2026-11-21 起不再 301） |
 
 ### 体积基线（复测方法）
 
-CSS 现在是一个外部文件 `/css/main.min.<hash>.css`（约 38.5 KB raw / 8.5 KB gzip）。复测：
+CSS 现在是一个外部文件 `/css/main.min.<hash>.css`，全站 JS 是 `/js/site.min.<hash>.js`（当前体积见第 0 节自动区块，`python3 scripts/sync-status.py --print` 可直接看）。手动复测：
 
 ```bash
 find public/css -name 'main.min.*.css' -exec wc -c {} \;
@@ -50,7 +74,7 @@ DESIGN.md / MAINTENANCE.md / README.md
 
 content/
   _index.md               首页正文（Hi! + 题记 + 简介 + 「支持」链接 + 四个平台链接行）
-  about.md roll.md privacy.md archive.md donate.md run.md           14 个根级独立页（含 style / map / series /
+  about.md roll.md privacy.md archive.md donate.md run.md           根级独立页（含 style / map / series /
                           tools / featured / wechat / contact 两页）
   style.md map.md         2026-11-21 新增：样式样本 / 地图（入口 + 本站说明）
                           style.md 的 front matter 有 `longForm: true`，让样本页吃到
@@ -63,8 +87,8 @@ content/
                             ⚠️ links.md 2026-10-11 已删（友链并进 roll.md），别再加回来
                           run.md 2026-10-12 从子站搬入：`layout: "run"` →
                             layouts/_default/run.html，数据读 data/runs.json
-  posts/                  113 篇文章 + _index.md（noindex，纯内部页）
-  weekly/                 30 期周刊 + _index.md（单独开 RSS 输出）
+  posts/                  文章 + _index.md（noindex，纯内部页）
+  weekly/                 周刊 + _index.md（单独开 RSS 输出）
   feed/                   /feed/ 与 /feed/weekly/ —— 订阅源的「浏览器视图」的两个壳
                           （_index.md + weekly.md，**只有 front matter**：noindex + feedScope；
                           内容全在 layouts/partials/feed-view.html。⚠️ 别挂进导航）
@@ -72,7 +96,7 @@ content/
 archetypes/
   posts.md weekly.md      新建文章的模板（含发布前检查清单）
 
-layouts/                  ★ 站点层覆盖，46 个文件（另有 data/ 下的词表与站点数据）
+layouts/                  ★ 站点层覆盖（另有 data/ 下的词表与站点数据）
   index.html                        首页（上游只有 {{ .Content }}；简介**不包 <content>**）
   sitemap.xml                       ★ 2026-10-17 新增：按 $noindex 过滤（336 → 134 条）
                                     ⚠️ 过滤条件必须与 _default/baseof.html 的 $noindex 逐字同口径
@@ -139,8 +163,8 @@ layouts/                  ★ 站点层覆盖，46 个文件（另有 data/ 下�
   partials/footer.html              版权独立成行 + 订阅行挪到第 3 行
                                     + copyrightNote/licenseName/licenseURL
                                     + 「打个招呼」浮层（partials/hello.html、
-                                      partials/hello-script.html，样式在 custom.css 第 48 段）
-  partials/custom_head.html         CSS 管道 + 升级包 `<style>`（--hl-*）+ 主题引导 +
+                                      assets/js/hello.js，样式在 custom.css 第 48 段）
+  partials/custom_head.html         CSS 管道（theme → custom → upgrade.css）+ site.js + 主题引导 +
                                     图床预连 + 单个 theme-color + GoatCounter
                                     ⚠️ 样式段号全部在 assets/css/custom.css；
                                        `.hl-*` 升级包组件在 custom_head 末尾，别混
@@ -162,10 +186,10 @@ layouts/                  ★ 站点层覆盖，46 个文件（另有 data/ 下�
 assets/js/giscus.js       评论区脚本（只在挂评论的页加载）
 assets/js/code-copy.js    代码块复制按钮（只在含代码块的 5 页加载）
 
-themes/hugo-bearneo/      ★ 上游副本，27 个文件；style.html 有 3 处登记改动，其余逐字节未改
+themes/hugo-bearneo/      ★ 上游副本；style.html 有 4 处登记改动（见 DESIGN.md 第 5 节），其余逐字节未改
 
 static/
-  _headers _redirects     Cloudflare 的响应头 / 301 规则（_redirects 现有 18 条，见第 0 节「URL」行）
+  _headers _redirects     Cloudflare 的响应头 / 301 规则（条数见第 0 节自动区块）
   manifest.webmanifest    ★ 2026-10-26 新增：PWA 清单（name/图标/主题色），head 的
                           <link rel=manifest> 在 favicon.html。⚠️ 手写 JSON 不能写注释（见 DESIGN.md 第 5 节）
   favicon.svg             ⚠️ 2026-10-13 删掉的旧 PWA 五件套与 2026-10-26 新加的 manifest
@@ -185,9 +209,8 @@ functions/                ★ Cloudflare Pages Functions（2026-10-15 新增）
 data/                     runs.json（/run/ 页在读）+ image-dims.json（喂 render-image.html）
                           featured.yaml（/featured/ 的主编导读：3 组 × 2 篇 + 推荐语）
                           ⚠️ 两个都别当孤儿删
-scripts/                  13 个脚本，见第 4 节
-.github/workflows/        build.yml（构建校验）/ sync-garmin.yml（每日同步跑步数据）
-                          / daily-rebuild.yml（每日触发 CF Pages 重建，更新首页天数）
+scripts/                  脚本，见第 4 节
+.github/workflows/        build.yml（构建校验）/ sync-garmin.yml（每日同步跑步数据，兼全站每日重建）
 ```
 
 > ⚠️ **2026-10-12：四个子站（run / profile / shot / share）全部下线，`sites/` 目录已从仓库整体删除。**
@@ -307,8 +330,8 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 ### CI
 
 - `.github/workflows/build.yml`：push / PR 时用同一个 Hugo 版本**只构建主站**，并检查中文标题锚点是否补齐。周刊期号检查那一步 2026-10-10 已删（`issue` 字段 2026-10-13 已从全部周刊移除）。
-- `.github/workflows/sync-garmin.yml`：每天 22:00（Asia/Taipei）拉跑步数据写 `data/runs.json`。
-- `.github/workflows/daily-rebuild.yml`：每天 00:10（Asia/Taipei；UTC `10 16 * * *`）POST 一次 Cloudflare Pages Deploy Hook，让首页「运行 N 天」前进。⚠️ 需要仓库 secret `CLOUDFLARE_DEPLOY_HOOK`（CF Pages → Settings → Builds & deployments → Deploy hooks，Branch 选 `main`）；没配时 job 直接 fail。⚠️ 公开仓库连续 60 天无提交会被 GitHub 停用 schedule，届时在 Actions 页面 Enable。
+- `.github/workflows/sync-garmin.yml`：每天 00:10（Asia/Taipei；UTC `10 16 * * *`）拉跑步数据写 `data/runs.json`（2026-11-22 前是 22:00）。白天跑的要到次日 00:10 才上 `/run/`，急着看就在 Actions 里手动 Run workflow。
+- ~~`.github/workflows/daily-rebuild.yml`~~ **2026-11-22 删除**：它每天 00:10 调 Deploy Hook 重建，和 `sync-garmin.yml` 每天的自动提交（workflow 里「记录本次同步」一步无论 Garmin 成败都写 `runs.json` 的 `checked` → 必有提交 → CF 必构建；Garmin 失败时 job 照样标红通知）重复；过去 60 天每天都有提交。⚠️ 因此**每日重建现在靠 `sync-garmin.yml`**：停掉它、改 cron、或删掉「记录本次同步」那一步，首页「运行 N 天」、写作天数、热力图就会停在最后一次构建。⚠️ 公开仓库连续 60 天无提交会被 GitHub 停用 schedule —— 有了每日自动提交，这条不会触发。
 
 ---
 
@@ -352,7 +375,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | --- | --- |
 | 改导航（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板**（当前 **7 项**：首页 `/` / 关于 `/about/` / 邻居 `/roll/` / **工具 `/tools/`** / 周刊 `/weekly/` / 文章 `/archive/` / 订阅 `/index.xml`）。⚠️ 7 项在 375–390px 下是**零余量**（刚好一行、差 0px），换字体渲染略宽的设备会折成两行 —— 这是可接受的降级，**别再压 gap 或字号** |
 | 改首页文案 | `content/_index.md` |
-| 改首页身份条 | `content/_index.md` 的 `{{< home-stats >}}` + `layouts/shortcodes/home-stats.html`。⚠️ shortcode 只输出**纯文本 + 句号**，必须和「支持一下」同段；**不要加 span/class/`<br>`/样式**（用户 2026-11-20 明确要求正常显示、连起来）。天数靠 `.github/workflows/daily-rebuild.yml` 每天触发 CF 重建来前进；文章/周刊数在发布时自然更新 |
+| 改首页身份条 | `content/_index.md` 的 `{{< home-stats >}}` + `layouts/shortcodes/home-stats.html`。⚠️ shortcode 只输出**纯文本 + 句号**，必须和「支持一下」同段；**不要加 span/class/`<br>`/样式**（用户 2026-11-20 明确要求正常显示、连起来）。天数靠每天的构建前进（2026-11-22 起由 `sync-garmin.yml` 每天 00:10 的自动提交触发，过零点就 +1）；文章/周刊数在发布时自然更新 |
 | 改首页列表条数 | `hugo.toml` 的 `homeRecentCount`（设 0 退回上游原样） |
 | 改**首页最新周刊块** | `layouts/index.html` 的 `.latest-weekly`（2026-11-21 新增）。取 weekly section 最新一篇，期号从标题「第N期」解析，导语取 front matter 的 `summary`；样式在 `custom.css` 第 53 段。⚠️ 最近更新列表**只取 posts**，周刊只在这个块出现，别把周刊加回列表（同一期会重复两次） |
 | 改**精选导读页** | `data/featured.yaml`（唯一数据源：intro / groups / items.file + note）+ `layouts/_default/featured.html`（样式第 53 段）。⚠️ `file` 是相对 `content/` 的路径，不是 slug/URL —— 改 slug 不会失联；`where ... "File.Path"` 找不到页面时静默跳过，改完数一遍 `.featured-item` 是否等于条目数。⚠️ 只放 5–8 篇，这一页是「先读这几篇」，不再有 `featured: true` 第二套数据 |
@@ -360,7 +383,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改关于页 /「内容平台」一节 | `content/about.md`（纯 Markdown，全站没有头像） |
 | 改联系页 / 换 QQ、微信二维码 | `content/contact-qq.md` / `content/contact-wechat.md`（两处 `src` 仍是图床地址）+ `custom.css` 第 38 段（二维码 / 信息条样式）。⚠️ 两个文件用 front matter 的 `url:` 落在 `/contact/qq/`、`/contact/wechat/`；**别改成 `content/contact/` 目录**（会生成一个 `/contact/` 章节列表页）。关于页两个入口分别指过去 |
 | 改支持页 / 换收款码 | `content/donate.md`（结构 + 文案）+ `custom_head.html` 第 08 段（样式）。⚠️ 换码后要去 Cloudflare Purge `/images/donate/*`（30 天缓存） |
-| 改页脚 | `hugo.toml` 的 `copyright` / `copyrightNote` / `licenseName` / `licenseURL` / `[params.footer]` 四个开关。⚠️ 订阅行末尾那两条友链**不在配置里**，写在 `layouts/partials/footer.html` 的订阅块里（`safeHTML` 存成变量、三个互斥分支各引用一次）。⚠️「打个招呼」浮层是另一套三件套：`partials/hello.html`（标记）+ `partials/hello-script.html`（内联脚本）+ `custom.css` 第 48 段，**三处一起改**。正文 `/about/` 的「写信」走 `shortcodes/mail-link.html`，用的是同一套；脚本遍历所有 `.hello`，别改回 `querySelector` |
+| 改页脚 | `hugo.toml` 的 `copyright` / `copyrightNote` / `licenseName` / `licenseURL` / `[params.footer]` 四个开关。⚠️ 订阅行末尾那两条友链**不在配置里**，写在 `layouts/partials/footer.html` 的订阅块里（`safeHTML` 存成变量、三个互斥分支各引用一次）。⚠️「打个招呼」浮层是另一套三件套：`partials/hello.html`（标记）+ `assets/js/hello.js`（内联脚本）+ `custom.css` 第 48 段，**三处一起改**。正文 `/about/` 的「写信」走 `shortcodes/mail-link.html`，用的是同一套；脚本遍历所有 `.hello`，别改回 `querySelector` |
 | 改**站内跳转预渲染** | `custom_head.html` 末尾那个 `<script type="speculationrules">`（2026-10-28）。⚠️ `eagerness` 是 `moderate`，**别改成 `eager`** —— 列表页一屏十几个链接会同时预渲染，把带宽吃光。⚠️ 规则里 `href_matches` 写 `/*` 是相对本文档解析的，只命中同源路径；别换成跨源全通配。⚠️ 模板注释里**绝不能出现星号加斜杠的连续两字符**（那就是注释结束符），我这次就写坏过一次，构建直接报 `comment ends before closing delimiter` |
 | 改**图标 link 的绝对 / 相对** | `layouts/partials/favicon.html`（2026-10-28 起 6 条全用 `relURL`）。⚠️ 别改回 `absURL`：这 6 条只服务当前 HTML 页，绝对地址在镜像域名下会把请求拽回 hulatu.com。**需要绝对地址的是 feed 里的图标**（走 `params.feedIcon`） |
 | 改**图床预连的触发条件** | `custom_head.html` 顶部的图床预连段，条件是 `and (strings.Contains .Content "img.hulatu.com") (strings.Contains .Content "<img")`。⚠️ **两个条件缺一不可**：只判主机名会误命中 `/`、`/about/`、`/privacy/`（那三页里是 `<a href>` 或纯文本）。⚠️ 验收别数 `rel=preconnect` —— giscus 的预连也长这样（135 个长文页都有），会把结论带偏 |
@@ -397,10 +420,10 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 加 301 | `static/_redirects`（**首条命中即生效**，splat 要排在精确路径之后） |
 | 改响应头 / 缓存 | `static/_headers` |
 | 换 favicon / 站点图标 / 分享图 | **母版是 `~/Documents/生活素材/图片/H_avatar.jpg`**（2026-11-04 起）：按 DESIGN.md 8.6 的步骤用 potrace 描摹成 `static/favicon.svg`，再跑第 3 步生成 `icon-512/192.png`、`apple-touch-icon.png`、`favicon.ico`、`images/feed-icon.png`，最后**把 `partials/favicon.html` 里的 `$iconV` 加 1**（不加等于没换，浏览器 7 天内不会重抓）。（feed `<image>` 用，路径在 `hugo.toml` 的 `params.feedIcon`，宽高在 `rss.xml` 里写死 144）。⚠️ 光栅图**别手工裁**，会和 SVG 分叉；⚠️ 改完阅读器要手动刷新图标（订阅时抓一次就长期缓存）。分享图是 `static/images/share.webp`（只是**兜底** `og:image`，由 `params.images` 引用；文章页各有一张 `static/images/og/<slug>.png`，由 `scripts/gen-og.js` 生成，`publish.sh` 每次重画）。⚠️ 换兜底图后改 `hugo.toml` 的 `params.ogImageWidth` / `ogImageHeight` 跟上（`seo_tags.html` 读这两个参数输出 og 宽高）。⚠️⚠️ **拼 `favicon.ico` 那句必须带 `-type TrueColorAlpha`**（2026-11-04 修）：少了它每层只剩 3–4 种颜色，抗锯齿全丢，浏览器标签页就是阶梯锯齿 —— 默认浏览器 Helium 走的是 `/favicon.ico` 而不是 SVG，所以这条链路一错，标签页必糊。见 DESIGN.md 8.6 |
-| 改 SEO 头（keywords / JSON-LD / og / referrer / theme-color） | `layouts/partials/seo_tags.html`（2026-10-14 新增，整份覆盖上游同名 partial）。⚠️ `theme-color` 现在只有一条 `<meta id="hl-theme-color">`（`custom_head.html`），由 `custom_body.html` 的 `applyTheme()` 在深浅色切换时改；`color-scheme` 与 `input{font-size}` 在第 26 段；`referrer` 在 `baseof.html`。⚠️ 上游那份是「HTML 规范还在 2015 年」的写法，**别回退** |
+| 改 SEO 头（keywords / JSON-LD / og / referrer / theme-color） | `layouts/partials/seo_tags.html`（2026-10-14 新增，整份覆盖上游同名 partial）。⚠️ `theme-color` 现在只有一条 `<meta id="hl-theme-color">`（`custom_head.html`），由 `assets/js/palette.js` 的 `applyTheme()` 在深浅色切换时改；`color-scheme` 与 `input{font-size}` 在第 26 段；`referrer` 在 `baseof.html`。⚠️ 上游那份是「HTML 规范还在 2015 年」的写法，**别回退** |
 | 改分享卡片图 / JSON-LD 的 `image` | **`layouts/partials/og-image.html`**（2026-10-26 起是唯一取值处，`og:image` / `twitter:image` / JSON-LD `image` 三处都调它）。⚠️ 返回的是**绝对 URL**，调用方不要再套 `absURL` |
 | 改分类页的标题 / 描述 | `content/categories/<词>/_index.md`（8 个，2026-10-26 新增）。⚠️ `title` 必须写，否则 `<title>` 会退化成「 \| 胡拉图说」；标签页没有对应文件（它们仍是 noindex） |
-| 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有 `layouts/partials/custom_body.html` 的命令面板。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（2026-11-22 起只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
+| 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有命令面板（脚本 `assets/js/palette.js`，对话框 HTML 在 `layouts/partials/custom_body.html`）。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（2026-11-22 起只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
 | 改分享卡上的日期 / 作者 / 标签（`article:*`） | `layouts/_partials/opengraph.html`。⚠️ 只对 `posts` / `weekly` 输出，首页与列表页的 `og:type` 是 `website`，挂 `article:*` 非法；⚠️ `article:author` 按协议是**作者主页 URL**（本站指 `/about/`），不是名字 |
 | 改「更新于」的显示条件 / 日期行排版 | `layouts/_default/single.html` 日期行（`$showUpdated`）。⚠️ 判据是「`lastmod` 晚于 `date` **且** 日历日不同」，不是「差 24 小时」——当天发当天改的两个日期长得一样，显示出来是噪音；⚠️ 2026-11-21 起日期行是 flex 一行（`.byline`，`custom.css` 第 39 段），日期、更新、时长、字数之间用间距分开，不用中点串 |
 | 改 Web App Manifest（名称 / 图标 / 主题色） | `static/manifest.webmanifest`。⚠️ 它是**手写 JSON、不能写注释**（加了整份解析失败且静默），所有取舍理由写在 `layouts/partials/favicon.html` 那段注释里；⚠️ `purpose` 别加 `maskable`（图标笔画贴边会被裁）；⚠️ `id` 一旦发布别再改 |
@@ -417,7 +440,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | --- | --- |
 | `sync-pinyin.py` | ✅ 在用（2026-11-04 取代 `add-heading-anchors.py`）。只维护 `data/pinyin.json`，**不改 md**；CI 也跑 `--check`。云端构建机是 Linux、没有拼音库，所以这张表必须本机补好再提交 |
 | `sync-garmin.py` / `garmin-token.py` | ✅ 在用（每日 CI 同步跑步数据 → `data/runs.json`） |
-| `sync-lastmod.py` | ⚠️ 半废（`lastmod` 只喂 RSS / sitemap） |
+| `sync-lastmod.py` | ✅ 在用：发布前刷新**这次真正改过**的文章的 `lastmod`（文章页「更新于」、sitemap、JSON-LD `dateModified` 都读它）。⚠️ 2026-11-22 起一次要刷超过 10 篇就**一篇都不写**并报警（全站维护几乎不可能是内容修订；`--bulk-ok` 放行），`featured` / `comments` 字段改动不算修订。起因：2026-09-28 / 10-13 / 10-26 / 11-05 / 11-21 五次批量误刷，11-21 那次 143/144 篇一起显示「更新于」，已从 git 历史恢复 |
 | `sync-image-dims.py` | ✅ 在用（HTTP 探测图床图片真实宽高 → `data/image-dims.json`，供 `render-image.html` 消费）。**2026-10-18 起在 `publish.sh` 里自动跑**，只补缺的 |
 | `check-cache.sh` | ✅ 在用（2026-10-25 新增，**手动跑**）。自查线上首页是否被边缘缓存锁住：打 `/` 与 `/?cb=随机` 对比 `cf-cache-status` + 内容指纹，命中就打印后台 Purge / Edge TTL 的操作路径。退出码 0=正常 / 1=被锁 / 2=网络拿不到。⚠️ 不进 `publish.sh` —— 它依赖外网，而发布流程要能离线跑 |
 | `check-links.sh` | ✅ 在用（2026-11-02 新增）：构建后检查站内路径和页内锚点；`deploy.sh` 会调用，CI 也跑同一套 lychee 参数。未安装 lychee 时本地脚本提示并跳过 |
@@ -425,6 +448,8 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | `gen-og.js` | ✅ 在用（2026-10-17 重写，2026-10-18 接入 `publish.sh`）：每篇文章一张 1200×630 分享卡 → `static/images/og/`。⚠️ 依赖 sharp，`publish.sh` 会自己找 `node` 与 `NODE_PATH`；**每次都全量重画**（改过标题的卡片要跟着变） |
 | `new-post.sh` | ✅ 在用（2026-10-18）：`new posts/xxx` 建文件 + 用系统默认应用打开。配套的 `new()` 函数在 `~/.config/zsh/.zshrc`，不在仓库里 |
 | `backup-blog.sh` / `cleanup-junk.sh` / `_frontmatter.py` | ✅ 工具 |
+| `sync-status.py` | ✅ 2026-11-22 新增：把篇数 / 文件数 / sitemap / 体积写进本文第 0 节和 README「站点现状」的自动区块，并更新 README 徽章。`publish.sh` 发布前自动跑；`--check` 只检查，`--print` 只打印。构建统计读**上一次** `./deploy.sh` 的 `public/`，`hugo server` 的开发版产物会被识别并跳过 |
+| `backup-images.py` | ✅ 2026-11-22 新增：由 `backup-blog.sh` 调用，把正文引用的 `img.hulatu.com/post/` 原图增量镜像到 `<备份目录>/images/`，附 `manifest.tsv`（地址 / 路径 / 字节 / sha256）。仓库里没有这些图，不跑它等于没备份图片。`SKIP_IMAGES=1` 可跳过 |
 
 ---
 
@@ -780,7 +805,7 @@ PY
 - 页脚两行：`通过 RSS 订阅，或直接 ✉️ 问候， 🔒 隐私. 🚇 开往. 🌀 虫洞. 🗺️ 网站地图.` / `基于 … 制作，版权所有 …，本站内容采用 CC BY-NC-SA 4.0 协议。`（2026-11-21 晚已去掉「🔍 搜索」入口）
   ⚠️ **RSS 前面不要图标**；其余入口保留 emoji。顺序固定为 隐私 → 搜索 → 开往 → 虫洞 → 网站地图。分隔符统一 `.`，`·` 为 0 个。
   哨兵：`<footer>` 里 `<br>` 恰好 **1 个**、`go.html` 恰好 **2 次**（开往 + 虫洞）、`·` **0 次**
-  ⚠️「打个招呼」是悬停胶囊（2026-11-20）：**触发词仍是 `mailto:` 链接**（`.hello-link`），悬停 / 键盘聚焦浮出 `.hello-card`，点 `.hello-copy` 复制并显示「已复制」，1.6 秒复原；触屏（`hover: none`）改为点触发词开合胶囊。**卡片里只有邮箱 + 复制图标** —— 没有「邮箱」标签、提示行、mailto 入口或小三角（用户同日明确要求），别再加回去。三件套：`partials/hello.html` + `partials/hello-script.html` + `custom.css` 第 48 段，改名要三处同改（`.is-copied` / `.is-open` 也是契约）。⚠️ 2026-11-21 起 `/about/` 的「写信」也用它（`shortcodes/mail-link.html`）；脚本遍历页面上所有 `.hello`，正文卡片用第 52 段左对齐，避免窄屏溢出
+  ⚠️「打个招呼」是悬停胶囊（2026-11-20）：**触发词仍是 `mailto:` 链接**（`.hello-link`），悬停 / 键盘聚焦浮出 `.hello-card`，点 `.hello-copy` 复制并显示「已复制」，1.6 秒复原；触屏（`hover: none`）改为点触发词开合胶囊。**卡片里只有邮箱 + 复制图标** —— 没有「邮箱」标签、提示行、mailto 入口或小三角（用户同日明确要求），别再加回去。三件套：`partials/hello.html` + `assets/js/hello.js` + `custom.css` 第 48 段，改名要三处同改（`.is-copied` / `.is-open` 也是契约）。⚠️ 2026-11-21 起 `/about/` 的「写信」也用它（`shortcodes/mail-link.html`）；脚本遍历页面上所有 `.hello`，正文卡片用第 52 段左对齐，避免窄屏溢出
 - 文章页：`<h1>`、日期行、标签行、**文末系列坐标带（仅 23 篇连载）+ 上一篇/下一篇（126 篇都有）**、TOC、评论区
   ⚠️ **「上一篇」= 更早、「下一篇」= 更晚**；两段相邻时只画一条发丝线；最新一篇没有「下一篇」、最早一篇没有「上一篇」（留不可见空槽，正常）
   ⚠️ 含代码的文章代码块必须「浅灰底 + 深字」（浅色）—— 大片文字发白就是 `noClasses` 被改回 `true`，跑第 5 条 f) 哨兵
@@ -801,7 +826,7 @@ PY
 2. **非文章页没有页面级 `<h1>`**（有意接受上游行为，见 DESIGN.md 8.11）。
 3. **Cloudflare 后台收尾**（仓库侧无法代劳）：`run.` / `profile.` / `shot.` / `share.` 四个子域名的 CNAME 已删，Pages 项目本身若还留在后台建议一并删掉 —— 它们指向的 `sites/` 目录已不存在，构建只会失败。
 4. **⚠️ 确认 Pages 项目的 Functions 目录**：必须是仓库根的 `functions`。被改过或 Functions 被关掉的话，浏览器打开 `/index.xml` 会退回 raw XML，而**构建与部署都不报错** —— 核对命令见第 2 节「边缘函数」那三条 `curl`。
-5. **每日重建的部署凭据**：Cloudflare Pages → Settings → Builds & deployments → Deploy hooks，建一个 **Branch = `main`** 的 hook，把 URL 存成 GitHub 仓库 secret **`CLOUDFLARE_DEPLOY_HOOK`**。不配的话 `daily-rebuild.yml` 每天会红灯（线上不受影响，只是首页「运行 N 天」不会前进）。
+5. ~~**每日重建的部署凭据**~~（2026-11-22 随 `daily-rebuild.yml` 一起废弃）：不再需要 Deploy Hook。迁移时**别再配**；旧仓库里的 `CLOUDFLARE_DEPLOY_HOOK` secret 与 Cloudflare 里那个 hook 应删除（它是带凭据的地址，谁拿到都能触发部署）。每日重建见第 2 节 `sync-garmin.yml` 那条。
 
 > 被删掉的孤儿资源与失效脚本都在 git 历史里；要恢复就 `git log --diff-filter=D` 取回，别照着旧待办去找已经不存在的文件。
 
