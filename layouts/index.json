@@ -67,7 +67,8 @@
        ⚠️ 多段合并后截 300 字，避免一期周刊几十条引用把索引撑大。 */ -}}
   {{- $quotes := slice -}}
   {{- range findRE `(?s)<blockquote\b[^>]*>.*?</blockquote>` $html -}}
-    {{- $q := . | replaceRE `<[^>]*>` " " | replaceRE `\s+` " " | strings.TrimSpace -}}
+    {{- /* 2026-11-23：提示框的小标题（「注意」「提示」…）不是引用内容，先去掉。 */ -}}
+    {{- $q := . | replaceRE `(?s)<p class="callout-title">.*?</p>` "" | replaceRE `<[^>]*>` " " | replaceRE `\s+` " " | strings.TrimSpace -}}
     {{- with $q }}{{ $quotes = $quotes | append . }}{{ end -}}
   {{- end -}}
   {{- $quoteText := delimit $quotes " … " | strings.TrimSpace -}}

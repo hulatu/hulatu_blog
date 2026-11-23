@@ -8,6 +8,28 @@
       document.documentElement.setAttribute('data-theme', saved || (prefersDark ? 'dark' : 'light'));
     } catch (e) {}
   })();
+  /* 2026-11-23：列表 ↔ 文章的标题过渡，进入页一侧。pagereveal 必须在首次渲染前注册，
+     所以只能写在这段渲染阻塞的内联脚本里（defer 的 site.js 来不及）。
+     离开页一侧和两边共用的规则在 assets/js/motion.js 第 4 段，改一边要同步另一边。
+     开头先清掉上次留下的名字（从 bfcache 回到这一页时还挂着）。 */
+  if ('onpagereveal' in window) window.addEventListener('pagereveal', function (e) {
+    var d = document, old = d.querySelectorAll('[data-vt-title]'), i, el = null;
+    for (i = 0; i < old.length; i++) { old[i].style.viewTransitionName = ''; old[i].removeAttribute('data-vt-title'); }
+    var act = window.navigation && navigation.activation;
+    if (!e.viewTransition || !act || !act.from) return;
+    var from = new URL(act.from.url), P = /^\/posts\/\d{4}\//;
+    if (from.origin !== location.origin) return;
+    if (P.test(location.pathname) && /^\/(?:archive\/|weekly\/|posts\/|categories\/[^/]+\/|tags\/[^/]+\/)?$/.test(from.pathname)) {
+      el = d.querySelector('main h1');
+    } else if (P.test(from.pathname)) {
+      var a = d.querySelectorAll('ul.blog-posts a, .recent-posts a');
+      for (i = 0; i < a.length; i++) if (a[i].pathname === from.pathname) { el = a[i]; break; }
+    }
+    if (!el) return;
+    el.style.viewTransitionName = 'post-title';
+    el.setAttribute('data-vt-title', '');
+    e.viewTransition.finished.finally(function () { el.style.viewTransitionName = ''; el.removeAttribute('data-vt-title'); });
+  });
 </script>
 
 {{- /* 站点头部：CSS 管道 + 升级包覆写 + 预连 + theme-color + GoatCounter。
@@ -44,12 +66,13 @@
          assets/js/palette.js  搜索面板 / 深浅色切换 / 随机漫游（原 custom_body.html）
          assets/js/hello.js    「问候」/「写信」邮箱浮层（原 partials/hello-script.html）
          assets/js/toc.js      右侧目录显隐（原 _default/single.html 末尾）
+         assets/js/motion.js   图片淡入 / # 复制链接 / 图表入场 / 标题过渡（2026-11-23）
        ⚠️ 放在 <head> 并用 defer：既不阻塞渲染，又保证它比正文里的 giscus.js /
           code-copy.js（同为 defer）**先执行** —— giscus 注入时要读 applyTheme
           写好的 #giscus-slot.dataset.theme。挪到 <body> 末尾会打乱这个顺序。
        ⚠️ 三个文件都自带「找不到元素就 return」的守卫，所以全站共用一份没问题。
        ⚠️ 主题初值仍由上面那段内联脚本设置（必须同步执行，否则深色闪白）。 */ -}}
-{{- $siteJS := slice (resources.Get "js/palette.js") (resources.Get "js/hello.js") (resources.Get "js/toc.js") | resources.Concat "js/site.js" | minify | fingerprint -}}
+{{- $siteJS := slice (resources.Get "js/palette.js") (resources.Get "js/hello.js") (resources.Get "js/toc.js") (resources.Get "js/motion.js") | resources.Concat "js/site.js" | minify | fingerprint -}}
 <script src="{{ $siteJS.RelPermalink }}" integrity="{{ $siteJS.Data.Integrity }}" crossorigin="anonymous" defer></script>
 {{- /* 没有 JS 时，页头的「搜索 / 深浅色」按钮点了没反应，直接藏掉。 */ -}}
 <noscript><style>.hl-toolbar{display:none}</style></noscript>
@@ -97,7 +120,9 @@
 
 {{- /* Speculation Rules：站内跳转预渲染，eagerness=moderate。
        ⚠️ href_matches 的 /* 相对本文档解析，只命中同源；别改成跨源通配。
-       ⚠️ 别写 /**（URLPattern 里 ** 是跨段通配，语义不同）。 */ -}}
-<script type="speculationrules">{"prerender":[{"where":{"href_matches":"/*"},"eagerness":"moderate"}]}</script>
+       ⚠️ 别写 /**（URLPattern 里 ** 是跨段通配，语义不同）。
+       2026-11-23：排除订阅源 / JSON / 统计 / 订阅源浏览器视图 —— 鼠标停在导航「订阅」上时，
+       原来会预渲染 /index.xml（被中间件改写成 /feed/ 那页），白白多一次 Function 调用。 */ -}}
+<script type="speculationrules">{"prerender":[{"where":{"and":[{"href_matches":"/*"},{"not":{"href_matches":"/*.xml"}},{"not":{"href_matches":"/*.json"}},{"not":{"href_matches":"/stats/*"}},{"not":{"href_matches":"/feed/*"}}]},"eagerness":"moderate"}]}</script>
 
 {{- /* 升级包样式 2026-11-22 起在 assets/css/upgrade.css（见上面的 CSS 管道），这里不再内联。 */ -}}

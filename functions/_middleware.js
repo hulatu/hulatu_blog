@@ -1,6 +1,16 @@
 /**
  * Cloudflare Pages Functions 中间件 —— 订阅源的内容协商 + www 归一（2026-10-15 / 2026-11-21）
  *
+ * ⚠️⚠️ 2026-11-23：**这个中间件现在只在三个地址上运行**（static/_routes.json）：
+ *     /index.xml   /weekly/index.xml   /stats/*
+ *    以前仓库里没有 _routes.json，Pages 会让**每一个请求**（HTML / CSS / 图片 / 分享卡）
+ *    都先过一遍 Function：多一跳延迟，还吃每天 10 万次的免费额度。
+ *    · www → 根域的 301 因此改由 Cloudflare 后台的 **Redirect Rule** 负责
+ *      （配置见 MAINTENANCE.md「部署清单」）；下面那段 www 代码只剩兜底作用 ——
+ *      访问 www.hulatu.com/index.xml 时还会走到这里。别删，也别指望它处理别的路径。
+ *    · 以后给 Function 加新路由，**必须同时把路径加进 static/_routes.json 的 include**，
+ *      否则新函数根本不会被调用（症状：一切照旧、不报错）。
+ *
  * ── www → 根域（2026-11-21 新增）────────────────────────────────────
  * `www.hulatu.com` 与根域指向同一个 Pages 项目，但搜索引擎会把两个主机名
  * 当成两份内容，权重被摊薄。这里在边缘做 301，把 www 永久并到根域，

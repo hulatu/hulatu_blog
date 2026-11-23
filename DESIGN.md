@@ -60,6 +60,22 @@ description: >
 | 列表与表格 | 列表项之间 `0.3em`（只给无 class 的直接子级，`ul.blog-posts` 不受影响）；表格单元格 `0.5em 0.65em`、表头 600、数字 tabular |
 | 脚注 / 图注 | 脚注 16px 二级灰；图注 0.85em 二级灰，alt 非空时加 `aria-hidden="true"`（避免读屏把 alt 念两遍） |
 | 阅读进度条 | 长文页（posts + weekly）顶部 3px 链接蓝；`animation-timeline: scroll(root block)`，零 JS；不支持时整条隐藏 |
+| 断点 | **480 / 800 / 1200** 三档（2026-11-23 由 400 / 480 / 600 / 640 / 700 / 800 / 1200 收拢，只往上并、不往下并 —— 窄屏布局提前生效不会溢出）。新规则请从这三档里选 |
+| 弹层动效 | 图片放大淡入 0.18s（关闭瞬间）；搜索面板淡入淡出 0.16s + 面板下沉 6px、0.98 → 1 放大；`@starting-style`，零 JS（`custom.css` 第 60 段） |
+| 引用框 | 长文页蓝竖线 + 浅蓝底 + 左上角 **2em** Georgia 引号（2026-11-23 由 5em 缩小，左内边距 3.2em → 2.4em）（第 39-b 段） |
+| 提示框 | `> [!NOTE]` / TIP / IMPORTANT / WARNING / CAUTION，`render-blockquote.html` 输出 `blockquote.callout`；左边框 + 小标题换色，底色 7% 混色，默认标题 说明 / 提示 / 重要 / 注意 / 警告（第 61 段） |
+| 选中文字 | 浅色链接蓝 20%、深色 32% 底色（第 62 段） |
+| 正文颜色 | **所有页面**的阅读区（`content` + `main`）都是 `--hl-ink`，引用块统一二级灰，与文章页一致（2026-11-23；首页、404、邻居页、精选导读原来更淡）。页眉、页脚、日期等元信息仍是 ink-2 / 三级灰 |
+| 邮箱浮层 | 页脚「问候」、关于页「写信」、邻居页「写信给我」、评论区「写信」共用 `partials/hello.html`（悬浮显示邮箱、点按复制）；`mail-link` 与 partial 都支持 `subject`。正文里的卡片左对齐，评论区的右对齐（第 52 段 / 第 48 段末尾） |
+| 图片段落 | 单独一行的图片不包 `<p>`（`hugo.toml` `wrapStandAloneImageWithinParagraph = false`，2026-11-23），消除 `<p><figure>` 产生的约 700 个空段落；间距不变 |
+| 锚点跳转 | 正文 h2–h4 `scroll-margin-top: 1.25rem`（第 63 段）；跳到后标题底色亮一下 1.4s（第 65 段） |
+| 加载过渡 | 懒加载图片：占位块是**这张图的主色**（`data/image-colors.json` → `--ph`，没有就浅灰）+ 0.28s 淡入（首图不做，免拖 LCP）；搜索索引未到时 3 条占位、失败可重试、鼠标悬停「搜索」按钮即预取；结果里命中的字用 `<mark>` 标出；评论区展开淡入（第 64 段 + `motion.js` / `palette.js`） |
+| 交互反馈 | 链接变色 0.15s；触屏按压 `scale: .96` 并去掉系统灰块；折叠块高度动画（Chrome 131+）；点 `#` 同时复制本节链接并在底部提示（第 65 段 + `motion.js`） |
+| 图表入场 | 跑步页柱状图、关于页热力图第一次进入视口时生长一次（IntersectionObserver，**不用滚动驱动** —— 停在半高会显示错的数字）（第 66 段） |
+| 图片放大 | **原生 Popover**（2026-11-23 起，原来是 checkbox + 两个 label）：`button[popovertarget]` 包原图，弹层整块是关闭按钮；Esc / 读屏语义 / 顶层显示由浏览器负责，仍零 JS。有 View Transitions 时 `motion.js` 第 5 段让放大图**从原图位置长出来、关闭缩回原位**；否则淡入淡出 0.18s。放大图仍是背景图（每张图 DOM 里只有一个 `<img>`）（第 68 段）。RSS 里会把这套标记拆掉，只留 `<img>` |
+| 搜索面板 | **原生 `<dialog>` + `showModal()`**（2026-11-23）：焦点困在面板内、背后页面 inert、Esc 关闭都是原生；`.open` 类仍保留给淡入淡出 |
+| 目录高亮 | 站点层覆盖主题 `toc.html`（只留标记），高亮改在 `toc.js` 用 IntersectionObserver + `scrollend` 校正，滚动中不再每帧测量；点目录走原生锚点（地址栏带 `#`，触发 :target 高亮） |
+| 标题过渡（试行） | 列表 ↔ 文章跨页时标题移动到 h1 位置，`view-transition-name: post-title` 只在那次跳转期间挂上（第 67 段 + `motion.js` 第 4 段 + `custom_head.html` 内联 pagereveal） |
 
 2026-11-21 新增两个根级页：`/style/`（所有 Markdown 元素的样式样本，`long-form: true`）与 `/map/`（人类可读的站点地图，同时收技术栈、排版、评论与隐私、站史；原 `/colophon/` 当天并入，301 到 `/map/`）。`/about/` 底部新增「写作统计」：文章/周刊数、累计字数、写作天数，以及过去 365 天的发布热力图（`layouts/shortcodes/writing-stats.html` + `custom.css` 第 51 段，纯构建期生成，无 JS）。2026-11-21 当天改版：统计条改成「小标签在上、大数字带单位」，四列之间用发丝线分隔；热力图加月份刻度与范围/有发布天数，配色改成 `--hl-*` 强调色混合（`color-mix`），注脚用虚线分隔；窄屏 2×2 统计 + 月份与格子一起横向滚动。
 
@@ -144,7 +160,7 @@ layout:
   body-padding: 20px
   heading-margin: "16px 0"    # 上游 h1~h6 一律 16px 上下；正文里由站点层加大上间距
   breakpoints:
-    - 800px                   # 唯一断点：TOC 隐藏 + #minipic 图片放开宽度
+    - 800px                   # 上游唯一断点：TOC 隐藏 + #minipic 图片放开宽度（站点层另有 480 / 640 / 1200，见第 0 节）
   note: >
     上游**没有**间距阶梯（--space-1/2/3）、**没有**圆角档位（--radius-sm/chip/pill）、
     **没有**投影令牌。需要圆角时直接写 4px（上游对表格 / 图片 / code / 高亮块一律 4px）。
@@ -454,6 +470,8 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - **导航右侧的 `搜索 /` 与 `☾/☀` 由 `partials/nav.html` 静态输出**（2026-11-22 前是 JS 追加的），
   不在 `[[menu.main]]` 里，事件由 `assets/js/palette.js` 绑定。桌面 1280px 保持一行；390px 时工具栏折到第二行
   （`header nav` 高约 67px），这是接受的行为 —— 7 个菜单项本来就贴着折行临界。
+  ⚠️ 2026-11-23 试过把按钮挪到站名那一行（页头两行），**用户要求恢复原布局，别再提**。
+  手机上隐藏按钮里的 `/` 提示、触控命中区用透明 `::after` 撑到约 44px（`custom.css` 第 00e 段），外观不变。
   图标是内联 SVG（月亮 / 太阳），不再用 `☾/☀` 文字，尺寸规则在 `custom.css` 第 56 段。
 - `.hl-section*` / `.hl-project-*` / `.hl-tag-pill` / `.hl-cmd-*` / `.hl-toolbar`
   样式全部在 `assets/css/upgrade.css` 里（升级包原样，不拆到 custom.css；2026-11-22 前是 `custom_head.html` 末尾的内联 `<style>`）。
@@ -1502,7 +1520,7 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 后者会把背后的页面一起滚。选到最后一项再按 ↓ 会回到第一项并滚回顶部。
 
 ⚠️ 升级包原版用 `innerHTML` 拼结果项。本站标题全部由作者控制，暂时没有注入面；
-**以后若把评论、外部 RSS 之类不可信文本塞进索引，必须先改成 `textContent`**。
+（2026-11-23 起结果在拼 HTML 前一律转义，命中处才包 `<mark>`；以前「不可信文本进索引前要先改成 textContent」的提醒已经不需要了。）
 ⚠️ 面板脚本 2026-11-22 起是 `assets/js/palette.js`（`<head>` 里 `defer`，DOM 解析完才执行），
 对话框标记仍在 `custom_body.html`，所以可以直接 `getElementById`。将来若再加页内输入框，它通常仍在 `<head>` 之后，
 必须等 `DOMContentLoaded` 再跑，否则 `querySelectorAll` 拿到空列表、打字零反应且零报错。

@@ -15,10 +15,20 @@
   var ICON_MOON = '<svg class="hl-theme-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
   var ICON_SUN = '<svg class="hl-theme-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
 
+  /* 2026-11-23：缓存 Promise 本身。原来只缓存结果，索引还在下载时每敲一个字
+     就会再发一次 fetch；现在下载中的请求被共用。失败时清空，下次打开会重试。 */
+  var indexPromise = null;
+  var indexFailed = false;
+
   function loadIndex() {
     if (indexCache) return Promise.resolve(indexCache);
-    return fetch('/index.json')
-      .then(function (r) { return r.json(); })
+    if (indexPromise) return indexPromise;
+    indexFailed = false;
+    indexPromise = fetch('/index.json')
+      .then(function (r) {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.json();
+      })
       .then(function (data) {
         /* 本站 /index.json 是 {t,u,g,h,k,d}（layouts/index.json），
            这里统一成升级包需要的 title/url/summary/date/section。
@@ -37,7 +47,28 @@
         });
         return indexCache;
       })
-      .catch(function () { return []; });
+      .catch(function () {
+        indexFailed = true;
+        indexPromise = null;
+        return [];
+      });
+    return indexPromise;
+  }
+
+  /* 第一次打开面板、索引还没到时显示三条占位（约 61 KB gzip，慢网要等一会儿）。
+     ⚠️ 仍然只在打开面板时才拉索引 —— 别改成进页面或聚焦就拉（MAINTENANCE 有约定）。 */
+  function renderLoading() {
+    resultsEl.setAttribute('aria-busy', 'true');
+    resultsEl.innerHTML =
+      '<li class="hl-cmd-skel" aria-hidden="true"></li>' +
+      '<li class="hl-cmd-skel" aria-hidden="true"></li>' +
+      '<li class="hl-cmd-skel" aria-hidden="true"></li>';
+  }
+
+  function retryIndex() {
+    indexPromise = null;
+    indexFailed = false;
+    openCmd();
   }
 
   function prefersReducedMotion() {
@@ -197,6 +228,14 @@
   var openCmdBtn = document.getElementById('hlOpenCmdBtn');
   var themeToggleBtn = document.getElementById('hlThemeBtn');
   if (openCmdBtn) openCmdBtn.addEventListener('click', openCmd);
+  /* 2026-11-23：鼠标停到「搜索」按钮上就开始拉索引（约 61 KB gzip），点下去时多半已经到了。
+     只认鼠标悬停（明确的使用意图）；触屏没有悬停、键盘聚焦也不算 —— 仍然遵守
+     「别在进页面或聚焦时拉索引」那条约定（MAINTENANCE.md）。失败了打开面板时会自动重试。 */
+  if (openCmdBtn) {
+    openCmdBtn.addEventListener('pointerenter', function (e) {
+      if (e.pointerType === 'mouse') loadIndex();
+    }, { once: true });
+  }
   if (themeToggleBtn) themeToggleBtn.addEventListener('click', toggleTheme);
 
   // 归档页计数行里的「随机阅读一篇」（2026-11-21 从页脚移过来）
@@ -215,6 +254,30 @@
   var overlay = document.getElementById('hlCmdOverlay');
   var input = document.getElementById('hlCmdInput');
   var resultsEl = document.getElementById('hlCmdResults');
+
+  /* 2026-11-23：结果改成先转义再拼 HTML —— 原来标题直接塞进 innerHTML，
+     索引里将来要是混进带 < 的文字就会被当成标签。命中的那几个字用 <mark> 标出来。 */
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
+      return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+    });
+  }
+
+  function markHit(text, q) {
+    text = String(text || '');
+    var i = q ? text.toLowerCase().indexOf(q) : -1;
+    if (i < 0) return esc(text);
+    return esc(text.slice(0, i)) + '<mark>' + esc(text.slice(i, i + q.length)) + '</mark>' + esc(text.slice(i + q.length));
+  }
+
+  /* 右侧胶囊只放得下约 18 个字：命中位置靠后时从命中处前几个字开始截，保证 <mark> 看得见。 */
+  function snippet(text, q, max) {
+    text = String(text || '');
+    var i = text.toLowerCase().indexOf(q);
+    var start = i > max - q.length - 2 ? Math.max(0, i - 4) : 0;
+    var out = text.slice(start, start + max);
+    return (start > 0 ? '…' : '') + out + (start + max < text.length ? '…' : '');
+  }
 
   function renderCmd(posts) {
     var q = (input.value || '').trim().toLowerCase();
@@ -262,13 +325,22 @@
 
     currentItems = matched.slice(0, 10).map(function (m) {
       var p = m.p;
-      var meta = p.date || p.section;
+      var metaHtml = esc(p.date || p.section);
       if (m.hit) {
-        var shown = m.hit.length > 18 ? m.hit.slice(0, 18) + '…' : m.hit;
-        meta = m.hitKind + ' · ' + shown;
+        metaHtml = esc(m.hitKind + ' · ') + markHit(snippet(m.hit, q, 18), q);
       }
-      return { label: p.title, meta: meta, action: function () { window.location.href = p.url; } };
+      return {
+        label: p.title,
+        labelHtml: m.score === 4 ? markHit(p.title, q) : esc(p.title),
+        metaHtml: metaHtml,
+        action: function () { window.location.href = p.url; }
+      };
     });
+
+    resultsEl.removeAttribute('aria-busy');
+    if (indexFailed) {
+      currentItems.unshift({ label: '搜索索引加载失败，点这里重试', meta: '重试', action: retryIndex });
+    }
 
     if (!q || '随机'.indexOf(q) !== -1 || 'random'.indexOf(q) !== -1) {
       currentItems.push({ label: '随机读一篇文章（Surprise me）', meta: '快捷指令', action: openRandomPost });
@@ -290,7 +362,7 @@
       var b = document.createElement('button');
       b.type = 'button';
       b.className = 'hl-cmd-item' + (idx === selectedIdx ? ' selected' : '');
-      b.innerHTML = '<span>' + item.label + '</span><span class="hl-tag-pill">' + item.meta + '</span>';
+      b.innerHTML = '<span>' + (item.labelHtml || esc(item.label)) + '</span><span class="hl-tag-pill">' + (item.metaHtml || esc(item.meta)) + '</span>';
       b.addEventListener('click', function () { closeCmd(); item.action(); });
       li.appendChild(b);
       resultsEl.appendChild(li);
@@ -313,17 +385,27 @@
     }
   }
 
+  /* 2026-11-23：#hlCmdOverlay 是 <dialog>。.open 类继续保留 —— 淡入淡出的 CSS（第 60 段）
+     和 :not(.open) 的点击穿透都挂在它上面。不支持 showModal 的旧浏览器只靠这个类显示。 */
+  var hasModal = typeof overlay.showModal === 'function';
+
   function openCmd() {
     overlay.classList.add('open');
+    if (hasModal && !overlay.open) overlay.showModal();
     input.value = '';
     selectedIdx = 0;
+    if (!indexCache) renderLoading();
     loadIndex().then(renderCmd);
     setTimeout(function () { input.focus(); }, 20);
   }
 
   function closeCmd() {
     overlay.classList.remove('open');
+    if (hasModal && overlay.open) overlay.close();
   }
+
+  /* Esc 由 <dialog> 原生处理（不走下面的 keydown），这里把 .open 类同步掉。 */
+  overlay.addEventListener('close', function () { overlay.classList.remove('open'); });
 
   overlay.addEventListener('click', function (e) { if (e.target === overlay) closeCmd(); });
   input.addEventListener('input', function () { selectedIdx = 0; loadIndex().then(renderCmd); });

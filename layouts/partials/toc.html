@@ -1,0 +1,15 @@
+{{- /* 站点层覆盖：themes/hugo-bearneo/layouts/partials/toc.html（2026-11-23）
+       标记与上游逐字一致（toc-anchors.html 会对这段输出做字符串替换，别改写法）；
+       只是去掉了上游内联的那段 <script>：
+         · 上游在每一帧滚动里对每个标题调 getBoundingClientRect()，长文（最多 32 个标题）
+           在低端手机上会掉帧；
+         · 每篇文章都内联约 1.6 KB、不能缓存。
+       当前节高亮改在 assets/js/toc.js 里用 IntersectionObserver 做（只在标题跨过阅读线时才算）。
+       另一处变化：点目录不再 preventDefault + scrollIntoView，而是走原生锚点跳转 ——
+       地址栏会带上 #章节（可以直接复制分享），标题也会触发第 65 段的 :target 高亮；
+       平滑滚动与上方留白由 custom.css 第 17 / 63 段负责。 */ -}}
+{{ if and .TableOfContents (ne .TableOfContents "<nav id=\"TableOfContents\"></nav>") }}
+<aside class="toc-nav" role="navigation" aria-label="目录">
+  {{ .TableOfContents }}
+</aside>
+{{ end }}

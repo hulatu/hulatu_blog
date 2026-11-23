@@ -1,9 +1,11 @@
 <!-- hulatu.com 全局 / 搜索面板（脚本在 assets/js/palette.js） -->
-<div class="hl-cmd-overlay" id="hlCmdOverlay" role="dialog" aria-modal="true" aria-label="站内快捷搜索">
+{{- /* 2026-11-23：外层改成原生 <dialog>（palette.js 用 showModal 打开）。焦点自动困在面板里、
+       背后页面自动 inert、Esc 关闭都由浏览器负责。整块仍是满屏遮罩，点遮罩空白处关闭。 */ -}}
+<dialog class="hl-cmd-overlay" id="hlCmdOverlay" aria-label="站内快捷搜索">
   <div class="hl-cmd-dialog">
     <div class="hl-cmd-input-wrap">
       <span class="hl-mono" style="color: var(--hl-mute);">/</span>
-      <input class="hl-cmd-input" id="hlCmdInput" type="text" placeholder="搜索文章、周刊、工具..." autocomplete="off">
+      <input class="hl-cmd-input" id="hlCmdInput" type="search" placeholder="搜索文章、周刊、工具..." autocomplete="off" enterkeyhint="go" autofocus>
       <span class="hl-kbd">ESC</span>
     </div>
     <ul class="hl-cmd-results" id="hlCmdResults"></ul>
@@ -12,7 +14,7 @@
       <span>按 / 或 ⌘K 随时唤起</span>
     </div>
   </div>
-</div>
+</dialog>
 
 {{- /* 面板与深浅色切换的脚本 2026-11-22 起在 assets/js/palette.js，
        由 custom_head.html 拼进 /js/site.min.<hash>.js（defer、长缓存）。

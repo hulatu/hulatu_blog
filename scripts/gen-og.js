@@ -32,6 +32,12 @@
  *   NODE_PATH=<node_modules> node scripts/gen-og.js
  *   NODE_PATH=... node scripts/gen-og.js --limit=3      # 只生成前 3 张，调试用
  *   NODE_PATH=... node scripts/gen-og.js --only=<slug>  # 只生成某一篇
+ *   NODE_PATH=... node scripts/gen-og.js --force        # 全部重画（忽略缓存）
+ *
+ * 2026-11-23：增量生成。每张卡的 SVG 原文算一个 sha1，记在 resources/og-cache.json
+ * （resources/ 已在 .gitignore 里，纯本机缓存）。SVG 原文由标题、日期、slug 和
+ * 本文件里的设计 token / 版式共同决定，所以**改了版式会自动全部重画**，不用手动 --force；
+ * 只有标题和日期都没变、PNG 也还在的文章会被跳过。换电脑 / 删了 resources/ 就是全量重画。
  *
  * 输出：static/images/og/<slug>.png
  * 用 slug 而不是文件名做图名 —— 文件名里有「：」「！」「+」「，」这类字符，
@@ -42,6 +48,7 @@
  */
 
 const { execFileSync } = require('child_process');
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -56,6 +63,9 @@ try {
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT_DIR = path.join(ROOT, 'static', 'images', 'og');
+const CACHE_FILE = path.join(ROOT, 'resources', 'og-cache.json');
+/* sharp 的输出参数也参与缓存键：改了压缩方式要重画。 */
+const PNG_OPTS = { compressionLevel: 9, palette: true };
 
 /* ── 设计 token（与 themes/hugo-bearneo/layouts/partials/style.html 的 :root 一一对应）── */
 const PAPER = '#fdfdfd';
@@ -223,6 +233,7 @@ function loadArticles() {
 async function main() {
   const args = process.argv.slice(2);
   const only = (args.find((a) => a.startsWith('--only=')) || '').slice(7);
+  const force = args.includes('--force');
   const limitArg = args.find((a) => a.startsWith('--limit='));
   const limit = limitArg ? Number(limitArg.slice(8)) : 0;
 
@@ -236,6 +247,12 @@ async function main() {
   }
 
   fs.mkdirSync(OUT_DIR, { recursive: true });
+
+  let cache = {};
+  if (!force) {
+    try { cache = JSON.parse(fs.readFileSync(CACHE_FILE, 'utf8')); } catch (e) { cache = {}; }
+  }
+  let skipped = 0;
 
   const t0 = Date.now();
   let total = 0;
@@ -251,6 +268,11 @@ async function main() {
     }
     const svg = ogSvg(a);
     const out = path.join(OUT_DIR, `${a.slug}.png`);
+    const key = crypto.createHash('sha1').update(svg).update(JSON.stringify(PNG_OPTS)).digest('hex');
+    if (cache[a.slug] === key && fs.existsSync(out)) {
+      skipped++;
+      continue;
+    }
     /* ⚠️ 这里**不能**传 { density: 96 }。sharp 对 SVG 输入会按 density/72
        缩放画布 —— 96 会让 1200×630 变成 1600×840（踩过：图是生成了，
        但尺寸不是 OG 图的标准值，而且白白多占 78% 的像素）。
@@ -259,14 +281,23 @@ async function main() {
        palette: true 走 8 位调色板 PNG：这张图只有「白底 + 黑字 + 一点蓝」，
        量化后 45KB → 24KB 左右，肉眼无差别（纯色底 + 抗锯齿文字是量化的最佳场景）。 */
     const info = await sharp(Buffer.from(svg))
-      .png({ compressionLevel: 9, palette: true })
+      .png(PNG_OPTS)
       .toFile(out);
+    cache[a.slug] = key;
     total += info.size;
     if (!sizeSeen) sizeSeen = `${info.width}×${info.height}`;
   }
 
   const ms = Date.now() - t0;
-  console.log(`生成 ${arts.length - bad.length} 张，尺寸 ${sizeSeen}，共 ${(total / 1024 / 1024).toFixed(2)} MB，用时 ${ms} ms`);
+  /* 只在全量清单时写缓存；--only / --limit 是调试用，部分结果合并进去也安全（按 slug 存）。 */
+  try {
+    fs.mkdirSync(path.dirname(CACHE_FILE), { recursive: true });
+    fs.writeFileSync(CACHE_FILE, JSON.stringify(cache, null, 0));
+  } catch (e) {
+    console.warn('写缓存失败（不影响这次生成）：', e.message);
+  }
+  const made = arts.length - bad.length - skipped;
+  console.log(`生成 ${made} 张${skipped ? `，未变跳过 ${skipped} 张` : ''}${made ? `，尺寸 ${sizeSeen || '—'}，共 ${(total / 1024 / 1024).toFixed(2)} MB` : ''}，用时 ${ms} ms`);
   console.log(`输出目录：${path.relative(ROOT, OUT_DIR)}`);
   if (bad.length) {
     console.log(`\n⚠️  ${bad.length} 篇没有英文 slug，已跳过（图名会带中文，进 URL 要转义）：`);

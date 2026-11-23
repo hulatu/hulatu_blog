@@ -201,6 +201,8 @@ hugo new content/posts/文章名.md           # 周刊：hugo new content/weekly
 | `tags` | 标签行 + 归档页标签云 |
 | `categories` | 文章面包屑的第三段 + `/categories/<词>/` 词条页。周刊也写 `["周刊"]`（词条页要用），只是面包屑模板对周刊跳过这一段（分类名与栏目名重复） |
 
+**提示框**：引用块第一行写 `[!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]`，类型后面可以跟自定义标题（`> [!WARNING] 先看这里`）。不写就是普通引用。样例见 `/style/`。
+
 日常一条命令：
 
 ```bash

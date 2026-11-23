@@ -13,10 +13,16 @@
        ⚠️ 2026-11-20 第三版：用户要求「只显示邮箱号码、一个复制按钮」，
           卡片里的「邮箱」标签、提示行、触屏的「打开邮件」入口全部删除。
           现在 `.hello-card` 里只有这一颗按钮，别再往里加装饰元素。 */ -}}
+{{- /* 2026-11-23：
+       · subject（可选）：点触发词拉起邮件客户端时带上主题，比如 /roll/ 的「友链申请」；复制按钮仍只复制邮箱。
+       · 触发词前后的空白收掉：原来 `</a>` 后面的换行会在「写信给我」和紧跟的「，」之间留一个空格，
+         页脚「问候，」同理。卡片本身是绝对定位，收掉空白不影响它的位置。 */ -}}
 {{- $email := .email -}}
 {{- $text := .text | default "打个招呼" -}}
+{{- $href := printf "mailto:%s" $email -}}
+{{- with .subject }}{{ $href = printf "%s?subject=%s" $href (urlquery .) }}{{ end -}}
 <span class="hello">
-  <a class="hello-link" href="mailto:{{ $email }}">{{ $text }}</a>
+  <a class="hello-link" href="{{ $href }}">{{ $text }}</a>{{- "" -}}
   <span class="hello-card">
     <button type="button" class="hello-copy" data-email="{{ $email }}" aria-label="复制邮箱地址 {{ $email }}">
       <span class="hello-text">
@@ -28,5 +34,5 @@
         <svg class="hello-icon hello-icon-check" width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 8.5 3.5 3.5 7-8"></path></svg>
       </span>
     </button>
-  </span>
+  </span>{{- "" -}}
 </span>

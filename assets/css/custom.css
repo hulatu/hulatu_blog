@@ -29,8 +29,10 @@
 
   /* 390px 是 iPhone 12–15 的常见 CSS 视口宽。7 项导航在 8px 间距下
      刚好超过内容宽 0.5px，只剩 RSS 单独折到第二行；6px 能让它保持一行。
-     更窄的 375 / 360 仍会自然折行，不强行压缩字号或内容宽度。 */
-  @media (max-width: 400px) {
+     更窄的 375 / 360 仍会自然折行，不强行压缩字号或内容宽度。
+     2026-11-23：断点由 400 并到 480（全站断点收成 480 / 800 / 1200 三档）；
+     400–480 之间也用 6px，差 2px，看不出来。 */
+  @media (max-width: 480px) {
     header nav {
       column-gap: 6px;
     }
@@ -85,6 +87,43 @@
     font-size: 30px;
     font-weight: bold;
     margin: 16px 0;
+  }
+
+  /*
+  00e 页头工具按钮与导航的触屏细节（2026-11-23）
+  ⚠️ 按钮仍跟在导航链接后面（partials/nav.html）。同日试过「站名 + 按钮一行、导航一行」
+     的两行页头，用户要求恢复原布局 —— 别再把按钮挪到站名行。
+  */
+  /* 手机没有键盘，「搜索 /」里的 `/` 提示没有意义，按钮也能窄一点。
+     ⚠️ 只限页头按钮里的 .hl-kbd —— 命令面板里的「ESC」也是这个类，别一起藏。 */
+  @media (hover: none) and (pointer: coarse) {
+    .hl-ctrl-btn .hl-kbd {
+      display: none;
+    }
+  }
+
+  /* 触控命中区：外观不变，用透明 ::after 把可点范围撑到约 44px 高
+     （与第 19 段标题锚点同一个做法）。
+     · 工具按钮 28px → 上下各 8px；两个按钮间距 6px，左右各 3px 正好接上、不重叠。
+     · 导航链接 ≤480px 已有上下 6px padding（约 36px）→ 再各 4px；
+       横向各 3px，导航最小间距 6px，同样不重叠。
+     ⚠️ 只在 pointer: coarse 生效：鼠标用户不需要，也避免影响桌面端的 hover 范围。 */
+  @media (pointer: coarse) {
+    .hl-ctrl-btn,
+    header nav a {
+      position: relative;
+    }
+
+    .hl-ctrl-btn::after,
+    header nav a::after {
+      content: "";
+      position: absolute;
+      inset: -8px -3px;
+    }
+
+    header nav a::after {
+      inset: -4px -3px;
+    }
   }
   /*
   01 字体：上游只有 `Verdana, sans-serif`，中文全靠浏览器兜底。
@@ -1004,9 +1043,9 @@
     margin: 0.5rem 0 0.35rem;
   }
 
+  /* 2026-11-23：说明句跟正文同色（原来二级灰）。 */
   .notfound-text {
     margin: 0 0 1.2rem;
-    color: var(--text-color-secondary);
   }
 
   .notfound-actions {
@@ -1083,7 +1122,7 @@
 
   /* 窄屏收成一列：两列在 352px 内容宽下每列只剩 140px，「全部文章，按年月翻阅」
      这种说明会折成两三行，反而不如一行一个清楚。 */
-  @media (max-width: 600px) {
+  @media (max-width: 800px) {
     .notfound-links {
       grid-template-columns: 1fr;
     }
@@ -1483,6 +1522,8 @@
   */
   .chart {
     display: flex;
+    /* 2026-11-23：模板里月份是新 → 旧输出，这里反过来排，滚动起点落在右端（最新的月份）。 */
+    flex-direction: row-reverse;
     align-items: flex-end;
     gap: 4px;
     height: 200px;
@@ -1583,7 +1624,7 @@
     font-size: 0.82rem;
   }
 
-  @media (max-width: 700px) {
+  @media (max-width: 800px) {
     .run-year summary {
       align-items: flex-start;
       flex-direction: column;
@@ -1596,9 +1637,10 @@
   }
 
   /*
-  26 六项小修：input 字号 16px、`color-scheme: light dark`、TOC 的 `100vw`→`100%`、
-  图片放大 overlay 只画背景、checkbox 可聚焦、`padding: 5vh 5vw`。
-  ⚠️ 图片放大的 checkbox 必须带 `display`，否则主题的 `display:none` 会留下、无法聚焦。
+  26 小修：input 字号 16px、`color-scheme: light dark`、TOC 的 `100vw`→`100%`。
+  2026-11-23：原来这里还有图片放大 checkbox 的三条规则，放大改成 Popover 后删掉了，
+  新样式在第 68 段。主题 theme.css 里那批 `.image-zoom-toggle:checked ~ …` 规则
+  不再命中任何元素，留在上游副本里无害（主题文件不改）。
   */
   input {
     font-size: 16px;
@@ -1612,34 +1654,6 @@
     left: calc((100% + var(--width-max)) / 2);
     width: calc((90% - var(--width-max)) / 2);
     max-height: 80dvh;
-  }
-
-  .image-zoom-toggle {
-    /* ⚠️ 这条必须带上 `display`：只写定位会让主题的 `display: none` 留下来，
-       checkbox 照旧不可聚焦（也就是这次修改要修的那件事）。
-       absolute + 1px + opacity:0 = 经典「可聚焦但不可见」。 */
-    display: block;
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    margin: 0;
-    padding: 0;
-    border: 0;
-    opacity: 0;
-    pointer-events: none;
-  }
-
-  .image-zoom-toggle:focus-visible ~ .image-zoom-label {
-    outline: 2px solid var(--link-color);
-    outline-offset: 2px;
-  }
-
-  .image-zoom-toggle:checked ~ .image-zoom-overlay {
-    padding: 5vh 5vw;
-    background-image: var(--zoom-src);
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
   }
 
   /*
@@ -1983,9 +1997,20 @@
   /* 2026-11-22：正文改用升级包最深的 ink（浅色 #111315 / 深色 #F3F4F6）。
      升级包只把 `h1–h4 / strong` 设成 ink，`body` 是 ink-2（#374151 / #C8CDD6），
      用户反馈文章正文偏淡。这里只提深阅读区，页眉、页脚、日期等仍保持 ink-2，
-     层级不被拉平。⚠️ 用 `content` 而不是 `body`，别把整站一起改重。 */
-  content {
+     层级不被拉平。⚠️ 用 `content` 而不是 `body`，别把整站一起改重。
+     2026-11-23：用户要求邻居页和其他页面的文字颜色与文章页一致 ——
+       · 加上 `main`：首页的问候 / 简介和 404 页的正文不在 <content> 里，原来是 ink-2；
+         页眉、页脚仍在 main 外面，保持 ink-2。文章页 main 里 content 外的元信息
+         （面包屑、日期行、副标题、相关文章）都有自己的颜色，不受影响。
+       · 引用块统一成文章页的二级灰：升级包给 blockquote 的是 --hl-mute（更浅），
+         只有长文页被第 39-b 段改成了二级灰，首页 / 关于 / 隐私等页的引用一直更淡。 */
+  content,
+  main {
     color: var(--hl-ink);
+  }
+
+  main blockquote {
+    color: var(--text-color-secondary);
   }
 
   /*
@@ -2045,7 +2070,8 @@
   content.long-form blockquote {
     position: relative;
     overflow: hidden;
-    padding: 1.05em 1.2em 1.05em 3.2em;
+    /* 2026-11-23：大引号 5em → 2em，左内边距 3.2em → 2.4em 跟着收。 */
+    padding: 1.05em 1.2em 1.05em 2.4em;
     border-left: 3px solid var(--link-color);
     border-radius: 0 4px 4px 0;
     background: #eef4fd;
@@ -2055,10 +2081,11 @@
   content.long-form blockquote::before {
     content: "“";
     position: absolute;
-    left: 0.08em;
-    top: 0;
+    /* left / top 以引号自身字号（2em）为单位：墨迹约落在第一行文字的高度上。 */
+    left: 0.3em;
+    top: 0.45em;
     font-family: Georgia, "Times New Roman", serif;
-    font-size: 5em;
+    font-size: 2em;
     font-weight: 700;
     line-height: 1;
     color: var(--link-color);
@@ -2086,8 +2113,7 @@
     }
 
     content.long-form blockquote::before {
-      left: 0.06em;
-      font-size: 3.6em;
+      left: 0.2em;
     }
   }
 
@@ -3190,7 +3216,7 @@
     }
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 800px) {
     .stats-grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));
       gap: 1.1rem 0;
@@ -3239,6 +3265,22 @@
   content .hello:hover .hello-card,
   content .hello:focus-within .hello-card,
   content .hello.is-open .hello-card {
+    transform: translate(0, 0) scale(1);
+  }
+
+  /* 评论区「写信」（2026-11-23）：这一行贴着正文右边缘，卡片改成右对齐、从右下角展开。
+     居中的话会伸出正文右边约 80px，被 main 的 overflow-x: clip 裁掉。 */
+  .giscus-hint .hello-card {
+    left: auto;
+    right: 0;
+    transform: translate(0, 5px) scale(0.98);
+    transform-origin: 100% 100%;
+    text-align: left;
+  }
+
+  .giscus-hint .hello:hover .hello-card,
+  .giscus-hint .hello:focus-within .hello-card,
+  .giscus-hint .hello.is-open .hello-card {
     transform: translate(0, 0) scale(1);
   }
 
@@ -3334,17 +3376,17 @@
     }
   
 
-  @media (max-width: 640px) {
+  @media (max-width: 800px) {
     .latest-weekly {
       padding: 0.85rem 0.9rem;
     }
   }
 
+  /* 2026-11-23：导读是正文，跟正文同色（原来二级灰）。 */
   .featured-intro {
     margin: 0 0 1.6rem;
     font-size: 1.02rem;
     line-height: 1.7;
-    color: var(--text-color-secondary);
   }
 
   .featured-group {
@@ -3385,7 +3427,7 @@
     color: var(--text-color-secondary);
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 800px) {
     .latest-weekly {
       padding-left: 0.8rem;
     }
@@ -3411,8 +3453,10 @@
   ⚠️ 2026-11-21 晚按用户要求「不要有那么多分割线」：分组标签没有延长线、
      朋友 / 组织列表没有逐行横线、信息块没有外边框和内部横线。
   */
+  /* 2026-11-23：用户要求邻居页文字颜色与文章页一致 —— 导语、朋友 / 组织点评、
+     交友原则、友链信息四处原来都是二级灰，现在都继承 content 的正文色（第 39 段）；
+     站名链接从正文黑改成链接蓝（与文章里的链接同色），粗细不变。 */
   .roll-page content > p:first-of-type {
-    color: var(--text-color-secondary);
     font-size: 1.02em;
   }
 
@@ -3432,20 +3476,17 @@
   .roll-page content > ul:nth-of-type(1) li,
   .roll-page content > ul:nth-of-type(2) li {
     padding: 0.5rem 0;
-    color: var(--text-color-secondary);
     line-height: 1.65;
   }
 
   .roll-page content > ul:nth-of-type(1) li > a,
   .roll-page content > ul:nth-of-type(2) li > a {
-    color: var(--text-color-primary);
     font-weight: 600;
     text-decoration: none;
   }
 
   .roll-page content > ul:nth-of-type(1) li > a:hover,
   .roll-page content > ul:nth-of-type(2) li > a:hover {
-    color: var(--link-color);
     text-decoration: underline;
     text-underline-offset: 3px;
   }
@@ -3465,7 +3506,6 @@
     position: relative;
     margin: 0 0 0.95rem;
     padding-left: 1.3em;
-    color: var(--text-color-secondary);
     line-height: 1.65;
   }
 
@@ -3498,7 +3538,6 @@
 
   .roll-page content > ul:nth-of-type(4) li {
     padding: 7px 0;
-    color: var(--text-color-secondary);
     line-height: 1.6;
   }
 
@@ -3506,7 +3545,7 @@
     font-size: 0.92em;
   }
 
-  @media (max-width: 600px) {
+  @media (max-width: 800px) {
     .roll-page .roll-group {
       margin-top: 2rem;
     }
@@ -3675,3 +3714,657 @@
 :root:not([data-theme="dark"]) #hlThemeIcon .hl-i-sun {
   display: none;
 }
+
+/*
+  60 弹层淡入：图片放大 + 搜索面板（2026-11-23）
+  两者原来都是 display: none ↔ flex 直接切换，站里其他交互都有过渡，这两处显得生硬。
+  用 @starting-style 给「从 display:none 出现」的那一帧一个起点，零 JS。
+  · 不支持 @starting-style 的浏览器：照旧瞬间出现 / 消失，不会出错（不会卡在透明）。
+  · prefers-reduced-motion: reduce 时整段不生效。
+
+  图片放大的动效 2026-11-23 起在第 68 段（改成 Popover 之后淡入淡出都能做了）。
+  搜索面板 2026-11-23 起是 <dialog>：transition 里多了 `overlay`，否则 close() 那一刻
+  它就被移出顶层，淡出来不及播。
+
+  搜索面板淡入淡出都做：关闭时靠 transition-behavior: allow-discrete 让 display:none
+  等透明度走完再生效；这期间面板不能再挡住点击（:not(.open) 关掉 pointer-events）。
+  */
+  .hl-cmd-overlay:not(.open) {
+    pointer-events: none;
+  }
+
+  /* 面板里点「切换深浅色」时，圆形绽开的快照不能把正在淡出的面板一起拍进去：
+     .hl-vt-theme 只在那次切换期间挂在 <html> 上（palette.js），这时直接收起。 */
+  html.hl-vt-theme .hl-cmd-overlay:not(.open) {
+    display: none;
+    transition: none;
+  }
+
+  /* <dialog> 的 UA 样式（居中小框、边框、白底、max-width）全部拆掉，
+     让它和原来的 div 一样是满屏遮罩；遮罩颜色仍由 upgrade.css 的 .hl-cmd-overlay 给。 */
+  dialog.hl-cmd-overlay {
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    color: inherit;
+    overflow: hidden;
+  }
+
+  dialog.hl-cmd-overlay::backdrop {
+    background: transparent;
+  }
+
+  /* type=search 的浏览器自带清除按钮 / 圆角样式去掉，外观与原来的 text 一致。 */
+  .hl-cmd-input {
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .hl-cmd-input::-webkit-search-cancel-button {
+    display: none;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hl-cmd-overlay {
+      opacity: 0;
+      transition-property: opacity, display, overlay;
+      transition-duration: 0.16s;
+      transition-timing-function: ease;
+      transition-behavior: allow-discrete;
+    }
+
+    .hl-cmd-overlay.open {
+      opacity: 1;
+    }
+
+    .hl-cmd-dialog {
+      transform: translateY(-6px) scale(0.98);
+      transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .hl-cmd-overlay.open .hl-cmd-dialog {
+      transform: none;
+    }
+
+    @starting-style {
+      .hl-cmd-overlay.open {
+        opacity: 0;
+      }
+
+      .hl-cmd-overlay.open .hl-cmd-dialog {
+        transform: translateY(-6px) scale(0.98);
+      }
+    }
+  }
+
+/*
+  61 提示框：`> [!NOTE]` / TIP / IMPORTANT / WARNING / CAUTION（2026-11-23）
+  标记由 layouts/_default/_markup/render-blockquote.html 输出：
+    <blockquote class="callout callout-warning" role="note"><p class="callout-title"><b>注意</b></p>…
+  ⚠️ 选择器用 `:is(content, content.long-form) blockquote.callout`，特异性 (0,2,2)：
+     要压过第 39-b 段的长文引用框（大引号、蓝底、左内边距），包括同为 (0,2,2) 的
+     深色底那条 —— 靠**本段在文件更后面**取胜，别把这段挪到 39-b 前面。
+  ⚠️ 颜色只用在左边框和小标题；底色是同色 7% 混进页面底色，深浅色自动跟随。
+     每个标题色对混色底的对比度都 ≥ 4.5:1（2026-11-23 实测最低 5.0：浅色 important）。
+  ⚠️ 不支持 color-mix 的旧浏览器退回次级底色（上一行 background）。
+  */
+  :root {
+    --callout-note: #1d4ed8;
+    --callout-tip: #166534;
+    --callout-important: #7c3aed;
+    --callout-warning: #92400e;
+    --callout-caution: #b91c1c;
+  }
+
+  :root[data-theme="dark"] {
+    --callout-note: #60a5fa;
+    --callout-tip: #4ade80;
+    --callout-important: #c4b5fd;
+    --callout-warning: #fbbf24;
+    --callout-caution: #f87171;
+  }
+
+  :is(content, content.long-form) blockquote.callout {
+    --callout: var(--callout-note);
+    overflow: visible;
+    padding: 0.8em 1.1em;
+    border-left: 3px solid var(--callout);
+    border-radius: 0 4px 4px 0;
+    background: var(--bg-color-secondary);
+    background: color-mix(in srgb, var(--callout) 7%, var(--bg-color-primary));
+    color: var(--text-color-secondary);
+  }
+
+  :is(content, content.long-form) blockquote.callout::before {
+    content: none;
+  }
+
+  blockquote.callout-tip { --callout: var(--callout-tip); }
+  blockquote.callout-important { --callout: var(--callout-important); }
+  blockquote.callout-warning { --callout: var(--callout-warning); }
+  blockquote.callout-caution { --callout: var(--callout-caution); }
+
+  .callout-title {
+    margin: 0;
+    font-size: 0.85em;
+    line-height: 1.5;
+    letter-spacing: 0.02em;
+    color: var(--callout);
+  }
+
+  /* 主题给 b / strong 统一上了正文主色，这里让它跟提示框的颜色走。 */
+  .callout-title b {
+    color: inherit;
+    font-weight: 600;
+  }
+
+  :is(content, content.long-form) blockquote.callout .callout-title + * {
+    margin-top: 0.3em;
+  }
+
+  @media print {
+    :is(content, content.long-form) blockquote.callout {
+      background: none;
+      border-left: 2px solid #000;
+    }
+
+    .callout-title {
+      color: #000;
+    }
+  }
+
+/*
+  62 选中文字用品牌色（2026-11-23）
+  ⚠️ 没用 --hl-accent-soft：那是 8% 透明度，选中范围几乎看不出来。
+     这里浅色 20%、深色 32%，选中后正文对底色仍 ≥ 6.5:1。
+  ⚠️ 只改底色、不改文字色：代码块里的高亮配色在选中时保持原样。
+  */
+  :root {
+    --hl-selection: rgba(29, 78, 216, 0.2);
+  }
+
+  :root[data-theme="dark"] {
+    --hl-selection: rgba(96, 165, 250, 0.32);
+  }
+
+  ::selection {
+    background-color: var(--hl-selection);
+  }
+
+/*
+  63 点目录 / 锚点跳到标题时，上方留一点空（2026-11-23）
+  不留的话标题贴着窗口上沿，顶部 3px 阅读进度条还会压在上面。
+  脚注的留白在第 44 段（`.footnotes li`，1rem），这里不重复。
+  */
+  content :is(h2, h3, h4),
+  content sup[id^="fnref"] {
+    scroll-margin-top: 1.25rem;
+  }
+
+/*
+  64 加载过渡（2026-11-23）
+  ① 正文图片：加载前占位底色，加载完淡入。类由 assets/js/motion.js 第 1 段加，
+     JS 没跑就什么都不藏。只作用于懒加载的图，每篇首图（fetchpriority=high）不碰。
+     ⚠️ 占位底色画在 label 上而不是 img 上：img 透明时自己的背景也跟着透明。
+        所以 label 改成跟图片一样宽（fit-content），窄图的占位也不会比图宽。
+        副作用：窄图两侧的空白不再能点开放大（只有图本身能点），这是有意的。
+  ② 搜索面板第一次打开、索引还没到时的三条占位（palette.js renderLoading）。
+  ③ 评论区：展开时淡入；giscus 自己在 iframe 加载完前把 opacity 设成 0，
+     这里只补一个过渡，让它淡出来而不是跳出来。
+  */
+  .image-zoom-label {
+    width: fit-content;
+    max-width: 100%;
+    margin-inline: auto;
+    border-radius: 4px;
+  }
+
+  /* --ph 是这张图自己的主色（render-image.html 写在 figure 上），没有就用浅灰。 */
+  html.img-fade .image-zoom-label:has(> img.img-wait) {
+    background-color: var(--ph, var(--hl-bg-subtle));
+  }
+
+  /* 搜索结果里命中的那几个字（palette.js 的 markHit）。 */
+  .hl-cmd-item mark {
+    padding: 0 1px;
+    border-radius: 2px;
+    background: color-mix(in srgb, var(--hl-accent) 16%, transparent);
+    color: inherit;
+  }
+
+  .hl-cmd-skel {
+    height: 12px;
+    margin: 12px 10px;
+    border-radius: 4px;
+    background: var(--hl-hair);
+  }
+
+  .hl-cmd-skel:nth-child(2) { width: 72%; }
+  .hl-cmd-skel:nth-child(3) { width: 54%; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    html.img-fade .image-zoom-label {
+      transition: background-color 0.3s ease;
+    }
+
+    html.img-fade .image-zoom-label > img {
+      transition: opacity 0.28s ease, transform 0.3s ease;
+    }
+
+    html.img-fade .image-zoom-label > img.img-wait {
+      opacity: 0;
+    }
+
+    .hl-cmd-skel {
+      animation: hl-skel 1s ease-in-out infinite alternate;
+    }
+
+    .hl-cmd-skel:nth-child(2) { animation-delay: 0.15s; }
+    .hl-cmd-skel:nth-child(3) { animation-delay: 0.3s; }
+
+    @keyframes hl-skel {
+      from { opacity: 0.45; }
+      to { opacity: 1; }
+    }
+
+    .giscus-body {
+      opacity: 0;
+    }
+
+    .giscus-box.is-open .giscus-body {
+      opacity: 1;
+      transition: opacity 0.22s ease;
+    }
+
+    .giscus-frame {
+      transition: opacity 0.25s ease;
+    }
+  }
+
+/*
+  65 交互反馈（2026-11-23）
+  ① 链接变色带 0.15s 过渡（下划线出现与否是离散属性，仍是瞬间）。
+     ⚠️ 深浅色圆形绽开期间关掉：新快照是实时画面，链接会在圆里慢半拍才换色。
+  ② 触屏按压：去掉系统灰色闪块，按下时缩到 0.96。用独立的 `scale` 属性而不是
+     transform —— 返回顶部按钮的出现动画占着 transform，两者会互相覆盖。
+  ③ 跳到标题（目录 / #链接 / 地址带 #）时，标题底色亮一下再褪掉。脚注的 :target 在第 44 段。
+  ④ 折叠块（窄屏目录、跑步页年份、正文 <details>）展开 / 收起带高度动画。
+     Chrome 131+；其他浏览器照旧瞬间展开。评论区那个 details 恒为 open，排除。
+  ⑤ 「# 复制本节链接」的提示条（motion.js 第 2 段创建）。
+  */
+  a {
+    transition: color 0.15s ease, text-decoration-color 0.15s ease;
+  }
+
+  .hl-cmd-item {
+    transition: background-color 0.12s ease, color 0.12s ease;
+  }
+
+  html.hl-vt-theme a {
+    transition: none;
+  }
+
+  @media (hover: none) {
+    .hl-ctrl-btn,
+    .back-top,
+    .code-copy,
+    .giscus-toggle,
+    .hello-copy,
+    .heading-anchor {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .hl-ctrl-btn:active,
+    .back-top:active,
+    .code-copy:active,
+    .giscus-toggle:active,
+    .hello-copy:active {
+      scale: 0.96;
+    }
+  }
+
+  .hl-toast {
+    position: fixed;
+    left: 50%;
+    bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+    z-index: 1100;
+    padding: 0.45em 0.95em;
+    border-radius: 999px;
+    background: var(--hl-ink);
+    color: var(--hl-bg);
+    font-size: 0.82rem;
+    line-height: 1.4;
+    box-shadow: var(--hl-shadow);
+    opacity: 0;
+    transform: translate(-50%, 8px);
+    pointer-events: none;
+  }
+
+  .hl-toast.is-on {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .hl-toast {
+      transition: opacity 0.18s ease, transform 0.18s ease;
+    }
+
+    content :is(h2, h3, h4):target,
+    content sup[id^="fnref"]:target {
+      border-radius: 4px;
+      animation: hl-target-flash 1.4s ease-out;
+    }
+
+    /* 2026-11-23：键盘焦点框出现时从贴边外扩到 3px（第 00d 段的终值），0.14s。
+       用 animation 而不是 transition：各组件自己的 transition 声明会互相覆盖。 */
+    :is(a, button, summary, [tabindex]):focus-visible {
+      animation: hl-focus-in 0.14s ease-out;
+    }
+
+    @keyframes hl-focus-in {
+      from {
+        outline-offset: 0;
+      }
+    }
+
+    @keyframes hl-target-flash {
+      0%,
+      35% {
+        background-color: color-mix(in srgb, var(--link-color) 14%, transparent);
+        box-shadow: 0 0 0 0.3em color-mix(in srgb, var(--link-color) 14%, transparent);
+      }
+
+      100% {
+        background-color: transparent;
+        box-shadow: 0 0 0 0.3em transparent;
+      }
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    a,
+    .hl-cmd-item {
+      transition: none;
+    }
+  }
+
+  @supports selector(::details-content) {
+    @media (prefers-reduced-motion: no-preference) {
+      details {
+        interpolate-size: allow-keywords;
+      }
+
+      details::details-content {
+        block-size: 0;
+        overflow-x: visible;
+        overflow-y: clip;
+        transition: block-size 0.22s ease, content-visibility 0.22s allow-discrete;
+      }
+
+      details[open]::details-content {
+        block-size: auto;
+      }
+
+      /* 评论区恒为 open，折叠由 max-height 自己管（第 07 段）；这里整条撤掉。 */
+      .giscus-box[open]::details-content {
+        overflow: visible;
+        transition: none;
+      }
+    }
+  }
+
+  @media print {
+    .hl-toast {
+      display: none;
+    }
+  }
+
+/*
+  66 图表入场：跑步页月度柱状图 + 关于页 365 天热力图（2026-11-23）
+  第一次进入视口时生长一次；类由 motion.js 第 3 段加（每根柱子的延迟也在那里写）。
+  ⚠️ 打印时直接显示终态：没滚到过的图表在纸上不能是空的。
+  */
+  @media (prefers-reduced-motion: no-preference) {
+    html.chart-anim .month-bar {
+      transform-origin: 50% 100%;
+      transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    html.chart-anim .chart:not(.is-in) .month-bar {
+      transform: scaleY(0);
+    }
+
+    html.chart-anim .heatmap {
+      transition: clip-path 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    html.chart-anim .heatmap-block:not(.is-in) .heatmap {
+      clip-path: inset(0 100% 0 0);
+    }
+  }
+
+  @media print {
+    html.chart-anim .month-bar {
+      transform: none;
+    }
+
+    html.chart-anim .heatmap {
+      clip-path: none;
+    }
+  }
+
+/*
+  67 列表 ↔ 文章的标题过渡（2026-11-23，试行）
+  从文章列表（/ /archive/ /weekly/ /posts/ 分类 / 标签）点进文章时，被点的标题移动、
+  放大到文章 h1 的位置；从文章回到列表时反过来。名字 post-title 只在那一次跳转期间挂上：
+  离开页一侧 motion.js 第 4 段，进入页一侧 custom_head.html 的内联脚本。
+  只在支持跨页 view transition 的浏览器、且没开「减少动态效果」时出现（第 30 段的 @view-transition）。
+  ⚠️ 深浅色圆形绽开期间强制去掉这个名字：否则标题会被单独拍成一层，不跟着圆一起换色。
+  ⚠️ 想关掉整个效果：删 motion.js 第 4 段 + custom_head.html 里 pagereveal 那段，这里留着无害。
+  */
+  html.hl-vt-theme [data-vt-title] {
+    view-transition-name: none !important;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    ::view-transition-group(post-title) {
+      animation-duration: 0.35s;
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+  }
+
+/*
+  68 图片放大：原生 Popover（2026-11-23）
+  标记（render-image.html）：
+    figure[style="--zoom-src:url(原图);--zw:宽;--zh:高"]
+      button.image-zoom-label[popovertarget]   ← 包住正文里的 <img>
+      div.image-zoom-overlay[popover]          ← 顶层满屏，黑底
+        button.image-zoom-close[popovertargetaction=hide][autofocus]   ← 整块都是关闭按钮
+          span.image-zoom-pic                  ← 放大图（背景图，按 --zw/--zh 定比例）
+  · Esc 关闭、读屏「按钮，已展开」、顶层显示、关闭后焦点回到原图：都是 Popover 自带。
+  · 背景图画在弹层里面：弹层关着是 display:none，原图不会被提前下载；
+    关闭时弹层还在（allow-discrete），所以淡出时图还在，不再是「一层空黑幕」。
+  · --zoom-thumb 是 motion.js 第 5 段塞进来的「已经加载好的那张小图」，垫在原图下面，
+    原图还没到时先看到小图，不会空白。没有 JS 时这一层是 none。
+  ⚠️ 主题 theme.css 里 `.image-zoom-overlay { display:none … }` 这条还在（上游副本不改），
+     所以 :popover-open 必须显式写 display，否则弹层打开了也看不见。
+  ⚠️ 别给 .image-zoom-pic 加 border / 圆角：它要和正文缩略图的盒子一致，过渡才对得上。
+  */
+  button.image-zoom-label {
+    -webkit-appearance: none;
+    appearance: none;
+    display: block;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: zoom-in;
+  }
+
+  /* 主题那条 `.image-zoom-label:focus` 会让鼠标点击也画框；只给键盘留着（第 00d 段）。 */
+  .image-zoom-label:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  body:has(.image-zoom-overlay:popover-open) {
+    overflow: hidden;
+  }
+
+  .image-zoom-overlay[popover] {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    overflow: hidden;
+    background: rgba(0, 0, 0, 0.9);
+    color: #fff;
+  }
+
+  .image-zoom-overlay:popover-open {
+    display: block;
+  }
+
+  .image-zoom-close {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 5vh 5vw;
+    border: 0;
+    background: none;
+    cursor: zoom-out;
+  }
+
+  .image-zoom-close:focus-visible {
+    outline: 2px solid #fff;
+    outline-offset: -6px;
+  }
+
+  .image-zoom-pic {
+    display: block;
+    width: 100%;
+    height: 100%;
+    background:
+      var(--zoom-src, none) center / contain no-repeat,
+      var(--zoom-thumb, none) center / contain no-repeat;
+  }
+
+  /* 有原图宽高时按比例定尺寸：最多占满 90vw × 90vh（即 close 按钮的内容盒）。 */
+  .image-zoom-container[style*="--zw"] .image-zoom-pic {
+    width: min(100%, calc(90vh * var(--zw) / var(--zh)));
+    height: auto;
+    aspect-ratio: var(--zw) / var(--zh);
+  }
+
+  /* 右上角 ✕：只是提示，整块都能点关闭，所以不接收点击。 */
+  .image-zoom-overlay::before,
+  .image-zoom-overlay::after {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 1;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    pointer-events: none;
+  }
+
+  .image-zoom-overlay::before {
+    content: "";
+    background: rgba(255, 255, 255, 0.9);
+  }
+
+  .image-zoom-overlay::after {
+    content: "✕";
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    font-weight: 700;
+    color: #000;
+  }
+
+  @media (max-width: 800px) {
+    .image-zoom-overlay::before,
+    .image-zoom-overlay::after {
+      top: 10px;
+      right: 10px;
+      width: 28px;
+      height: 28px;
+      font-size: 16px;
+    }
+  }
+
+  /* 不支持跨元素过渡（或没有 JS）时：淡入淡出 + 图片 0.98 → 1。
+     有 View Transitions 时由 motion.js 接管成「从原图位置长出来」，期间 <html> 挂 .hl-vt-zoom，
+     这里的过渡必须关掉 —— 否则新快照拍到的是 opacity:0 的那一帧，放大图会是空的。 */
+  @media (prefers-reduced-motion: no-preference) {
+    .image-zoom-overlay[popover] {
+      opacity: 0;
+      transition: opacity 0.18s ease, display 0.18s allow-discrete, overlay 0.18s allow-discrete;
+    }
+
+    .image-zoom-overlay:popover-open {
+      opacity: 1;
+    }
+
+    .image-zoom-pic {
+      scale: 0.98;
+      transition: scale 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+
+    .image-zoom-overlay:popover-open .image-zoom-pic {
+      scale: 1;
+    }
+
+    @starting-style {
+      .image-zoom-overlay:popover-open {
+        opacity: 0;
+      }
+
+      .image-zoom-overlay:popover-open .image-zoom-pic {
+        scale: 0.98;
+      }
+    }
+
+    html.hl-vt-zoom .image-zoom-overlay[popover],
+    html.hl-vt-zoom .image-zoom-pic {
+      transition: none;
+    }
+
+    html.hl-vt-zoom .image-zoom-overlay[popover] {
+      opacity: 1;
+    }
+
+    html.hl-vt-zoom .image-zoom-pic {
+      scale: 1;
+    }
+
+    ::view-transition-group(zoom-img) {
+      animation-duration: 0.32s;
+      animation-timing-function: cubic-bezier(0.2, 0.8, 0.2, 1);
+    }
+  }
+
+  @media print {
+    .image-zoom-overlay {
+      display: none !important;
+    }
+  }

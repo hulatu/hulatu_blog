@@ -1,6 +1,6 @@
 {{- /* 正文里的邮箱浮层（2026-11-21）
        —— 把页脚「打个招呼」那套邮箱卡片复用到正文。当前调用点是
-          content/about.md 的「联系我」一节，shortcode 名是 mail-link。
+          content/about.md 的「联系我」一节和 content/roll.md 的「交友原则」末尾，shortcode 名是 mail-link。
 
        参数与 partials/hello.html 一致：text（触发词）、email（默认取
        site.Params.Author.email）。标记、样式、脚本都不在这里重复，
@@ -13,4 +13,6 @@
           页脚居中没问题，正文列表里居中会在窄屏溢出左边。 */ -}}
 {{- $text := .Get "text" | default "写信" -}}
 {{- $email := .Get "email" | default site.Params.Author.email -}}
-{{- partial "hello.html" (dict "text" $text "email" $email) -}}
+{{- /* subject：可选，点触发词时邮件主题（2026-11-23，/roll/ 的「友链申请」在用）。 */ -}}
+{{- $subject := .Get "subject" | default "" -}}
+{{- partial "hello.html" (dict "text" $text "email" $email "subject" $subject) -}}

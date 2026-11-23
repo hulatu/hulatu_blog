@@ -149,8 +149,11 @@
 
   <h2>月度里程</h2>
   {{ if $monthly }}
+    {{- /* 2026-11-23：月份倒序输出 + CSS `flex-direction: row-reverse`（第 25 段）——
+           视觉上仍是旧 → 新、从左到右，但滚动起点在右端，一进页面就看到最近的月份。
+           原来靠一段内联 JS 把 scrollLeft 推到最右，已删。 */ -}}
     <div class="chart" role="img" aria-label="每月跑步距离">
-      {{ range $m := $monthly }}
+      {{ range $m := sort $monthly "month" "desc" }}
         {{- $distance := float (index $m "distance_km") -}}
         {{- $height := 0 -}}
         {{- if gt $maxDistance 0.0 }}{{ $height = math.Round (math.Mul (math.Div $distance $maxDistance) 100.0) }}{{ end -}}
@@ -162,24 +165,8 @@
         </div>
       {{ end }}
     </div>
-    {{- /* 2026-10-26：手机上柱状图必然横向溢出，而滚动条初始停在**最左**
-           （= 最早的 2025-05），最新的那个月藏在右边、一进页面看不见 ——
-           这一页讲的却是「现在跑得怎么样」。这里把滚动位置推到最右端。
-           桌面端 15 个月已经排得下（`.month` 最小 38px，见 custom_head 第 25 段），
-           没有溢出时 `scrollLeft` 赋值是空操作。
-           顺手给「真的能滚」的情况补 `tabindex`，让键盘也能滚（WCAG 2.1.1）；
-           不溢出就不加，免得桌面上白多一个 Tab 停靠点。 */ -}}
-    <script>
-    (function () {
-      var c = document.querySelector('.chart');
-      if (!c) return;
-      c.scrollLeft = c.scrollWidth;
-      requestAnimationFrame(function () {
-        c.scrollLeft = c.scrollWidth;
-        if (c.scrollWidth > c.clientWidth) c.tabIndex = 0;
-      });
-    })();
-    </script>
+    {{- /* 可键盘滚动（tabindex）由 assets/js/motion.js 第 3 段补：只在真的能滚时才加，
+           桌面端不多一个 Tab 停靠点（WCAG 2.1.1）。 */ -}}
   {{ else }}
     <p>还没有跑步记录。</p>
   {{ end }}

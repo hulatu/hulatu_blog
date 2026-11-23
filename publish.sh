@@ -83,6 +83,11 @@ if [ -n "$PYTHON_BIN" ]; then
   if ! "$PYTHON_BIN" scripts/sync-image-dims.py; then
     echo "    !! 图片尺寸同步失败（可能断网），这次新加的图会缺 width/height（不影响发布）" >&2
   fi
+  # 新图的主色（2026-11-23）：图片加载前的占位块用这张图自己的颜色。读上一步的尺寸表，
+  #     只补缺的；要联网 + macOS 自带的 sips，任何一样没有就跳过（占位退回浅灰）。
+  if ! "$PYTHON_BIN" scripts/sync-image-colors.py; then
+    echo "    !! 图片主色同步失败（可能断网），这次新加的图占位是浅灰（不影响发布）" >&2
+  fi
   # 把篇数 / 文件数 / 体积写进 README 与 MAINTENANCE 第 0 节的自动区块（2026-11-22）。
   #     文档里不再手写这些数字 —— 以前三份文档各写一个版本，互相矛盾。
   #     构建统计读上一次 ./deploy.sh 的 public/；只写文档，不碰 content/。

@@ -94,8 +94,12 @@
       {{- end }}
       {{- /* description 是纯文本摘要；plainify 后必须 htmlUnescape。 */ -}}
       <description>{{ .Summary | plainify | htmlUnescape }}</description>
-      {{- /* 全文：XMLEscape 后必须 safeHTML，否则被再转义一层。 */ -}}
-      <content:encoded>{{ .Content | transform.XMLEscape | safeHTML }}</content:encoded>
+      {{- /* 全文：XMLEscape 后必须 safeHTML，否则被再转义一层。
+             2026-11-23：图片放大改成 <button popovertarget> + <div popover> 之后，先把这两样
+             从 feed 里拆掉 —— 不少阅读器会把 <button> 连同里面的 <img> 一起过滤，图就没了。
+             ⚠️ 两条正则跟着 render-image.html 的输出写，改那边的标记要同步这里。 */ -}}
+      {{- $html := .Content | replaceRE `(?s)<div popover[^>]*class="image-zoom-overlay"[^>]*>.*?</div>` "" | replaceRE `<button type="button" class="image-zoom-label"[^>]*>(<img [^>]*>)</button>` "$1" -}}
+      <content:encoded>{{ $html | transform.XMLEscape | safeHTML }}</content:encoded>
     </item>
     {{- end }}
   </channel>

@@ -79,6 +79,20 @@ def _token_text_indicates_cn(token_text: str) -> bool:
     return False
 
 
+def token_expiry_note(token_text: str) -> str:
+    """只读令牌里访问令牌的过期时间（JWT 的 exp），用于日志诊断；不输出任何令牌内容。"""
+    try:
+        data = json.loads(token_text)
+        part = (data.get("di_token") or "").split(".")[1]
+        part += "=" * (-len(part) % 4)
+        exp = json.loads(base64.urlsafe_b64decode(part)).get("exp")
+        when = datetime.fromtimestamp(float(exp), TZ)
+        state = "已过期，需要用 refresh token 续期" if when < datetime.now(TZ) else "仍有效"
+        return f"Secret 里的访问令牌有效期至 {when:%Y-%m-%d %H:%M}（台北时间），{state}"
+    except Exception:
+        return "无法从令牌里读出有效期"
+
+
 def load_existing() -> dict:
     if not DATA_FILE.exists():
         return {"updated": "", "activities": []}
@@ -395,6 +409,8 @@ def main() -> None:
     # 2026-11-22：令牌登录失败时隔 90 秒再试一次。Garmin 的接口偶尔连续拒绝几次
     # （实测：同一个令牌 22:38 成功、23:09 失败），多数是临时限流，不是令牌坏了。
     # 账号密码登录不重试 —— 连续输错密码可能触发账号锁定。
+    if tokens and not use_local_store:
+        print(token_expiry_note(tokens))
     attempts = 2 if (use_local_store or tokens) else 1
     client = None
     for attempt in range(1, attempts + 1):
@@ -429,6 +445,28 @@ def main() -> None:
         activities = client.get_activities(0, limit)
     except Exception as exc:
         sys.exit(f"拉取活动列表失败：{exc}")
+
+    # 2026-11-22：令牌回写。访问令牌过期时库会用 refresh token 换一套新的，而 Garmin 换完
+    # 会让旧的 refresh token 作废（令牌轮换）。令牌以 JSON 字符串传入时（CI 的 GARMINTOKENS），
+    # 库没有地方保存新令牌 —— 下一次运行拿着已作废的旧令牌，刷新失败，最终报
+    # 「Failed to retrieve social profile」（2026-11-22 第 82、83 次运行就是这样）。
+    # 所以这里把续期后的令牌写到 GARMIN_TOKEN_OUT，由 workflow 下一步回写到 Secret。
+    # 本机令牌（~/.garminconnect）库自己会保存，不需要这一步。⚠️ 绝不 print 令牌内容。
+    token_out = os.environ.get("GARMIN_TOKEN_OUT", "").strip()
+    if tokens and not use_local_store and token_out:
+        try:
+            fresh = client.client.dumps()
+            if json.loads(fresh) != json.loads(tokens):
+                out = Path(token_out)
+                out.parent.mkdir(parents=True, exist_ok=True)
+                fd = os.open(out, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+                with os.fdopen(fd, "w", encoding="utf-8") as fh:
+                    fh.write(fresh)
+                print("令牌已续期，交给下一步回写 GitHub Secret GARMINTOKENS")
+            else:
+                print("令牌没有变化，不需要回写")
+        except Exception as exc:
+            print(f"警告：读取续期后的令牌失败（不影响这次同步）：{type(exc).__name__}")
 
     data = load_existing()
     seen_ids = set()

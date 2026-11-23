@@ -20,9 +20,9 @@
 | 分类 | 8 个：思考 40 / 周刊 31 / 工具 22 / 记录 19 / 运动 13 / 学习科研 10 / 饮食 5 / 健康 4 |
 | 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
 | 根级独立页 | 15 个（`content/*.md`，不含首页 `_index.md`） |
-| 站点层 | `layouts/` 47 个文件 + `assets/js/` 5 个 + `assets/css/` 3 个 |
+| 站点层 | `layouts/` 49 个文件 + `assets/js/` 6 个 + `assets/css/` 3 个 |
 | 主题副本 | `themes/hugo-bearneo/` 27 个文件 |
-| 脚本 | `scripts/` 15 个；GitHub Actions 2 个 |
+| 脚本 | `scripts/` 17 个；GitHub Actions 2 个 |
 | 301 | `static/_redirects` 17 条 |
 | 产出 HTML | 408 个 |
 | sitemap | 164 条 |
@@ -47,7 +47,7 @@
 | 词条页 | 标签与分类的词条页数量以 `ls public/tags | wc -l` / `ls public/categories | wc -l` 为准（会随标签合并变化）；标签页 `noindex, follow`，分类页可索引并进 sitemap。索引页 `/tags/` 已关；`/categories/` 2026-11-21 起是正式总览页（普通内容页 `content/category.md`） |
 | sitemap | 构成 = 内容页 + 根级/列表页 + 分类词条页 + `/categories/` 总览页；与 noindex 页**零交集**。条数见上面的自动区块，或 `grep -c '<loc>' public/sitemap.xml` |
 | CSS | **外部指纹文件** `/css/main.min.<hash>.css`（theme.css + custom.css + upgrade.css 按序拼接，体积见上面的自动区块），`/css/*` 长缓存 |
-| JS | **全站 `/js/site.min.<hash>.js`**（2026-11-22：`assets/js/palette.js` + `hello.js` + `toc.js` 拼接，`<head>` 里 defer，`/js/*` 长缓存）+ giscus + 代码块复制按钮（后两个按需加载）。内联只剩主题引导、GoatCounter 加载器、Speculation Rules 与 JSON-LD |
+| JS | **全站 `/js/site.min.<hash>.js`**（2026-11-22：`assets/js/palette.js` + `hello.js` + `toc.js` + `motion.js`（2026-11-23）拼接，`<head>` 里 defer，`/js/*` 长缓存）+ giscus + 代码块复制按钮（后两个按需加载）。内联只剩主题引导、GoatCounter 加载器、Speculation Rules 与 JSON-LD |
 | 构建 | 干净构建 **0 警告** |
 | URL | 文章与周刊都落在 `/posts/…`；301 规则（`static/_redirects`，条数见上面的自动区块）：6 条 slug 兜底 + 4 条分页 + `/now/` + `/friends/` `/links/` + `/media/` `/stats/` + `/tags/` + `/colophon/` → `/map/`（`/categories/` 2026-11-21 起不再 301） |
 
@@ -423,7 +423,8 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改 SEO 头（keywords / JSON-LD / og / referrer / theme-color） | `layouts/partials/seo_tags.html`（2026-10-14 新增，整份覆盖上游同名 partial）。⚠️ `theme-color` 现在只有一条 `<meta id="hl-theme-color">`（`custom_head.html`），由 `assets/js/palette.js` 的 `applyTheme()` 在深浅色切换时改；`color-scheme` 与 `input{font-size}` 在第 26 段；`referrer` 在 `baseof.html`。⚠️ 上游那份是「HTML 规范还在 2015 年」的写法，**别回退** |
 | 改分享卡片图 / JSON-LD 的 `image` | **`layouts/partials/og-image.html`**（2026-10-26 起是唯一取值处，`og:image` / `twitter:image` / JSON-LD `image` 三处都调它）。⚠️ 返回的是**绝对 URL**，调用方不要再套 `absURL` |
 | 改分类页的标题 / 描述 | `content/categories/<词>/_index.md`（8 个，2026-10-26 新增）。⚠️ `title` 必须写，否则 `<title>` 会退化成「 \| 胡拉图说」；标签页没有对应文件（它们仍是 noindex） |
-| 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有命令面板（脚本 `assets/js/palette.js`，对话框 HTML 在 `layouts/partials/custom_body.html`）。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（2026-11-22 起只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
+| 改引用框 / 提示框 | 普通引用：`custom.css` 第 39-b 段；提示框：`layouts/_default/_markup/render-blockquote.html`（类型 → 默认中文标题）+ `custom.css` 第 61 段（颜色变量 `--callout-*`）。⚠️ 提示框必须仍输出 `<blockquote>`（搜索索引按它收「引用」）；标题用 `<b>` 不用 `<strong>`（否则进关键词）。样例页 `/style/` |
+| 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有命令面板（脚本 `assets/js/palette.js`，对话框 HTML 在 `layouts/partials/custom_body.html`）。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（2026-11-22 起只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch（2026-11-23 起鼠标悬停在「搜索」按钮上也会预取，只认鼠标、只一次）；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
 | 改分享卡上的日期 / 作者 / 标签（`article:*`） | `layouts/_partials/opengraph.html`。⚠️ 只对 `posts` / `weekly` 输出，首页与列表页的 `og:type` 是 `website`，挂 `article:*` 非法；⚠️ `article:author` 按协议是**作者主页 URL**（本站指 `/about/`），不是名字 |
 | 改「更新于」的显示条件 / 日期行排版 | `layouts/_default/single.html` 日期行（`$showUpdated`）。⚠️ 判据是「`lastmod` 晚于 `date` **且** 日历日不同」，不是「差 24 小时」——当天发当天改的两个日期长得一样，显示出来是噪音；⚠️ 2026-11-21 起日期行是 flex 一行（`.byline`，`custom.css` 第 39 段），日期、更新、时长、字数之间用间距分开，不用中点串 |
 | 改 Web App Manifest（名称 / 图标 / 主题色） | `static/manifest.webmanifest`。⚠️ 它是**手写 JSON、不能写注释**（加了整份解析失败且静默），所有取舍理由写在 `layouts/partials/favicon.html` 那段注释里；⚠️ `purpose` 别加 `maskable`（图标笔画贴边会被裁）；⚠️ `id` 一旦发布别再改 |
@@ -445,10 +446,12 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | `check-cache.sh` | ✅ 在用（2026-10-25 新增，**手动跑**）。自查线上首页是否被边缘缓存锁住：打 `/` 与 `/?cb=随机` 对比 `cf-cache-status` + 内容指纹，命中就打印后台 Purge / Edge TTL 的操作路径。退出码 0=正常 / 1=被锁 / 2=网络拿不到。⚠️ 不进 `publish.sh` —— 它依赖外网，而发布流程要能离线跑 |
 | `check-links.sh` | ✅ 在用（2026-11-02 新增）：构建后检查站内路径和页内锚点；`deploy.sh` 会调用，CI 也跑同一套 lychee 参数。未安装 lychee 时本地脚本提示并跳过 |
 | `check-html.sh` | ✅ 在用（2026-11-15 新增，**CI 已接入**）：查八类问题 —— 同页重复 id、同名 landmark、`<img>` 缺 alt、标题跳级、锚点 `aria-label` 全同、产物含 livereload/localhost、打印字号被屏幕 px 覆盖、文字/背景对比度低于 4.5。只依赖 python3，不需要 lychee。用法 `bash scripts/check-html.sh public`；不给目录就临时构建一份。⚠️ 本机若开着 `hugo server`，它会往 `public/` 注入 livereload 与 localhost，脚本会（正确地）报「产物污染」—— 验收请用 `./deploy.sh` 或临时目录构建。退出码 0=干净 / 1=有问题 / 2=环境问题。⚠️ 与 `check-links.sh` 分工不同：那个查「指向的东西存不存在」，这个查「结构本身对不对」，**别合并**（依赖面不一样） |
-| `gen-og.js` | ✅ 在用（2026-10-17 重写，2026-10-18 接入 `publish.sh`）：每篇文章一张 1200×630 分享卡 → `static/images/og/`。⚠️ 依赖 sharp，`publish.sh` 会自己找 `node` 与 `NODE_PATH`；**每次都全量重画**（改过标题的卡片要跟着变） |
+| `gen-og.js` | ✅ 在用（2026-10-17 重写，2026-10-18 接入 `publish.sh`）：每篇文章一张 1200×630 分享卡 → `static/images/og/`。⚠️ 依赖 sharp，`publish.sh` 会自己找 `node` 与 `NODE_PATH`。**2026-11-23 起增量**：按每张卡的 SVG 原文算 sha1，记在 `resources/og-cache.json`（本机缓存，已 gitignore），标题 / 日期 / 版式都没变就跳过；改了版式会自动全部重画；`--force` 强制全量 |
 | `new-post.sh` | ✅ 在用（2026-10-18）：`new posts/xxx` 建文件 + 用系统默认应用打开。配套的 `new()` 函数在 `~/.config/zsh/.zshrc`，不在仓库里 |
 | `backup-blog.sh` / `cleanup-junk.sh` / `_frontmatter.py` | ✅ 工具 |
 | `sync-status.py` | ✅ 2026-11-22 新增：把篇数 / 文件数 / sitemap / 体积写进本文第 0 节和 README「站点现状」的自动区块，并更新 README 徽章。`publish.sh` 发布前自动跑；`--check` 只检查，`--print` 只打印。构建统计读**上一次** `./deploy.sh` 的 `public/`，`hugo server` 的开发版产物会被识别并跳过 |
+| `sync-image-colors.py` | ✅ 2026-11-23 新增，`publish.sh` 在 `sync-image-dims.py` 之后自动跑：图床把每张图缩成 24×24 JPEG → macOS 自带 `sips` 转 BMP → 取平均色，写 `data/image-colors.json`。`render-image.html` 把它输出成 `--ph`，图片加载前的占位块就是这张图的主色（第 64 段）。只补缺的；`--all` 全部重算；不是 macOS 或断网就跳过 |
+| `migrate-layouts.py` | 🕓 一次性（2026-11-23 新增）：把 `layouts/` 迁到 Hugo 0.146+ 的新结构（`_partials` / `_shortcodes` / `_markup`、`_default/` 下的模板提到根目录）。**自带验收**：改前改后各构建一次逐字节比对（404.html 除外），不一致就自动回滚；一致才改写文档里的旧路径，再构建复核一次。`--dry-run` 只列计划。跑完可删 |
 | `backup-images.py` | ✅ 2026-11-22 新增：由 `backup-blog.sh` 调用，把正文引用的 `img.hulatu.com/post/` 原图增量镜像到 `<备份目录>/images/`，附 `manifest.tsv`（地址 / 路径 / 字节 / sha256）。仓库里没有这些图，不跑它等于没备份图片。`SKIP_IMAGES=1` 可跳过 |
 
 ---
@@ -827,6 +830,21 @@ PY
 3. **Cloudflare 后台收尾**（仓库侧无法代劳）：`run.` / `profile.` / `shot.` / `share.` 四个子域名的 CNAME 已删，Pages 项目本身若还留在后台建议一并删掉 —— 它们指向的 `sites/` 目录已不存在，构建只会失败。
 4. **⚠️ 确认 Pages 项目的 Functions 目录**：必须是仓库根的 `functions`。被改过或 Functions 被关掉的话，浏览器打开 `/index.xml` 会退回 raw XML，而**构建与部署都不报错** —— 核对命令见第 2 节「边缘函数」那三条 `curl`。
 5. ~~**每日重建的部署凭据**~~（2026-11-22 随 `daily-rebuild.yml` 一起废弃）：不再需要 Deploy Hook。迁移时**别再配**；旧仓库里的 `CLOUDFLARE_DEPLOY_HOOK` secret 与 Cloudflare 里那个 hook 应删除（它是带凭据的地址，谁拿到都能触发部署）。每日重建见第 2 节 `sync-garmin.yml` 那条。
+7. **www → 根域的 301 用 Cloudflare Redirect Rule**（2026-11-23）：`static/_routes.json` 让 Pages Functions 只在 `/index.xml`、`/weekly/index.xml`、`/stats/*` 上运行（以前**所有请求**都先过一遍中间件），所以 www 跳转不能再靠中间件。
+   Cloudflare Dashboard → 选 `hulatu.com` 这个域名 → **Rules → Redirect Rules → Create rule**（也可以直接用模板「Redirect from WWW to root」）：
+   When incoming requests match：Hostname **equals** `www.hulatu.com`；
+   Then：Type **Dynamic**，Expression `concat("https://hulatu.com", http.request.uri.path)`，Status **301**，勾选 **Preserve query string**。
+   ⚠️ 前提是 www 的 DNS 记录是橙云（Proxied）。
+   ⚠️ **先建规则、验证，再推带 `_routes.json` 的代码**。推代码前中间件也在做 www 跳转，光看 301 分不出是谁给的，
+      要用 POST 验：`curl -s -o /dev/null -w '%{http_code} %{redirect_url}\n' -X POST https://www.hulatu.com/posts/`
+      —— 中间件只跳 GET/HEAD，**返回 301 才说明是 Redirect Rule 生效了**（没生效时是 405 或 200）。
+   推送之后在 Workers & Pages → 本项目 → Functions 的请求数里应该看到断崖式下降。
+   ⚠️ 以后给 `functions/` 加新路由，**必须同时加进 `_routes.json` 的 include**，否则新函数不会被调用、也不报错。
+6. **Garmin 令牌回写**（2026-11-22）：Garmin 续期访问令牌时会作废旧的 refresh token，`sync-garmin.yml` 每次续期后要把新令牌写回 Secret `GARMINTOKENS`。GitHub 自带的 `GITHUB_TOKEN` 改不了 Secret，所以要建一个专用 token：
+   GitHub → Settings → Developer settings → **Fine-grained personal access tokens** → Generate new token；
+   Repository access 选 **Only select repositories → `hulatu/hulatu_blog`**；Permissions 只开 **Repository → Secrets: Read and write**（其余全部 No access）；过期时间按自己习惯（到期前 GitHub 会发邮件）。
+   把生成的 token 存成仓库 Secret **`GH_SECRETS_TOKEN`**。没配时：令牌没续期就照常同步；一旦续期，job 会标红提醒（新令牌没写回，下一次续期会失败）。
+   ⚠️ 令牌已经坏了（报 `Failed to retrieve social profile` 且日志显示访问令牌已过期）：本机运行 `python3 scripts/garmin-token.py --fresh`，把打印的整段 JSON 更新到 `GARMINTOKENS`。
 
 > 被删掉的孤儿资源与失效脚本都在 git 历史里；要恢复就 `git log --diff-filter=D` 取回，别照着旧待办去找已经不存在的文件。
 

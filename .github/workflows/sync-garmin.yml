@@ -59,7 +59,33 @@ jobs:
           GARMINTOKENS: ${{ secrets.GARMINTOKENS }}
           GARMIN_REGION: ${{ secrets.GARMIN_REGION }}
           GARMIN_TOKEN_ONLY: "1"
+          GARMIN_TOKEN_OUT: ${{ runner.temp }}/garmin_tokens.json
         run: python3 scripts/sync-garmin.py
+
+      # 2026-11-22：令牌回写。Garmin 续期访问令牌时会作废旧的 refresh token（令牌轮换），
+      # 不把新令牌写回 Secret，下一次续期必然失败（第 82、83 次运行就是这样坏的）。
+      # GITHUB_TOKEN 没有改 Secret 的权限，所以要一个**只授权本仓库、只给 Secrets 读写**的
+      # fine-grained PAT，存成 Secret `GH_SECRETS_TOKEN`（步骤见 MAINTENANCE.md）。
+      # ⚠️ 这一步不 echo 任何令牌；临时文件在 runner.temp，job 结束即销毁，这里也会立即删掉。
+      - name: 回写续期后的令牌
+        # ⚠️ 别改成 hashFiles(...)：它只认仓库目录里的文件，runner.temp 在仓库外面，永远是空。
+        if: steps.sync.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GH_SECRETS_TOKEN }}
+          TOKEN_FILE: ${{ runner.temp }}/garmin_tokens.json
+        run: |
+          if [ ! -f "$TOKEN_FILE" ]; then
+            echo "令牌没有续期，不需要回写"
+            exit 0
+          fi
+          if [ -z "$GH_TOKEN" ]; then
+            rm -f "$TOKEN_FILE"
+            echo "::error::令牌已续期，但没有配置 GH_SECRETS_TOKEN，新令牌没能写回 —— 下次续期会失败。按 MAINTENANCE.md「Garmin 令牌回写」配置一次即可。"
+            exit 1
+          fi
+          gh secret set GARMINTOKENS --repo "$GITHUB_REPOSITORY" < "$TOKEN_FILE"
+          rm -f "$TOKEN_FILE"
+          echo "已更新 Secret GARMINTOKENS"
 
       # `checked` = 最近一次**尝试**同步的时间，`last_sync_ok` = 那次成没成功；
       # `updated`（/run/ 上的「数据更新于」）仍只在成功时由脚本改写，不会被这一步误刷。

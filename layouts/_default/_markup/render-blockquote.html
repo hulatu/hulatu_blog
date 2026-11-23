@@ -1,0 +1,35 @@
+{{- /* ============================================================
+     引用块渲染钩子（2026-11-23）
+
+     两种引用块走同一个钩子：
+       · 普通引用 `> …` —— 原样输出 <blockquote>，与 Goldmark 默认结果一致；
+       · 提示框 `> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]`
+         （GitHub 写法，Hugo 原生识别）—— 输出 `blockquote.callout.callout-<类型>`，
+         首行是小标题，按类型换左边框颜色。样式在 custom.css 第 61 段。
+
+     写法：
+         > [!WARNING]
+         > 这个脚本会连安全补丁一起屏蔽。
+
+         > [!TIP] 自定义标题
+         > 类型后面跟文字就是标题；不写就用下面的中文默认标题。
+
+     ⚠️ 提示框**仍然输出 <blockquote>**（不用 div / aside）：
+        · layouts/index.json 按 `<blockquote>` 收「引用」字段，换标签会让搜索少一级；
+        · aside 在 main 里是 landmark，一页几个无名 aside 会触发 check-html 的「同名 landmark」。
+     ⚠️ 标题用 <b> 不用 <strong>：index.json 把所有 <strong> 收进关键词，
+        用 strong 的话每篇带提示框的文章都会多一个「注意」「提示」关键词。
+        <b> 在 RSS 阅读器里仍是粗体。
+     ⚠️ 旧文章不用改：没写 [!TYPE] 的引用块一律走普通分支。
+     ============================================================ */ -}}
+{{- if eq .Type "alert" -}}
+{{- $type := lower .AlertType -}}
+{{- $titles := dict "note" "说明" "tip" "提示" "important" "重要" "warning" "注意" "caution" "警告" -}}
+{{- $title := or .AlertTitle (index $titles $type) (title $type) -}}
+<blockquote class="callout callout-{{ $type }}" role="note">
+<p class="callout-title"><b>{{ $title }}</b></p>
+{{ .Text }}</blockquote>
+{{- else -}}
+<blockquote{{ range $k, $v := .Attributes }}{{ printf " %s=%q" $k (string $v) | safeHTMLAttr }}{{ end }}>
+{{ .Text }}</blockquote>
+{{- end }}

@@ -57,7 +57,7 @@
     {{- /* 2026-11-21：弱网 / 国内网络下 giscus 依赖 GitHub API，常停在
            「正在加载评论…」。这里给读者一个不用 GitHub 的出口。
            2026-11-21 晚用户指定整行文案：「欢迎评论，如果不想公开评论或
-           加载有问题，欢迎给我写信！」——「写信」仍是 mailto 链接。
+           加载有问题，欢迎给我写信！」——「写信」2026-11-23 起是悬浮复制卡片（直接点仍是 mailto）。
            ⚠️ 提示在 `.giscus-box` **外面**，与 details 平级：details 展开/收起
               只改变自己的高度，不会再把右侧这行字挤到下一行（2026-11-21 修）。
               两者由 `.giscus-head` 的 flex 行放在同一条基线上。
@@ -67,7 +67,10 @@
               loading 元素，JS 仍可正常工作。 */ -}}
     <div class="giscus-hint">
       {{- with site.Params.Author.email }}
-      <p class="giscus-fallback">欢迎评论，如果不想公开评论或加载有问题，欢迎给我<a href="mailto:{{ . }}?subject={{ "博客评论" | urlquery }}">写信</a>！</p>
+      {{- /* 2026-11-23：「写信」换成与页脚「问候」同一套悬浮复制卡片（partials/hello.html）。
+             直接点仍拉起邮件客户端、主题「博客评论」；卡片在这里右对齐（custom.css 第 48 段末尾），
+             因为这一行贴着正文右边缘，居中会被 main 的 overflow-x: clip 裁掉。 */}}
+      <p class="giscus-fallback">欢迎评论，如果不想公开评论或加载有问题，欢迎给我{{ partial "hello.html" (dict "text" "写信" "email" . "subject" "博客评论") }}！</p>
       {{- end }}
       <p class="giscus-loading" id="giscus-loading" hidden aria-live="polite">正在加载评论…</p>
     </div>

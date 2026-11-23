@@ -7,7 +7,12 @@
        ⚠️ 数字是 float64，printf %d 前必须 int()，否则产物出现 %!d(float64=…)。
        ⚠️ 带连字符的 data key 用 index hugo.Data "image-dims"；with 会重绑 .，
           所以先把 $dest 存下来。
-       ⚠️ overlay 是空壳，放大用 figure 的 --zoom-src 背景图（custom.css 第 26 段）。 */ -}}
+       ⚠️ 放大层用原生 Popover（2026-11-23，原来是 checkbox + 两个 label）：
+          <button popovertarget> 打开，弹层里整块是一个 popovertargetaction="hide" 的按钮。
+          Esc / 读屏语义 / 顶层显示都是浏览器自带的，仍然零 JS。
+          放大图仍是 --zoom-src 背景（每张图 DOM 里只有一个 <img>），画在 .image-zoom-pic 上；
+          弹层关着时是 display:none，背景图不会被提前下载。样式在 custom.css 第 68 段。
+          assets/js/motion.js 第 5 段只做「从原图位置长出来」的增强，没有它也能用。 */ -}}
 {{- $dest := .Destination -}}
 {{- $alt := .Text -}}
 {{- $id := printf "img-%s" (substr (md5 $dest) 0 8) -}}
@@ -15,10 +20,12 @@
 
 {{- /* ① 原图尺寸 */ -}}
 {{- $w := 0 -}}
+{{- $h := 0 -}}
 {{- $dim := "" -}}
 {{- with index hugo.Data "image-dims" -}}
   {{- with index . $dest -}}
     {{- $w = int (index . 0) -}}
+    {{- $h = int (index . 1) -}}
     {{- $dim = printf ` width="%d" height="%d"` (int (index . 0)) (int (index . 1)) -}}
   {{- end -}}
 {{- end -}}
@@ -65,15 +72,28 @@
 
 {{- /* --zoom-src 用原图 URL；含单引号就放弃（遮罩仍在，只是不放大）。 */ -}}
 {{- $zoomStyle := "" -}}
+{{- /* --zw / --zh 是原图宽高：放大层按这个比例给 .image-zoom-pic 定尺寸，
+       「从原图位置长出来」的过渡才能对得严丝合缝。查不到尺寸就不写，退回满屏 contain。 */ -}}
+{{- /* 2026-11-23：--ph 是这张图的主色（scripts/sync-image-colors.py → data/image-colors.json），
+       图片加载前的占位块用它（custom.css 第 64 段）。查不到就不写，CSS 退回浅灰。
+       ⚠️ 只认 #rrggbb 六位小写，防止数据文件里混进别的东西进了 style 属性。 */ -}}
+{{- $ph := "" -}}
+{{- with index hugo.Data "image-colors" -}}
+  {{- with index . $dest -}}
+    {{- if findRE `^#[0-9a-f]{6}$` . -}}{{- $ph = printf ";--ph:%s" . -}}{{- end -}}
+  {{- end -}}
+{{- end -}}
 {{- if and $zoom (not (strings.Contains $dest "'")) -}}
-  {{- $zoomStyle = printf ` style="--zoom-src:url('%s')"` $dest | safeHTMLAttr -}}
+  {{- $ratio := "" -}}
+  {{- if and $w $h }}{{ $ratio = printf ";--zw:%d;--zh:%d" $w $h }}{{ end -}}
+  {{- $zoomStyle = printf ` style="--zoom-src:url('%s')%s%s"` $dest $ratio $ph | safeHTMLAttr -}}
+{{- else if $ph -}}
+  {{- $zoomStyle = printf ` style="%s"` (strings.TrimPrefix ";" $ph) | safeHTMLAttr -}}
 {{- end -}}
 <figure class="image-caption{{ if $zoom }} image-zoom-container{{ end }}"{{ $zoomStyle }}>
     {{- if $zoom }}
-    <input type="checkbox" id="{{ $id }}" class="image-zoom-toggle" aria-label="放大图片：{{ $alt }}" />
-    <label for="{{ $id }}" class="image-zoom-label"><img src="{{ $src | safeURL }}"{{ $srcsetAttr }} alt="{{ $alt }}"{{ $dim | safeHTMLAttr }}{{ $loadAttr | safeHTMLAttr }} class="zoomable-image" /></label>
-    <!-- overlay 是空壳：放大图由 figure 的 --zoom-src 背景绘制（0 JS、零回流）。 -->
-    <label for="{{ $id }}" class="image-zoom-overlay"></label>
+    <button type="button" class="image-zoom-label" popovertarget="{{ $id }}" aria-label="放大图片：{{ $alt }}"><img src="{{ $src | safeURL }}"{{ $srcsetAttr }} alt="{{ $alt }}"{{ $dim | safeHTMLAttr }}{{ $loadAttr | safeHTMLAttr }} class="zoomable-image" /></button>
+    <div popover id="{{ $id }}" class="image-zoom-overlay"><button type="button" class="image-zoom-close" popovertarget="{{ $id }}" popovertargetaction="hide" aria-label="关闭放大图片" autofocus><span class="image-zoom-pic"></span></button></div>
     {{- else }}
     <img src="{{ $src | safeURL }}"{{ $srcsetAttr }} alt="{{ $alt }}"{{ $dim | safeHTMLAttr }}{{ $loadAttr | safeHTMLAttr }} />
     {{- end }}
