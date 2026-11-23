@@ -1,32 +1,4 @@
 {
- "/images/tools/publish-ui.webp": [
-  1600,
-  1089
- ],
- "/images/tools/sspai-article.webp": [
-  1280,
-  800
- ],
- "/images/tools/sspai-dark.webp": [
-  1280,
-  800
- ],
- "/images/tools/sspai-home.webp": [
-  1280,
-  800
- ],
- "/images/tools/sspai-viewer.webp": [
-  1280,
-  800
- ],
- "/images/tools/vf-fullscreen.webp": [
-  1280,
-  800
- ],
- "/images/tools/vf-hover.webp": [
-  1280,
-  720
- ],
  "https://img.hulatu.com/post/04M6sQ.jpeg": [
   1170,
   1927
@@ -823,10 +795,6 @@
   1200,
   675
  ],
- "https://img.hulatu.com/post/YJPAwp.webp": [
-  1200,
-  750
- ],
  "https://img.hulatu.com/post/YUetD7.jpeg": [
   1200,
   1600
@@ -1363,10 +1331,6 @@
   1200,
   2133
  ],
- "https://img.hulatu.com/post/vPpkYM.png": [
-  1200,
-  675
- ],
  "https://img.hulatu.com/post/viPiWh.webp": [
   1200,
   674
@@ -1542,9 +1506,5 @@
  "https://img.hulatu.com/post/鸡蛋beSQLQ.webp": [
   1200,
   572
- ],
- "https://www.foreverblog.cn/assets/logo/wormhole_v2_dark.webp": [
-  163,
-  64
  ]
 }

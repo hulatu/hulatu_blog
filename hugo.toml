@@ -29,7 +29,8 @@ disableKinds = ["taxonomy"]
 
   # feed <image> 必须是 PNG，宽高与文件一致（144）。
   feedIcon = "images/feed-icon.png"
-  images = ["images/share.webp"]
+  # 非文章页的兜底分享图，由 scripts/gen-og.js 生成（与文章分享卡同一套版式）；换文件名要同步改脚本。
+  images = ["images/share.png"]
 
   # 分享图兜底尺寸；换图要同步改。
   ogImageWidth = 1200

@@ -123,7 +123,7 @@ const greeting = "你好，世界！";
 ## 图片与图注
 
 <figure class="image-caption">
-  <img src="/images/share.webp" alt="样式页的示例图片" width="1200" height="630">
+  <img src="/images/share.png" alt="样式页的示例图片" width="1200" height="630">
   <figcaption>图片与图注：图注居中、次级灰、斜体。</figcaption>
 </figure>
 

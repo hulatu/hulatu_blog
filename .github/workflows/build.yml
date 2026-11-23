@@ -4,21 +4,12 @@ name: 构建校验
 # 模板写错、短代码语法错、front matter 坏了这类问题在这里就被
 # 拦下来（报错带文件名和行号），不用等 Cloudflare Pages 构建失败才发现。
 #
-# ⚠️ 2026-10-12：**四个子站（run / shot / share / profile）全部下线** ——
-#    仓库里的 `sites/` 目录与 `scripts/build-subdomains.sh` 已整体删除
-#    （profile 内容并入主站 `/about/`，跑步页并入主站 `/run/`，
-#     shot / share 本来就是空壳）。所以这里不再有「构建子站」那一步。
-#    要恢复：`git log --all -- sites/` 能取回全部源码。
-#
 # 版本要和 Cloudflare Pages 项目里的 HUGO_VERSION 保持一致。改版本时三处一起改：
 #   本机 hugo version ／ 下面 peaceiris/actions-hugo 的 hugo-version ／ Cloudflare 项目的环境变量
-# 还有 hugo.toml 的 [module.hugoVersion]（站点层那个 check-hugo-version.html 已随
-# 2026-10-10 的主题迁移删除，现在版本约束只靠本文件和 hugo.toml）。
+# 还有 hugo.toml 的 [module.hugoVersion]。
 #
-# ⚠️ 2026-11-15：统一到 **0.170.0**，同时**删掉了 `extended: true` 与那条 extended 校验**。
-#    0.170 起 Hugo 取消了 extended 版（LibSass 移除，只剩单一二进制），
-#    `hugo version` 不再带 extended 字样，留着那条 grep 会让升级当天直接红灯。
-#    本站没用过 Sass / imageConfig，extended 一直是零收益的包袱。
+# ⚠️ Hugo 0.170 起没有 extended 版（LibSass 已移除），`hugo version` 不带 extended 字样，
+#    所以这里不写 `extended: true`、也不校验 extended。本站没用 Sass。
 
 on:
   push:

@@ -42,7 +42,7 @@
 | 发一篇文章 | [📝 写与发](#-写与发) |
 | 部署 / 订阅 / 评论 | [🚢 发布](#-发布) ・ [📡 订阅与评论](#-订阅与评论) |
 | 看现在的家底 | [🧭 站点现状](#-站点现状) |
-| 这里为什么是这样 | [📜 变更时间线](#-变更时间线) |
+| 这里为什么是这样 | [📜 变更记录](#-变更记录) |
 
 ## 🌱 这是个什么站
 
@@ -180,7 +180,7 @@ Blog/
 | 🖼 | 图标 | `static/favicon.svg` + 各档 PNG / ICO + `manifest.webmanifest`；重生成步骤见 DESIGN.md 8.6 |
 | 💬 | 评论 | `hugo.toml` 的 `[params.giscus]`；单篇用 `comments: false` 关掉 |
 | 📊 | 统计 | `hugo.toml` 的 `[params.analytics]`（GoatCounter，挂在 `custom_head.html` 末尾） |
-| 🖼 | 分享图 | 每篇文章自动取 `images/og/<slug>.png`；取不到才回落 `hugo.toml` 的 `params.images`（`share.webp`）+ `ogImageWidth` / `ogImageHeight` |
+| 🖼 | 分享图 | 每篇文章自动取 `images/og/<slug>.png`；取不到才回落 `hugo.toml` 的 `params.images`（`share.png`）+ `ogImageWidth` / `ogImageHeight` |
 | 🔎 | **SEO 头**（canonical / OG / JSON-LD） | `layouts/partials/seo_tags.html` —— 整份覆盖上游同名 partial：删掉 `keywords` 与不生效的微数据，改按页型输出 JSON-LD |
 | ↩️ | 加 301 / 改缓存头 | `static/_redirects`（首条命中即生效）/ `static/_headers` |
 | ➕ | 加根级独立页 | `content/xxx.md`（`hideDate: true` + `toc: false`；纯工具页再加 `noindex: true`；`_headers` 的 `/*` 已统一处理缓存） |
@@ -263,42 +263,20 @@ feed 本身是**纯 XML**（顶部没有 `<?xml-stylesheet?>`）。浏览器直�
 | 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
 | 产出 HTML | 408 个 |
 | sitemap | 164 条 |
-| 文章页 HTML | 中位数 23.8 KB，gzip 9.0 KB |
+| 文章页 HTML | 中位数 24.4 KB，gzip 9.1 KB |
 <!-- status:end -->
 
 - 每页都有 JSON-LD（首页 `WebSite` / 文章页 `BlogPosting` / 独立页与 404 `WebPage` /
   section 与词条 `CollectionPage`）。
 - **`noindex, follow`** 覆盖标签词条、`/privacy/`、`/posts/`、`/donate/`、`/wechat/`、404 与
   `/feed/` 那两页；**分类词条页 2026-10-26 起可索引**。
-- **og:image 每篇文章一张**（`images/og/<slug>.png`，1200×630）；独立页与词条页回落到 `share.webp`。
+- **og:image 每篇文章一张**（`images/og/<slug>.png`，1200×630）；独立页与词条页回落到 `share.png`。
 
 </details>
 
-## 📜 变更时间线
+## 📜 变更记录
 
-<details>
-<summary><b>点开看这个站是怎么长成现在这样的</b></summary>
-
-| 日期 | 改了什么 |
-| --- | --- |
-| 2026-10-10 | 整站从**自建主题**迁移到上游 hugo-bearneo；主题文件逐字节未改，站点特有内容全部走 `layouts/` 覆盖 |
-| 2026-10-11 | 周刊回到导航；`links.md` 删除、友链并入 `roll.md`；`/donate/` 搬回；清理 125 张按 slug 分的 og 图，改成全站一张 `share.webp` |
-| 2026-10-12 | **四个子站（run / shot / share / profile）全部下线**，`sites/` 与 `scripts/build-subdomains.sh` 从仓库删除；导航撤掉 `Hub`，内容并入 `/about/` 与 `/run/` |
-| 2026-10-13 | 移除 `issue`（周刊期号）字段；删掉 PWA 五件套图标 |
-| 2026-10-14 | 加载速率审计并全部实施：新增 `partials/seo_tags.html`（删掉 `keywords` 与不生效的微数据，改按页型输出 JSON-LD）、图片放大换成不重复 `<img>` 的方案。首页全页 gzip 5941 → 5082 B，全站 `<img>` 节点 644 → 323 |
-| 2026-10-15 | **浏览器打开 RSS 换了实现**：Chromium 正在移除 XSLT，所以撤掉 `static/rss.xsl` 与 feed 顶部的 `<?xml-stylesheet?>`，改由 `functions/_middleware.js` 内容协商到 `/feed/` 与 `/feed/weekly/` |
-| 2026-10-25 | 首页 `Hi!` 从 h2 升到 h1、`Recent Posts:` 升到 h2（与 h1 不跳级） |
-| 2026-10-26 | 分类词条页开放索引 |
-| 2026-11-02 | 删除手机端折叠目录（2026-11-15 已恢复） |
-| 2026-11-03 | 关于页撤掉「内容平台」一节（入口只留首页那一行）；「上一篇 / 下一篇」只给非系列文章；词条页与 `/weekly/` 不再挂搜索框 |
-| 2026-11-05 | 新增 `/featured/` 精选页（`layout: "featured"`，与 `/series/` 同一套做法） |
-| 2026-11-07 | 新增 `/wechat/` 公众号二维码页（`noindex`）；首页平台入口加了 X |
-| 2026-11-15 | 恢复 ≤1200px 的正文顶部折叠目录 |
-| 2026-11-21 | 新增 `/style/` 样式样本与 `/map/` 站点地图（`/colophon/` 并入并 301）；关于页加写作统计与 365 天热力图；首页固定「最新一期周刊」，精选入口移到「最近更新」同一行；`/featured/` 改成三组主编导读 |
-
-> 更早的历史：`git log --all` 。子站源码没有迁移到别处，需要时 `git show <commit>:sites/README.md` 取回。
-
-</details>
+这个站是怎么一步步长成现在这样的、删过哪些文件和子站，都记在 **[CHANGELOG.md](CHANGELOG.md)**。
 
 ## 📄 许可
 

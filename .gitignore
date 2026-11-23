@@ -28,6 +28,4 @@ __pycache__/
 content/**/douyin/
 
 # 本地未发布草稿（暂不进入 Git）
-content/posts/AI.md
-
 drafts/

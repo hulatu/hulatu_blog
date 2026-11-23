@@ -4,13 +4,13 @@
        内置那份的取图顺序是：
          ① front matter 的 `images`（本站一篇都没写）
          ② 页面资源里名字带 feature / cover / thumbnail 的图（本站没有 page bundle）
-         ③ `site.Params.images` 的第一张（= images/share.webp）
-       于是全部页面的 `og:image` **全是同一张 share.webp**。任何一篇文章
+         ③ `site.Params.images` 的第一张（= images/share.png）
+       于是全部页面的 `og:image` **全是同一张 share.png**。任何一篇文章
        被分享到微信 / 群 / Twitter，卡片长得一模一样 —— 这是「专业感」上
        最外显的一处缺失（缺口已于 2026-10-17 解决，机制见 DESIGN.md 8.8）。
 
        ── 改法 ────────────────────────────────────────────────────────
-       取图逻辑（按 slug 找 `images/og/<slug>.png`，找不到回落 share.webp）
+       取图逻辑（按 slug 找 `images/og/<slug>.png`，找不到回落 share.png）
        **2026-10-26 起收进 `layouts/partials/og-image.html`**，本文件只负责
        输出 7 个 meta 字段。同一份逻辑现在被三处调用：
          · 本文件（og:image）

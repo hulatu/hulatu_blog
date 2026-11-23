@@ -1,7 +1,7 @@
 {{- /* 分享卡片图的**唯一**取值来源（2026-10-26 抽出）
 
       ── 为什么抽出来 ────────────────────────────────────────────────
-      这套「按 slug 找 images/og/<slug>.png，找不到回落 share.webp」的逻辑
+      这套「按 slug 找 images/og/<slug>.png，找不到回落 share.png」的逻辑
       原本在 `_partials/opengraph.html` 与 `_partials/twitter_cards.html`
       各写了一份，两份文件的注释里都写着「必须逐字一致，否则分享卡片不一样」。
       2026-10-26 给 JSON-LD 的 `image` 也用同一张图时，它会变成**第三份** ——
@@ -9,7 +9,7 @@
 
       ── 取值顺序 ────────────────────────────────────────────────────
         ① 长文页（posts / weekly）→ images/og/<slug>.png（scripts/gen-og.js 生成）
-        ② 取不到 → site.Params.images 的第一张（images/share.webp）
+        ② 取不到 → site.Params.images 的第一张（images/share.png）
       返回**绝对 URL**。调用方不要再套 absURL，否则是二次处理。
 
       ⚠️ `fileExists` 查的是**磁盘文件**，路径相对项目根，所以必须写 `static/`。

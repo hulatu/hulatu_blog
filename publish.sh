@@ -42,19 +42,7 @@ for cand in "$(command -v python3 2>/dev/null)" \
   fi
 done
 
-# ⚠️ 2026-10-11：这里原本还跑一句 `scripts/fetch-image-dims.py`（抓远程图尺寸到
-#     data/image_dims.json，让 <img> 带上 width/height 避免加载时页面往下跳）。
-#     那一步**已经整个删掉了**，连带脚本和 data/image_dims.json 一起 —— 因为上游
-#     hugo-bearneo 的 render-image.html 根本不读那个文件，写了也进不去 <img>。
-#     实测过 CLS ≈ 0（三个图片最多的页面：0 / 0 / 0.0087），本来也没在抖。
-#     **别照旧文档把它加回来。**
 if [ -n "$PYTHON_BIN" ]; then
-  # ⚠️ 2026-10-12：这里原本还跑一句 `scripts/fetch-profile-content.py`（刷新
-  #     profile.hulatu.com「花园页」的最新文章 / 精选瞬间快照）。那个子站已按用户
-  #     要求**整体删除**（内容并入主站 `/about/`），脚本也一起删了 ——
-  #     **别照旧文档把它加回来**。同日稍后四个子站（run / shot / share / profile）
-  #     全部下线，仓库里连 `sites/` 目录都没有了。
-  #
   # ⚠️⚠️ 2026-10-18：下面这几步是「**离线生成、提交进仓库的派生数据**」。
   #     它们都**没有构建期钩子**（Hugo 拿不到图床图片的尺寸、也算不出分享卡），
   #     只能在这里跑。漏跑的后果是**静默降级 + 构建 0 警告**：

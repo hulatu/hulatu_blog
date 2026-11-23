@@ -2,33 +2,20 @@
 version: beta
 name: hulatu-bearneo
 description: >
-  ⚠️ 2026-10-10 晚**整份重写**。本站的视觉体系**不再是自建的「纸账 + 印章」系统** ——
-  那一天整站迁移到了上游 hugo-bearneo 主题（`themes/hugo-bearneo/`，27 个文件）。
-  ⚠️ **2026-10-14 起不再是「27 个文件逐字节未改」**：`style.html` 是 `assets/css/theme.css`
-  的镜像，两处同步，做过四处登记过的改动 —— ① `content { line-height }` 最终 1.5；
-  ② 删掉未启用的 upvote 三组规则与两个 `--upvoted-color` 变量（2026-11-03，省 ~260B/页）；
-  ③ visited 链接色与 link 同色（2026-11-21，去掉紫色）；
-  ④ 深色 `prefers-color-scheme` 改成 `[data-theme="dark"]`（2026-11-21，手动深浅色开关）。
-  其余 26 个文件仍与上游逐字节一致（`diff -r` 可验）。改上游一律在第 5 节登记。
-  自建的 6 个 CSS 模块 / 6 个 JS 全部删除。
-  ⚠️ **2026-11-06 起 CSS 不再内联**：主题 CSS 与站点补丁 CSS 抽成外部文件，
-  由 `layouts/partials/custom_head.html` 里的管道拼成一个带内容哈希的文件
-  `/css/main.min.<hash>.css`（体积见 MAINTENANCE.md 第 0 节自动区块），全站共用、
-  浏览器长缓存（`static/_headers` 里 `/css/*` 写 1 年 + immutable）。
-  主题 CSS 的真值在 `assets/css/theme.css`（复制自
-  `themes/hugo-bearneo/layouts/partials/style.html`，含上面四处登记过的改动；
-  行高与复制源保持同步）；
-  站点补丁的真值在 `assets/css/custom.css`（段号与注释原样保留）。
+  本站视觉体系 = 上游 hugo-bearneo 主题（`themes/hugo-bearneo/`）+ 站点层最小偏离。
+  主题 CSS 的真值在 `assets/css/theme.css`（复制自主题 `layouts/partials/style.html`，
+  有四处登记过的改动，见第 5 节），站点补丁在 `assets/css/custom.css`，升级包在
+  `assets/css/upgrade.css`；三者由 `layouts/partials/custom_head.html` 的管道按序拼成
+  带内容哈希的 `/css/main.min.<hash>.css`，全站共用、长缓存。
   本文件里的「第 N 段」一律指 `assets/css/custom.css` 第 N 段。
-  所以下面登记的令牌**全部是上游主题的真值**，唯一真值在
-  `assets/css/theme.css`（不再是主题文件本身 —— 主题文件现在只是复制源）。
-  站点层只做了最小偏离（文件数见 MAINTENANCE.md 第 0 节），逐条列在正文「站点层偏离」一节。
+  站点层文件数见 MAINTENANCE.md 第 0 节，逐条列在第 5 节「站点层偏离」。
   **改样式前先读那一节**：绝大多数视觉问题应该在上游那一份里改，
   而不是在站点层再叠一层规则 —— 那是上一版自建主题最后变得无法维护的原因。
+  变更历史在 CHANGELOG.md，本文件只写现状。
 
 ---
 
-## 0. 当前状态（2026-11-22，唯一真值）
+## 0. 当前状态（唯一真值）
 
 > 下面这些是**现在线上生效的值**。后面章节里带日期的旧值都是历史记录，
 > 与这里冲突时以本表为准。样式真值在 `assets/css/theme.css` 与
@@ -65,15 +52,15 @@ description: >
 | 引用框 | 长文页蓝竖线 + 浅蓝底 + 左上角 **2em** Georgia 引号（2026-11-23 由 5em 缩小，左内边距 3.2em → 2.4em）（第 39-b 段） |
 | 提示框 | `> [!NOTE]` / TIP / IMPORTANT / WARNING / CAUTION，`render-blockquote.html` 输出 `blockquote.callout`；左边框 + 小标题换色，底色 7% 混色，默认标题 说明 / 提示 / 重要 / 注意 / 警告（第 61 段） |
 | 选中文字 | 浅色链接蓝 20%、深色 32% 底色（第 62 段） |
-| 正文颜色 | **所有页面**的阅读区（`content` + `main`）都是 `--hl-ink`，引用块统一二级灰，与文章页一致（2026-11-23；首页、404、邻居页、精选导读原来更淡）。页眉、页脚、日期等元信息仍是 ink-2 / 三级灰 |
+| 正文颜色 | **所有页面**的阅读区（`content` + `main`）都是 `--hl-ink`，引用块统一二级灰，与文章页一致（首页、404、邻居页、精选导读原来更淡）。页眉、页脚、日期等元信息仍是 ink-2 / 三级灰 |
 | 邮箱浮层 | 页脚「问候」、关于页「写信」、邻居页「写信给我」、评论区「写信」共用 `partials/hello.html`（悬浮显示邮箱、点按复制）；`mail-link` 与 partial 都支持 `subject`。正文里的卡片左对齐，评论区的右对齐（第 52 段 / 第 48 段末尾） |
-| 图片段落 | 单独一行的图片不包 `<p>`（`hugo.toml` `wrapStandAloneImageWithinParagraph = false`，2026-11-23），消除 `<p><figure>` 产生的约 700 个空段落；间距不变 |
+| 图片段落 | 单独一行的图片不包 `<p>`（`hugo.toml` `wrapStandAloneImageWithinParagraph = false`），消除 `<p><figure>` 产生的约 700 个空段落；间距不变 |
 | 锚点跳转 | 正文 h2–h4 `scroll-margin-top: 1.25rem`（第 63 段）；跳到后标题底色亮一下 1.4s（第 65 段） |
 | 加载过渡 | 懒加载图片：占位块是**这张图的主色**（`data/image-colors.json` → `--ph`，没有就浅灰）+ 0.28s 淡入（首图不做，免拖 LCP）；搜索索引未到时 3 条占位、失败可重试、鼠标悬停「搜索」按钮即预取；结果里命中的字用 `<mark>` 标出；评论区展开淡入（第 64 段 + `motion.js` / `palette.js`） |
 | 交互反馈 | 链接变色 0.15s；触屏按压 `scale: .96` 并去掉系统灰块；折叠块高度动画（Chrome 131+）；点 `#` 同时复制本节链接并在底部提示（第 65 段 + `motion.js`） |
 | 图表入场 | 跑步页柱状图、关于页热力图第一次进入视口时生长一次（IntersectionObserver，**不用滚动驱动** —— 停在半高会显示错的数字）（第 66 段） |
-| 图片放大 | **原生 Popover**（2026-11-23 起，原来是 checkbox + 两个 label）：`button[popovertarget]` 包原图，弹层整块是关闭按钮；Esc / 读屏语义 / 顶层显示由浏览器负责，仍零 JS。有 View Transitions 时 `motion.js` 第 5 段让放大图**从原图位置长出来、关闭缩回原位**；否则淡入淡出 0.18s。放大图仍是背景图（每张图 DOM 里只有一个 `<img>`）（第 68 段）。RSS 里会把这套标记拆掉，只留 `<img>` |
-| 搜索面板 | **原生 `<dialog>` + `showModal()`**（2026-11-23）：焦点困在面板内、背后页面 inert、Esc 关闭都是原生；`.open` 类仍保留给淡入淡出 |
+| 图片放大 | **原生 Popover**（原来是 checkbox + 两个 label）：`button[popovertarget]` 包原图，弹层整块是关闭按钮；Esc / 读屏语义 / 顶层显示由浏览器负责，仍零 JS。有 View Transitions 时 `motion.js` 第 5 段让放大图**从原图位置长出来、关闭缩回原位**；否则淡入淡出 0.18s。放大图仍是背景图（每张图 DOM 里只有一个 `<img>`）（第 68 段）。RSS 里会把这套标记拆掉，只留 `<img>` |
+| 搜索面板 | **原生 `<dialog>` + `showModal()`**：焦点困在面板内、背后页面 inert、Esc 关闭都是原生；`.open` 类仍保留给淡入淡出 |
 | 目录高亮 | 站点层覆盖主题 `toc.html`（只留标记），高亮改在 `toc.js` 用 IntersectionObserver + `scrollend` 校正，滚动中不再每帧测量；点目录走原生锚点（地址栏带 `#`，触发 :target 高亮） |
 | 标题过渡（试行） | 列表 ↔ 文章跨页时标题移动到 h1 位置，`view-transition-name: post-title` 只在那次跳转期间挂上（第 67 段 + `motion.js` 第 4 段 + `custom_head.html` 内联 pagereveal） |
 
@@ -108,7 +95,7 @@ View Transitions API + `clip-path: circle()`，500ms、`cubic-bezier(.645,.045,.
 ---
 
 # ⚠️ 以下是上游原值（方便对照主题）；当前生效值见第 0 节。
-#    2026-11-21 起 visited 与 link 同色，不再使用下面的 #551a8b。
+#    visited 与 link 同色，不再使用下面的 #551a8b。
 colors:
   # ── 浅色（默认）─────────────────────────────
   bg-primary: "#fdfdfd"        # 页面底色，几乎纯白
@@ -141,7 +128,7 @@ typography:
   content-line-height: 1.5       # ⚠️ 唯一来源是 theme.css；18px × 1.5 = 27px，段间距 1.5em = 27px
   note: >
     上游只有 `Verdana, sans-serif`。Verdana 不含汉字，中文一直靠浏览器兜底。
-    2026-11-05 起站点层改成系统字体栈（`custom.css` 第 01 段），这是**唯一**动过字体的地方。
+    站点层改成系统字体栈（`custom.css` 第 01 段），这是**唯一**动过字体的地方。
 
     ⚠️ **行高最终 1.5 —— 这是全站唯一一处改上游主题的地方**
     （`themes/hugo-bearneo/layouts/partials/style.html` 的镜像，生效的是
@@ -186,10 +173,10 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 
 | 你想做的事 | 去哪儿 |
 | --- | --- |
-| 改升级包配色 / 组件样式 | `assets/css/upgrade.css`（`--hl-*`，2026-11-22 前是 `custom_head.html` 末尾的内联 `<style>`）。改站点旧组件的颜色去同一文件末尾的「站点令牌桥接」 |
+| 改升级包配色 / 组件样式 | `assets/css/upgrade.css`（`--hl-*`）。改站点旧组件的颜色去同一文件末尾的「站点令牌桥接」 |
 | 改正文排版（标题间距、中文字体） | `assets/css/custom.css` 第 02 段（样式），`custom_head.html` 只负责加载 |
-| 改首页 | `layouts/index.html`（结构）+ `content/_index.md`（文案：简介、支持链接、平台入口）。`data/projects.toml` 与 `shortcodes/projects.html` 保留但**当前未挂载** |
-| 改关于页的介绍块 | `content/about.md` 的纯 Markdown 介绍，**没有照片头像、没有 mac 卡片**；页面标题 2026-11-21 起恢复显示 |
+| 改首页 | `layouts/index.html`（结构）+ `content/_index.md`（文案：简介、支持链接、平台入口） |
+| 改关于页的介绍块 | `content/about.md` 的纯 Markdown 介绍，**没有照片头像、没有 mac 卡片**；有页面标题 |
 | 改支持页 / 换收款码 | `content/donate.md`（结构 + 文案）+ `custom.css` 第 08 段（样式） |
 | 改跑步页 `/run/` | `content/run.md`（导语）+ `layouts/_default/run.html`（结构）+ `custom.css` 第 25 段（样式）。数据读 `data/runs.json`，**别在页面里写数字** |
 | 改文末「系列」/「相关文章」/「上一篇 / 下一篇」 | 模板 `layouts/_default/single.html`（①②③ 三段）+ `custom.css` 第 09 / 10 段。⚠️ 相关文章的**权重与阈值**在 `hugo.toml` 的 `[related]`，不在模板里 |
@@ -205,7 +192,7 @@ hit-target: "无硬性下限"      # 上游没有 44px 触控区约定；站点�
 | 想加回一个已删功能 | 先在 git 历史里找删除当天的提交，读完理由再决定；当前设计不做「功能回收站」 |
 
 ⚠️ 主题目录 `themes/hugo-bearneo/` 基本是**上游副本**（2026-10-10 用 `diff -r` 验过），
-只有 `style.html` 有上面登记的三处改动（生效的是它的镜像 `assets/css/theme.css`）。真要再改它，改完请在本文档第 5 节登记一行
+只有 `style.html` 有登记的四处改动（生效的是它的镜像 `assets/css/theme.css`）。真要再改它，改完请在本文档第 5 节登记一行
 —— 否则下一次跟上游同步会静默覆盖。
 
 ---
@@ -226,7 +213,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 
 1. **中文字体要显式声明**（上游的 Verdana 栈不含汉字）。
 2. **正文标题要有层级**（上游 h1~h6 一律 `margin: 16px 0`，标题和上下段的距离一样）。
-   2026-11-21 起文章页标题后的 `#` 锚点**默认常显**并使用链接蓝，
+   文章页标题后的 `#` 锚点**默认常显**并使用链接蓝，
    标题与正文的区分更直接（见 `custom.css` 第 02 段）。
 3. **列表行的日期列不能写死宽度**（上游按它自己的 `"02 Jan."` 7 字符定 80px，
    本站用 ISO 的 `2006-01-02` 10 字符，写死就每行折两行）。
@@ -251,7 +238,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - **深色有手动开关**：`data-theme="dark|light"` 写在 `<html>`，右上角月亮/太阳 SVG 切换，
   初值读系统设置，选择存 `localStorage['hl-theme']`。`theme.css` / `custom.css`
   里所有 `@media (prefers-color-scheme: …)` 已改成 `[data-theme="…"]`，切换后全站一致。
-- **切换动效（2026-11-22 改）**：优先用 View Transitions API 抓新旧整页快照，
+- **切换动效**：优先用 View Transitions API 抓新旧整页快照，
   从**点击坐标**用 `clip-path: circle()` 绽开到铺满屏幕（`custom.css` 第 57b 段只关掉
   默认淡入，动画在 `custom_body.html` 里用 WAAPI 驱动：500ms、`cubic-bezier(.645,.045,.355,1)`）。
   图标在切换期间单独快照、转一圈（55% 段落带回弹，第 57c 段）；按钮中心点用
@@ -261,7 +248,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   `.hl-theme-transition`：新快照在过渡起步时抓取，颜色可能还是旧的。⚠️ 第 57b/57c 段的
   规则全部挂在 `.hl-vt-theme` 下（只在切换期间挂到 `<html>`），否则会把第 30 段跨页转场的
   0.2s 淡入一起关掉 / 让图标从整页淡入里被单独摘出来。
-- **正文用最深 ink（2026-11-22）**：升级包把 `body` 设为 `--hl-ink-2`（浅 `#374151` / 深 `#C8CDD6`），
+- **正文用最深 ink**：升级包把 `body` 设为 `--hl-ink-2`（浅 `#374151` / 深 `#C8CDD6`），
   长文正文偏淡；站点层只在 `<content>` 上覆盖为 `--hl-ink`（浅 `#111315` / 深 `#F3F4F6`），
   页眉、页脚、日期等元信息仍保持 ink-2，层级不被拉平。对比度：浅色 10.3:1 → 18.6:1，
   深色 11.7:1 → 17.0:1。改的是 `custom.css` 第 39 段。
@@ -270,7 +257,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   所以用户 2026-10-11 提的「配色参考 yinji」**无需任何改动** —— 本来就一致。
   真正有差异的只有字体栈（见下）和几处排版补丁（见第 5 节）。
 
-#### 代码块配色（2026-10-11 新增，**浅色 / 深色两套**）
+#### 代码块配色（浅色 / 深色两套）
 
 上面说的「深色只覆盖 8 个颜色变量」**不包括代码块** —— 代码块另有一组 `--code-*` 变量，
 由站点层在**含代码块的页面**上输出（见 `custom.css` 第 12 段）。
@@ -298,8 +285,8 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 
 | 角色 | 栈 | 用在哪儿 |
 | --- | --- | --- |
-| `--font-primary` | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif`（站点层补，2026-11-05 改成系统字体栈） | 正文、标题 |
-| `--font-secondary` | `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "Sarasa Mono SC", "Noto Sans Mono CJK SC", monospace`（站点层补，2026-10-12） | `<time>`、`<code>`、代码块 |
+| `--font-primary` | `-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", "Source Han Sans SC", "Noto Sans CJK SC", sans-serif`（站点层补，系统字体栈） | 正文、标题 |
+| `--font-secondary` | `ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", "Sarasa Mono SC", "Noto Sans Mono CJK SC", monospace`（站点层补） | `<time>`、`<code>`、代码块 |
 
 - ⚠️ yinji 的写法是 `"Verdana","PingFang SC", sans-serif` —— 2026-11-05 之前本站前两项与它逐字相同；改成系统字体栈后已**不再相同**，是用户明确要求的偏离（Verdana 不含汉字，中英混排基线会飘）。
 - ⚠️ 上游**没有** `--font-serif`（衬线标题）也没有 `--font-meta`（等宽元信息）这两个概念 ——
@@ -335,7 +322,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   唯一的阴影是图片放大遮罩上的 `0 8px 32px rgba(0,0,0,.3)`。
 - **`hr` 是虚线**：`hr { border: 0; border-top: 1px dashed }`。
   首页「Hi! 简介」和「Recent Posts:」之间那条分隔就是它，**不用加类名**。
-- **长文页引用框（2026-11-21）**：`content.long-form blockquote` —— 3px
+- **长文页引用框**：`content.long-form blockquote` —— 3px
   `--link-color` 左线、浅蓝底（亮 `#eef4fd` / 深 `#1a2230`）、左上角
   5em 低饱和 `“`（opacity .3）。只挂 `posts` + `weekly`（`single.html`
   的 `$longForm` / `.Params.longForm` 给 `<content>` 加 `long-form` 类），
@@ -349,7 +336,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   所有阅读页正文统一 **18px**，行盒 = 18 × 1.5 = **27px**。
 - **正文段间距 1.5em，与行高一致**（2026-11-21 用户要求「段间距和行间距一致，
   不用刻意增大」）：18 × 1.5 = **27px**，正好等于行盒高度。
-  旧方案（2026-10-27 起）是 1.75em / 2em，刻意让段距大于行距，已经取消。
+  旧方案是 1.75em / 2em，刻意让段距大于行距，已经取消。
   **段落本身只加 `margin-bottom`**；「标题 → 首段」的间距由标题自己的
   `margin-bottom` 决定：标题后的段落用 `content h2 + p` 等相邻选择器把
   默认的 `1em` 上边距归零，所以 h2 / h3 / h4 后面实际是 12 / 9 / 7px。
@@ -358,7 +345,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   ⚠️ 主题里 `content` 是**唯一**带行高的容器规则，所以 `<content>` 里的
   `p` / `li` / `blockquote` / **标题** 全都继承这 1.5（标题单行时看不出差别）。
   列表、引用块、图片容器也统一到 1.5em 上下距（见 `custom.css` 第 02 段）。
-- **正文项目符号**（2026-11-21 晚）：非 `/roll/` 页面的普通 Markdown 无序列表统一成「链接蓝 5px 圆点 + 1.3em 悬挂缩进」，嵌套列表用 4px 三级灰圆点；`ul:not([class])` 只命中正文列表，`.blog-posts` / `.recent-posts` 这些组件列表和 `/roll/` 都不受影响（`custom.css` 第 02b 段）。
+- **正文项目符号**：非 `/roll/` 页面的普通 Markdown 无序列表统一成「链接蓝 5px 圆点 + 1.3em 悬挂缩进」，嵌套列表用 4px 三级灰圆点；`ul:not([class])` 只命中正文列表，`.blog-posts` / `.recent-posts` 这些组件列表和 `/roll/` 都不受影响（`custom.css` 第 02b 段）。
 
 ---
 
@@ -385,7 +372,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 | --- | --- | --- |
 | `首页` | `/` | 首页 |
 | `关于` | `/about/` | 关于 |
-| `邻居` | `/roll/` | 收藏（**收藏 + 友链合并页**，2026-10-11 起） |
+| `邻居` | `/roll/` | 收藏（**收藏 + 友链合并页**） |
 | `工具` | `/tools/` | 工具 |
 | `周刊` | `/weekly/` | 周刊 |
 | `文章` | `/archive/` | 归档 |
@@ -394,7 +381,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 ⚠️ `RSS` 那一项与页脚的 `RSS` 指向**同一个** `/index.xml`。
 它不以 `http(s)` 开头，所以 `externalLinksNewTab` 那套不会给它加 `target="_blank"`
 （与页脚那个 RSS 链接行为一致：原地打开）。
-✅ **2026-10-17 起有「当前页高亮」了**：`nav.html` 输出 `aria-current="page"`，
+✅ **有「当前页高亮」**：`nav.html` 输出 `aria-current="page"`，
 样式在第 00b 段 —— 当前项转**主文字色**，**不加下划线**（普通项是蓝字无下划线、
 悬停是蓝字带下划线，三态都不改变宽度）。`RSS` 指向 `/index.xml`、不是页面，
 所以它永远不会被点亮。
@@ -404,40 +391,30 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 ⚠️ 判断必须**精确相等** `$.RelPermalink`。写成前缀匹配的话，`Posts`（指向 `/archive/`）
 会把每一篇 `/posts/…` 都点亮 —— 而本站 143 个内容页全在那条路径下。
 
-⚠️ **2026-10-12 撤掉了原来的 `Hub` 项**（`https://profile.hulatu.com/`，个人主页子站，
-2026-10-11 加、weight 15 卡在 `Home` 右侧）。用户要求「子站入口只留在 `/about/`」，
-所以导航里不再有跨站外链 —— **7 项全是本站页面**。`Now` 已于 2026-11-02 按用户要求删除，旧地址 301 到 `/about/`。
-（`RSS` 指向 `/index.xml`，同样不是 `http(s)` 开头、同样不参与 `externalLinksNewTab`。）
-⚠️ **同一天稍后 `profile.hulatu.com` 的子站被整体删除**（用户要求「把 Hub 去掉」），
-内容并入 `/about/`；**同日再晚一点 `run` / `shot` / `share` 三个子站也一并下线、
-`sites/` 目录整体从仓库删除**（见第 4 节「子站」）—— 所以「主站与子站导航差一项」
-这类问题现在**已经不存在了**：全站只剩主站一份 `[[menu.main]]`，当前 7 项。
+导航 7 项**全是本站页面**，没有跨站外链；`RSS` 指向 `/index.xml`，不是 `http(s)` 开头，
+不参与 `externalLinksNewTab`（原地打开，与页脚那个 RSS 链接一致）。
 ⚠️ 导航项一多，窄屏就会折行：`nav` 靠站点层 `custom.css` 第 00 段的
 `display: flex; flex-wrap: wrap; column-gap: 8px`（并清掉末项的 `margin-right`）
 保证折行只发生在**项与项之间**。没有这段时 392px 视口会把 `RSS` 拆成 `RS`/`S`。
 
-⚠️ **`/roll/` 是全站唯一的链接页**（2026-10-11 起）。**共 13 条**，
-2026-11-21 起用 `.roll-group` 轻量标签分成「朋友」「组织」两组（不是 `##` 标题，
+⚠️ **`/roll/` 是全站唯一的链接页**。**共 13 条**，
+用 `.roll-group` 轻量标签分成「朋友」「组织」两组（不是 `##` 标题，
 见第 4 节），DOM 上仍是**两个 `<ul>`：3 + 10**：
 - 前 **3 条是朋友**：花墨 / Cytrogen / 梁某银的博客。**不含千古壹号**（用户明确说不要；
   它的 `blog-list` 就是下面「中文博客琅琊榜」那条，已经在平台那批里了）。
 - 后 **10 条是聚合站 / 目录站**（原「博客圈与组织」；2026-11-02 移除了「十年之约」一条，14 → 13）。
 - ⚠️ 分组靠 `.roll-group` 小字标签，**别改成 `##`**（会进目录、破坏平铺）——
   细节见第 4 节「收藏 `/roll/`」。
-- 结尾照 yinji 还有一行 `&hellip;更新中`；2026-11-21 起其后追加「交友原则」与「我的友链信息」。
+- 结尾照 yinji 还有一行 `&hellip;更新中`；其后追加「交友原则」与「我的友链信息」。
 
 ⚠️ **条目格式照 yinji.org/roll**：`- [名称](地址)：一句话点评`。
 ⚠️ **13 条点评 2026-10-11 晚已由作者自己写全**（3 位朋友 + 10 个平台，每条都有一句）——
 **别再当漏写去补**。架构上仍留了口子：要加就直接接在中文冒号后面，不用改别处。
 
-⚠️ **`/links/` 这一页已经删除**（2026-10-11）：旧地址 `/links/` 与更早的 `/friends/`
-**都 301 到 `/roll/`**（见 `static/_redirects`）。**别再拆回两页** —— 用户已经用一次合并
-否掉了「两份清单互不重叠」那套说法。
+⚠️ 旧地址 `/links/` 与 `/friends/` **都 301 到 `/roll/`**（见 `static/_redirects`）。**别再拆成两页**。
 
 ⚠️ 顺序由 `weight` 决定，与 `hugo.toml` 里的书写顺序无关。
-`Weekly` 的 weight 是 **45**（卡在 `Links` 40 与 `Posts` 50 之间），
-所以它必然落在 `Posts` **左边** —— 2026-10-11 用户要求的位置。
-（原来的 `Hub` 靠 weight **15** 卡在 `Home` 10 与 `About` 20 之间，2026-10-12 已删。）
+`周刊` 的 weight 是 **40**（在 `工具` 35 与 `文章` 50 之间），所以它落在 `文章` **左边**。
 
 增删导航只动 `hugo.toml`；外链自动开新窗口（`externalLinksNewTab = true`，在 `nav.html` 里判）。
 
@@ -463,24 +440,21 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 ```
 
 - **文案全在 `content/_index.md`**，模板只负责分隔线、列表、周刊块和精选入口。
-- **2026-11-21 的 Now 与代表作都已按用户要求移除**：Now 曾短暂放在周刊下方，
-  随后整块删除（`shortcodes/now.html`、`partials/now-line.html`、front matter `now` 均已删）；
-  `{{< projects >}}` 也未挂载，`layouts/shortcodes/projects.html` 与 `data/projects.toml`
-  还在，加回一行即可恢复。
-- **导航右侧的 `搜索 /` 与 `☾/☀` 由 `partials/nav.html` 静态输出**（2026-11-22 前是 JS 追加的），
+- **首页没有 Now 与代表作区块**（用户要求移除，相关模板与数据已删）。
+- **导航右侧的 `搜索 /` 与 `☾/☀` 由 `partials/nav.html` 静态输出**，
   不在 `[[menu.main]]` 里，事件由 `assets/js/palette.js` 绑定。桌面 1280px 保持一行；390px 时工具栏折到第二行
   （`header nav` 高约 67px），这是接受的行为 —— 7 个菜单项本来就贴着折行临界。
   ⚠️ 2026-11-23 试过把按钮挪到站名那一行（页头两行），**用户要求恢复原布局，别再提**。
   手机上隐藏按钮里的 `/` 提示、触控命中区用透明 `::after` 撑到约 44px（`custom.css` 第 00e 段），外观不变。
   图标是内联 SVG（月亮 / 太阳），不再用 `☾/☀` 文字，尺寸规则在 `custom.css` 第 56 段。
 - `.hl-section*` / `.hl-project-*` / `.hl-tag-pill` / `.hl-cmd-*` / `.hl-toolbar`
-  样式全部在 `assets/css/upgrade.css` 里（升级包原样，不拆到 custom.css；2026-11-22 前是 `custom_head.html` 末尾的内联 `<style>`）。
+  样式全部在 `assets/css/upgrade.css` 里（升级包原样，不拆到 custom.css）。
   `.hl-project-*` 目前没有调用点（代表作区块未挂载），删掉也不影响构建。
 - 2026-11-21：周刊从 `recent-posts` 移出，单独成块 —— 否则同一期会在首页出现两次。
   周刊块只取 latest 一期，摘要取 front matter 的 `summary`；完整列表在 `/weekly/`。
 - 条数由 `params.homeRecentCount` 控制（当前 5），设 `0` 就退回上游原样（只剩正文）。
 
-#### 2026-11-20：首页身份条
+#### 首页身份条
 
 借花墨（flowersink.com）的「身份感」，但**不做头像、不做全屏 Hero**：在
 「如果觉得…支持一下」前加一句数字，和它**同属一个段落、同一套正文样式**：
@@ -492,15 +466,13 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - 位置：`content/_index.md` 里写 `{{< home-stats >}}如果觉得…`，shortcode 只输出
   纯文本 `文章 N 篇，周刊 N 篇，运行 N 天。` —— **没有 span、没有 class、没有 `<br>`**，
   所以和后面的支持句同属一个 `<p>`，字号/颜色完全一样。
-  标点 2026-11-20 由用户从 `·` 改成中文逗号，照现在的实现走。
+  标点用中文逗号（用户指定）。
 - 数字在构建期算：`layouts/shortcodes/home-stats.html` 取 `site.RegularPages`
   的 posts / weekly 数量，天数取最早一篇 post/weekly 到 `now` 的整天数（含当天）。
-  天数靠每天的构建前进：2026-11-22 起由 `sync-garmin.yml` 每天 00:10（Asia/Taipei）的
-  自动提交触发（原 `daily-rebuild.yml` 与它重复，已删除）；文章/周刊数在发布时自然更新。
+  天数靠每天的构建前进：由 `sync-garmin.yml` 每天 00:10（Asia/Taipei）的
+  自动提交触发；文章/周刊数在发布时自然更新。
   ⚠️ 静态站不每天构建时天数会停在最后一次构建；别为此加前端脚本。
-- 2026-11-20 第二轮：初版是 0.85em 三级灰 + `<br>` 独立一行，用户要求
-  「正常显示、连起来」，于是删掉 `.home-stats` 样式和换行，现在就是普通正文。
-  **别再给它加样式或分割线。**
+- **别给它加样式或分割线**：用户要求它和后面的支持句正常连在一起显示。
 - 数量口径与 `/archive/` 一致：文章 + 周刊。
 
 - `.recent-posts` 的样式在 `custom.css` 第 04 段：
@@ -534,15 +506,15 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   —— 首页简介走 `body` 的 1.5（yinji 也是 1.5）。
   去掉这一层之后两站首页的节奏逐项一致。`<hr>` / `<h3>` / `<ul.recent-posts>`
   本来就在 `<content>` 外面，不受影响。
-  ⚠️ 2026-11-21 起 `content` 与 `body` 同为 1.5，但这一层仍然要留着：
+  ⚠️ `content` 与 `body` 同为 1.5，但这一层仍然要留着：
   `<content>` 还带正文段距、`text-spacing-trim` 等块级规则，首页简介包进去
   会跟着正文的段落节奏走。实测首页整页 1.50、`li` 1.30，与改前逐值一致。
 
-#### 那四个平台链接（2026-10-11）
+#### 那四个平台链接
 
 | 顺序 | 标签 | 落点 |
 | --- | --- | --- |
-| 1 | 公众号 | **`/wechat/`**（站内独立页，2026-11-07 起。此前指向 `/images/gzh.webp` 二维码大图） |
+| 1 | 公众号 | **`/wechat/`**（站内独立页） |
 | 2 | 少数派 | `https://sspai.com/u/hulatu/updates` |
 | 4 | 知乎 | `https://www.zhihu.com/people/hulatu` |
 | 5 | 即刻 | `https://web.okjike.com/u/25B20BAD-…` |
@@ -561,7 +533,7 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   「关注并回复 XX 领取」。所以这一页**零 JS**。
 - ⚠️ **地址的唯一真相来源是 `content/about.md` 的「平台」段**，改的时候两边一起改。
 
-#### 支持入口与 `/donate/` 页（2026-10-11）
+#### 支持入口与 `/donate/` 页
 
 首页那句「如果觉得我的网站对你有帮助，可以选择 **[支持]** 我」里的 `支持`
 是一个**站内链接**，指向独立页 **`/donate/`**（`content/donate.md`）。
@@ -589,11 +561,8 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - front matter：`hideDate: true` + `toc: false`（与 `/about/` 同一套）+ `noindex: true`
   （与 `/privacy/` 一致 —— 两者都是「不是内容」的站点家具页）。
 
-### 关于页 `/about/` 的介绍块（2026-10-11，**没有头像**）
+### 关于页 `/about/` 的介绍块（没有头像）
 
-**2026-11-21**：当天曾加过 `{{< about-mac >}}`「关于本机」卡片，随后**按用户要求移除**：
-`content/about.md` 的调用、`layouts/shortcodes/about-mac.html` 与 `.hl-mac-*` 样式
-均已删除。正文重新从「大家好」开始，第一个元素是普通段落；「全站没有头像」这条不变。
 
 正文最上面那块「名字 + 一行简介 + 关注方向」现在是一段**最朴素的 Markdown**：
 
@@ -609,43 +578,25 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 - **全站没有头像**：页头与关于页都不显示，`static/images/avatar.webp` 也已删除。
 - ⚠️ **别再给关于页加头像**。若哪天要加：主题的全局 `img { margin-left:auto; margin-right:auto }`
   在列方向 flex 里会盖过 `align-items`，窄屏要把 `margin` 显式归零；两栏时左栏必须 `min-width: 0`。
-- 首尾元素的 16px 外边距：2026-10-11 去掉页面标题时，介绍块是首元素，上边距会折叠穿透；
-  2026-11-21 标题恢复后，介绍块回到标题下方，这条不再适用。
-  ⚠️ 别为了「消掉它」再加 `content > :first-child { margin-top: 0 }`：
-  那条规则 2026-10-11 已删，它会把首行顶到导航栏下面（见第 5 节第 ③ 条规矩）。
-- **页面标题 2026-11-21 起恢复显示**：用户要求 `/about/` `/roll/` 与文章页 / 周刊页一致，
-  两页不再写 `hideTitle: true`。此前 2026-10-11 曾照 yinji 把标题整行藏掉
-  （理由：导航已经在指示位置）；现在标题由站点层 `single.html` 正常输出 `<h1>`。
+- ⚠️ 别加 `content > :first-child { margin-top: 0 }`：它会把首行顶到导航栏下面（见第 5 节第 ③ 条规矩）。
+- **页面标题正常显示**：`/about/` `/roll/` 与文章页 / 周刊页一致，由站点层 `single.html` 输出 `<h1>`。
   `hideTitle` 开关仍保留，供 `/contact-qq/`、`/contact-wechat/` 等极简页使用。
 
-### 关于页 `/about/` 的章节结构（2026-10-12 并入原 Hub；2026-11-03 撤掉内容平台）
+### 关于页 `/about/` 的章节结构
 
-`/about/` 现在是**全站唯一的人物页** —— 原来那个独立子站 `profile.hulatu.com`（导航里叫 `Hub`）
-2026-10-12 被用户要求**整体删除**，内容并到这里。
+`/about/` 是**全站唯一的人物页**（原 `profile.hulatu.com` 子站的内容并到了这里）。
 
-- **2026-10-12 只并了一项**：`## 内容平台`（公众号 / 少数派 / 即刻 / Telegram），插在「联系我」之后。
-  用户明确只选了这一项 —— Hub 的工具栈、项目列表、数字花园、书影音**都没有并进来**
-  （其中「数字花园」那张域名表连同子站一起消失了）。
-- **2026-11-03 这一节又撤掉了**：首页已经有一行平台入口
-  （公众号 / 少数派 / 知乎 / 即刻），关于页再列一遍既重复、集合还不一致
-  （关于页多 X / Telegram，首页多知乎）。用户要求「保留首页那一行，关于页的去除」，
-  于是 `## 内容平台` 整节删除 —— X / Telegram / 关于页那份公众号二维码链接也随之消失，
-  平台入口**只在首页**。
-- 「联系我」原有 QQ / Gmail / WeChat 三个渠道。**2026-11-20 起 QQ 与 WeChat
-  分别指向 `/contact/qq/` 与 `/contact/wechat/`**（见下面「联系页」一节），
-  Gmail 仍是 mailto。
-- **「博客导览」里那条「花园」入口已删**（它指向的就是被删掉的子站），导语也跟着去掉
-  「以及我另外维护的两个站点」那半句。现在那一节**全是站内链接**。
-- 顺带撤掉了一条跨站外链：`content/privacy.md` 的适用域名列表去掉了 `profile.hulatu.com`
-  （只剩 `hulatu.com` / `run.` / `shot.` / `share.`）。
+- 平台入口**只在首页**那一行，关于页不再列一遍。
+- 「联系我」：QQ 与 WeChat 分别指向 `/contact/qq/` 与 `/contact/wechat/`（见下面「联系页」一节），Gmail 是 mailto。
+- 「博客导览」那一节**全是站内链接**。
 
 ⚠️ 这一页的章节顺序（改之前想清楚，TOC 是从这里生成的）：
 `介绍（无标题）→ 这个站 → 联系我 → 写作统计`（3 个 h2；TOC 自动生成）。
-2026-11-21 用户要求把「这个站」从页尾移到「联系我」上面。新增小节
+新增小节
 **照常写 `## 标题` 就行** —— 拼音锚点在构建期自动生成（见 8.1），
 md 里**不要**再手写 `{#pin-yin}`。
 
-### 联系页 `/contact/qq/` 与 `/contact/wechat/`：一页一码（2026-11-20）
+### 联系页 `/contact/qq/` 与 `/contact/wechat/`：一页一码
 
 关于页「联系我」里的 QQ 与微信，原来各是一条指向图床裸图的链接
 （`img.hulatu.com/post/…webp`），点开是浏览器缩放的图片。用户要求
@@ -672,7 +623,7 @@ md 里**不要**再手写 `{#pin-yin}`。
 - 页面设置与 `/wechat/` 一致：`hideTitle` / `hideDate` / `toc: false` / `noindex: true`。
   导航里没有这两项，入口只在关于页的「联系我」。
 
-### 收藏 `/roll/`（2026-10-11 照 yinji 改成平铺）
+### 收藏 `/roll/`
 
 导航里的「邻居」指向的就是这一页。**全站唯一的链接清单**（友链页 `/links/` 已删，301 到这里）。
 
@@ -696,7 +647,7 @@ md 里**不要**再手写 `{#pin-yin}`。
 • 网站名称 / 地址 / 描述 / LOGO / 邮箱
 ```
 
-- **页面标题 2026-11-21 起恢复显示**（用户要求与文章页 / 周刊页一致）；
+- **有页面标题**（与文章页 / 周刊页一致）；
   此前照 yinji 用 `hideTitle: true` 藏掉，现在 front matter 不再设该键。
   `hideDate: true` 仍保留（独立页不挂日期）。
 - **分组用轻量标签，不用 `##` 小标题**（2026-11-21 第五次改版）：
@@ -711,7 +662,7 @@ md 里**不要**再手写 `{#pin-yin}`。
   朋友 / 组织两列去掉圆点，改成**无横线**的链接行（名称加粗、点评次级灰、
   悬停时名称变链接蓝并出现下划线，**不再让其余行变淡** —— 用户明确不喜欢这个效果）；
   交友原则改成 **5px 链接蓝圆点 + 1.3em 悬挂缩进**，引导词用 `<strong>` 加粗
-  （2026-11-21 晚；不再用 `01–05` 编号，也不用浏览器默认 disc）；
+  （不再用 `01–05` 编号，也不用浏览器默认 disc）；
   同一套圆点已推广到全站正文列表（`custom.css` 第 02b 段），`/roll/` 因 `bodyClass` 单独保留；
   「我的友链信息」变成 12px 圆角的浅色信息块（无边框、无内部横线）。
   ⚠️ 第 55 段用 `content > ul:nth-of-type(1..4)` 定位四段列表
@@ -724,17 +675,15 @@ md 里**不要**再手写 `{#pin-yin}`。
 - ✅ **分组靠 `.roll-group` 轻量标签**（2026-11-21 第五次改版）：
   `<p class="roll-group">朋友</p>` / `<p class="roll-group">组织</p>`，
   样式在 `custom.css` 第 49 段（0.8rem 小字，无右侧延长线）。
-  历史：2026-10-11 曾用「## 朋友 / ## 博客聚合平台」，随后照 yinji 删成平铺；
-  2026-10-11 晚用裸 `<hr>` 分隔；2026-11-21 换成现在的标签，**不是 `##`**。
 - **2026-11-21 晚：整页去线**（用户：「不要有那么多分割线」）：
   `.roll-group` 去掉右侧延长线，朋友 / 组织列表去掉逐行 `border-bottom`，
   信息块去掉外边框与 `li + li` 内部横线，只保留浅色底。分隔只靠字号、字重与间距。
 - ⚠️ **裸 HTML 块会把页面拆成两个 `<ul>`**（3 条朋友 + 10 条组织）——
   Goldmark 遇到块级 HTML 就会封闭当前列表。这是**预期行为**：
   视觉上仍是连续的，语义上也正好是两组（屏幕阅读器会说「列表，3 项」+「列表，10 项」）。
-- `hideTitle` 2026-11-21 起**不再用于 `/roll/` `/about/`**（两页恢复标题）；开关仍保留给联系页。
+- `hideTitle` **不再用于 `/roll/` `/about/`**（两页都显示标题）；开关仍保留给联系页。
 
-### 跑步 `/run/`（2026-10-12 从子站搬回）
+### 跑步 `/run/`
 
 **这一页原来是个独立子站 `run.hulatu.com`**（源码 `sites/run/`）。2026-10-12 用户要求
 「把 `run.hulatu.com` 变成 `hulatu.com/run`，把网页变成我博客里的一个页面」，于是：
@@ -746,12 +695,12 @@ md 里**不要**再手写 `{#pin-yin}`。
 - **结构**：`<h1>跑步</h1>` → 导语 → `## 总览`（8 格）→ `## 近期状态`（4 格）→
   `## 个人纪录`（4 格）→ `## 年度汇总` → `## 月度里程`（柱状图）→ `## 全部记录`
   （按年 `<details>`，最早那一年默认展开）→ 一行「数据更新于 …」。
-- **样式**在 `assets/css/custom.css` 第 25 段（2026-11-06 前按 `.RelPermalink` 守卫，抽外部文件后守卫退役）。
+- **样式**在 `assets/css/custom.css` 第 25 段。
 
 ⚠️ 这一页**没有**面包屑 / TOC / 评论区 —— 它走自己的模板，根本不经过 `single.html`，
 所以 `$longForm` 那一整套（系列带、上下篇、giscus、标题锚点）都不适用。
 ⚠️ **柱状图用 `--link-color`**，不引入第三种颜色（404 页的主按钮也是它）。
-⚠️ **月度柱状图的横向滚动条（2026-10-26 改）**：原来 `.month` 最小 48px、`gap` 6px，
+⚠️ **月度柱状图的横向滚动条**：原来 `.month` 最小 48px、`gap` 6px，
 15 个月最少要 **804px**，而正文只有 680px → **桌面端也一直在横向滚动**，每个访客都看得见
 一条 15px 高的原生滚动条压在 200px 的图里。现在三处一起改：`.month` 最小 **38px**、
 `gap` **4px**（15 个月 **626px** < 680px，桌面端**不再溢出、滚动条消失**）；真的溢出时
@@ -760,19 +709,15 @@ md 里**不要**再手写 `{#pin-yin}`。
 不压住 `25-05` 那行月份标签。⚠️ 别图省事改成 `overflow-x: hidden` —— 手机上一屏只放得下
 8 个月，藏了滚动条就没人知道右边还有 7 个月。⚠️ `.month-key` / `.month-value` 的 `0.72rem`
 别再调大：41px 的格子刚好装下 5 个字符，调大会让相邻标签叠在一起。
-⚠️ 子站 `sites/run` **2026-10-12 晚已随全部子站一起删除**（下线前它只剩一条
-`/* → https://hulatu.com/run/ 301`）。配合 Cloudflare 侧撤掉 CNAME，
-`run.hulatu.com` 现在**既不解析、也没有内容**。要让旧域名重新跳过来，需要重建
-CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）。
+⚠️ 旧域名 `run.hulatu.com` 现在既不解析也没有内容；要让它跳回 `/run/`，需要在 Cloudflare 重建 CNAME + 一条 301（或配 Bulk Redirect）。
 
 ### 归档 `/archive/` 与周刊 `/weekly/`
 
 两页都走「上游 `list.html` 的形态」：**篇数 + 按年分组的列表**。
-**2026-11-21 起搜索框全部移除**（用户要求）：归档页的 `search-box.html`、`postSearch`
-参数与 CSS 高亮样式**已彻底删除**（不是隐藏）；全站搜索走 `⌘K` / `/` 命令面板。
+两页都**没有搜索框**；全站搜索走 `⌘K` / `/` 命令面板。
 
 - `/weekly/` 用站点层 `layouts/_default/list.html`（上游那份的 5 处界面文案英译中 + 删标签墙）。
-  **2026-11-21 起不显示一句话导语**：`list.html` 只给非 weekly 的 section 传 `desc=true`。
+  **不显示一句话导语**：`list.html` 只给非 weekly 的 section 传 `desc=true`。
 - `/archive/` 用 `layouts/_default/archive.html`（**站点层新增**，因为 `/archive/` 是普通内容页
   不是 section，上游没有对应模板）。内容 = `posts` + `weekly` 全部 143 篇，按年分组。
 - **2026-11-21：计数行改成「共 143 篇，随机阅读一篇。」**，随机入口从页脚移到这里。
@@ -790,7 +735,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   用户在 2026-10-10 明确不要标签云，`/tags/` 索引页也一并 `disableKinds` 关掉
   （`/tags/xxx/` 词条页仍然生成，文章下方的标签链接照常可用）。
 
-#### 全局命令面板（2026-11-21）
+#### 全局命令面板
 
 `layouts/partials/custom_body.html`（升级包原版）在任何页面底部输出对话框：
 按 `⌘K` 或 `/` 呼出，搜标题、章节、关键词与引用框，`↑↓` 选择、`Enter` 跳转、`ESC` 关闭。
@@ -803,16 +748,13 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   ⚠️ 别把 `/index.json` 换成升级包自带的 `_default/index.json`：本页面板还靠
   `t/u/g/h/k/d`，换了会把命令面板的搜索弄坏。
 - 面板**第一次打开时才 fetch 一次**，之后缓存在内存里；索引约 **137 KB / gzip 61 KB**
-  （2026-11-22 起只收标题、章节、关键词、引用，不再索引正文全文）。
+  （只收标题、章节、关键词、引用，不再索引正文全文）。
 - 空查询展示最近 10 篇 + 「随机读一篇文章」+「切换深浅色」两条快捷指令。
-- `/archive/` 原来那份页内搜索框 2026-11-21 晚**已彻底删除**（partial、`postSearch`
-  参数、CSS 47 段的高亮规则都没了），恢复要从 git 历史取回。
-  ⚠️ 如果哪天再加输入框，记得补回 `/` 的 `typing` 守卫。
-- ⚠️ `baseof.html` 里原来那份「`/` 跳 `/archive/#search-input`」的脚本已删；
-  别再加第二份 `keydown` —— 两处同时监听会一次开两个面板，或面板打开后页面又跳走。
+- ⚠️ 如果再加页内输入框，记得给 `/` 快捷键补回 `typing` 守卫。
+- ⚠️ 别再加第二份 `keydown`（比如「`/` 跳到某个输入框」）—— 两处同时监听会一次开两个面板，或面板打开后页面又跳走。
 - 样式在 `custom_head.html` 末尾（`.hl-cmd-*`），面板 520px / 12px 圆角 / 模糊遮罩。
 
-#### 「分类 / 系列」入口与总览页（2026-11-03 定稿；2026-11-21 晚补分类）
+#### 「分类 / 系列」入口与总览页
 
 `/archive/`（导航 Posts）顶部在「共 N 篇。」下面、文章列表上面只有一行入口：
 
@@ -837,11 +779,11 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   `where $posts "Params.series" $name` + `.ByDate`（升序 = 连载顺序）。
 - 系列名旁边的标题前缀（「综述写作之-」「居家流水账-」）会剥掉，
   完整标题留在 `title` 属性里（悬停可见）。三处剥法一致。
-- 样式：入口在 `assets/css/custom.css` 第 09 段，总览页在 09b 段（2026-11-06 前各有守卫，抽外部文件后守卫退役）。**没有印章红**，只用正文色 + 三级灰。
+- 样式：入口在 `assets/css/custom.css` 第 09 段，总览页在 09b 段。**没有印章红**，只用正文色 + 三级灰。
 
-#### 分类总览页 `/categories/`（2026-11-21 晚新增）
+#### 分类总览页 `/categories/`
 
-分类词条页 2026-10-26 起就存在且可索引，但一直没有站内入口。现在 `/archive/` 顶部和 `/map/` 都链到 `/categories/`。
+分类词条页一直可索引；`/archive/` 顶部和 `/map/` 都链到 `/categories/`。
 
 - `hugo.toml` 的 `disableKinds = ["taxonomy"]` 仍然关着：关的是 `/categories/` 与 `/tags/` 两个**索引页**，词条页 `/categories/<词>/` 照常生成。**不要打开 taxonomy kind** —— 会把 232 个标签索引页一起放出来。
 - `/categories/` 用普通内容页 `content/category.md`（`layout: "categories"` + `url: "/categories/"`）占位，模板 `layouts/_default/categories.html` 读 `.Site.Taxonomies.categories`。
@@ -857,7 +799,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   ⚠️ 想找分类入口看 `layouts/partials/breadcrumbs.html`，**别再加回文末那一行**。
 - **标题行可以整行藏掉**：front matter 写 `hideTitle: true`（站点层 `single.html` 识别）。
   目前用于 `/contact-qq/`、`/contact-wechat/` 这类极简联系页；`/roll/` `/about/`
-  2026-11-21 起恢复显示标题，不再设该键。与 `hideDate` 是两个独立开关。
+  显示标题，不再设该键。与 `hideDate` 是两个独立开关。
 - **日期行可以单独藏掉**：front matter 写 `hideDate: true`（站点层 `single.html` 识别）。
   用在 `/about/`、`/now/`、`/roll/`、`/donate/` 这几个独立页 —— 它们挂一个「最后修改于某天」
   没有意义。⚠️ **`date` 字段本身别删**，RSS / og meta 还要用。
@@ -865,7 +807,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   全都渲染成「没有标题没有日期的裸正文」。站点层去掉了这层条件。
 - **代码块没有红绿灯**（复制按钮 2026-10-11 已加回，见下节）—— 上游只有 `pre code` 的底色和圆角。
 
-#### 代码块的语法配色（2026-10-11 **修复**，不是新增）
+#### 代码块的语法配色
 
 > 用户原话：「我的博客代码区域的色彩显示，阅读体验不太好」
 
@@ -887,20 +829,20 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   不靠换底 —— 这样代码块不会在页面里「打补丁」。
 - **修法的关键在 `hugo.toml`，不在 CSS**：必须 `[markup.highlight] noClasses = false`
   让 Chroma 别再写内联样式，CSS 才够得着它。**改回 `true` 会立刻退化回「看不见」。**
-- 配色在 `assets/css/custom.css` 第 12 段（2026-11-06 前只给含代码块的 5 个页面输出，抽外部文件后全站共用）。
+- 配色在 `assets/css/custom.css` 第 12 段。
 
 实测（`/posts/2026/10/07/engineering-students-use-macbook/`）：像素采样确认底色 `#f2f4f7`，
 字色分别是 `#0a3069`（字符串，最多）/ `#656d76`（注释）/ `#24292f`（标识符）/ `#cf222e`（关键字），
 **内联 monokai 色 0 处残留**。
 
-- **图片带 `width` / `height`**（2026-10-12）：正文 `<img>` 都带真实宽高（取自
+- **图片带 `width` / `height`**：正文 `<img>` 都带真实宽高（取自
   `data/image-dims.json`），加载前就占好版面 → 无 CLS。⚠️ 配套**三件套缺一不可**：
   ① 数据文件 `data/image-dims.json` ② `render-image.html` 输出属性 ③ 第 21 段的 `img { height: auto }`。
   少了 ③ 时 `height` 会当硬高度生效，图会被**竖向拉伸**（实测旧产物 21 张图全部塌成 720×2px）。
 - **图片有 CSS-only 放大**（`imageZoom = true`）：点图弹近黑遮罩 + 右上角 ✕。
   纯 `:checked` 实现，没有 JS，也没有上一版那个带 `focus-trap` 的灯箱。
 
-#### 面包屑（2026-10-11 新增，只有文章页有）
+#### 面包屑（只有文章页有）
 
 ```
 首页 / 文章 / 工具                    ← 普通文章（101 篇，3 段）
@@ -916,11 +858,11 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 | 类型 | 页数 | 挂不挂 | 为什么 |
 | --- | --- | --- | --- |
 | 文章页 `/posts/年/月/日/slug/` | 126 | ✅ | 有层级：首页 → 文章/周刊 → 本篇 |
-| 标签 / 分类词条页 | 221 | ❌ | 顶部就是页面标题（2026-10-26 起是 `{{ .Title }}`，如「思考」）+「全部文章」返回链接，再加「首页 / 思考」是重复 |
+| 标签 / 分类词条页 | 221 | ❌ | 顶部就是页面标题（是 `{{ .Title }}`，如「思考」）+「全部文章」返回链接，再加「首页 / 思考」是重复 |
 | 首页、`/about/`、`/roll/`… | 8 | ❌ | 一级页面，**导航高亮已经指示位置**；「首页 / 关于」是纯冗余 |
 | `/archive/` `/weekly/` 列表页 | 2 | ❌ | 同上（一级页面） |
 
-⚠️ 第三类里的 `/roll/` `/about/` 是**一级页面**，不加面包屑（导航高亮已经指示位置）。2026-11-21 起两页恢复页面标题，但标题上方仍然不要补面包屑。
+⚠️ 第三类里的 `/roll/` `/about/` 是**一级页面**，不加面包屑（导航高亮已经指示位置）。两页有页面标题，但标题上方不要补面包屑。
 
 **三段各是什么**：
 
@@ -958,7 +900,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 `itemListElement` 长度 = 可见段数 + 1，且 `position` 从 1 连续。
 （验收：`grep -rl BreadcrumbList public | wc -l` 应等于长文页数。）
 
-**样式**（`assets/css/custom.css` 第 13 段，2026-11-06 前挂在 `$longForm` 上）：
+**样式**（`assets/css/custom.css` 第 13 段）：
 字号 `0.85rem`、颜色 `--text-color-tertiary`（**默认不抢眼**，悬停才变 `--link-color`）、
 **无底色 / 无边框 / 无圆角**，分隔符 `/` 由 CSS 的 `li + li::before` 画 ——
 与首页那行平台链接（`公众号 / 少数派 / …`）同一套写法，**别改成 `›` 或 `>`**。
@@ -989,7 +931,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   好在 `jsonify` 自己就会把 `<` `>` `&` 转义成 `\u003c` `\u003e` `\u0026`，
   所以**不需要**任何额外的 `</script>` 加固 —— 加了反而错。
 
-#### 文末推荐（2026-10-11 新增，只挂长文页；2026-11-21 改为三选一）
+#### 文末推荐（只挂长文页，三选一）
 
 顺序：标签行 → **文末推荐（三选一）** → 评论区。
 
@@ -1018,8 +960,8 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 - 数据口径与 `/series/` 总览页**完全一致**（同一个 `series` 字段 + `.ByDate` 升序），
   所以两处的「第 N / M 篇」必然一致。**改一处要回来对另一处。**
 - ⚠️ 只有 `len $seriesGroup > 1` 才渲染 —— 单篇的「系列」是自相矛盾的。
-- **「系列」两个字是指向 `/series/` 总览页的链接**（2026-11-03 起；2026-11-21 起
-  直接跳到该系列的锚点，例如 `/series/#综述写作`）—— 读者在系列中段也能一键回到
+- **「系列」两个字是指向 `/series/` 总览页的链接**，
+  直接跳到该系列的锚点（例如 `/series/#综述写作`）—— 读者在系列中段也能一键回到
   这一组的全部篇目；别把它改成普通文字。
 - ⚠️ 系列内上下篇用 `index $seriesGroup (sub $seriesPos 2)` 求，
   **别用 `.NextInSection` / `.PrevInSection`** —— 那两个按 section 的全站日期序，
@@ -1029,7 +971,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 
 - 来源：`site.RegularPages.Related`，权重 `tags 200` / `categories 50`、阈值 20，
   全部在 `hugo.toml` 的 `[related]` 里，不在模板。
-- 2026-11-21 起先扫 12 条、过滤后再截 4 条；非系列文章排除时间线上下篇
+- 先扫 12 条、过滤后再截 4 条；非系列文章排除时间线上下篇
   （系列文章整块不渲染，所以不存在重复）。每条右侧只显示日期，**不显示推荐理由**。
 
 **③ 全站上一篇 / 下一篇**（没有系列带、也没有相关文章时才渲染，兜底）
@@ -1050,16 +992,11 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 - ⚠️ 两列 `grid` 而不是 flex：`1fr 1fr` 让左右两栏宽度相等，长标题不会把另一条挤扁。
 - 最新一篇没有「下一篇」、最早一篇没有「上一篇」—— 模板会补一个
   `.post-nav-empty` 空槽（`visibility: hidden`）占位，否则只剩一条时会掉到左边那列。
-  （2026-11-21 起这一块当前不渲染，空槽逻辑保留给兜底场景。）
-- **2026-11-03 起，系列文章不渲染这一块**（2026-11-21 起「有相关文章」也不渲染）：
-  系列带已经给了组内上一篇/下一篇，再出一组同名的「时间线前后」会让读者分不清
-  两个「上一篇」。`.post-series + .post-nav` 那条「相邻时去边框」的规则随之删除。
+  （这一块目前全站不渲染，空槽逻辑保留给兜底场景。）
+- **系列文章、有相关文章的文章都不渲染这一块**：系列带已经给了组内上一篇/下一篇，
+  再出一组同名的「时间线前后」会让读者分不清两个「上一篇」。
 - 样式在 `custom.css` 第 09 / 10 段，**没有印章红**。
-- ⚠️ 历史：文末「上一篇 / 下一篇」2026-10-05 曾整条删过一次（当时的理由是它和相关文章
-  `if/else` 互斥、从没渲染过）。2026-10-11 用户要求加回来，与系列带并存；
-  **2026-11-03 又收了一次**；**2026-11-21 起彻底退成第三优先级**——
-  只要前面有系列带或相关文章，这一块就不渲染。当前全站 143 篇长文里 0 篇用到它，
-  它只是「既没有系列、也没有相关文章」时的兜底，别因为「看不到」就删掉。
+- ⚠️ 它只是「既没有系列、也没有相关文章」时的兜底，当前全站 0 篇用到，别因为「看不到」就删掉。
 
 ### 目录 TOC
 
@@ -1118,17 +1055,14 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 - 第一行是订阅、站点元信息与友链圈；第二行是制作署名、版权与授权。
 - **RSS 前面的 📡 已去掉**；问候、隐私、开往、虫洞、地图仍保留图标。
 - 顺序固定为：隐私 → 开往 → 虫洞 → 地图。
-- 「随机读一篇」**2026-11-21 已从页脚移除**，改到 `/archive/` 的计数行
-  （「共 143 篇，随机阅读一篇。」）。⚠️ 别在 `footer.html` 或 `custom_body.html`
-  里再加页脚按钮 —— 用户明确要求只保留归档页那一个入口。
-- 「搜索」入口 **2026-11-21 晚已按用户要求从页脚移除**（原来落到 `/archive/#search-input`）。
-  站内搜索只保留 `⌘K` / `/` 命令面板与导航右侧的「搜索 /」按钮，**别再加回页脚**。
+- 页脚**不放**「随机读一篇」和「搜索」：随机入口在 `/archive/` 的计数行，搜索只走 `⌘K` / `/` 命令面板
+  与导航右侧的「搜索 /」按钮。⚠️ 别在 `footer.html` 或 `custom_body.html` 里再加页脚按钮（用户明确要求）。
 - 「问候」是 `mailto:` 链接（`partials/hello.html`），悬停仍会浮出邮箱卡片。
 - 排版：行高 1.95、上下 padding 2.6rem / 2.2rem、非链接文字次级灰；
   字号仍是 `--font-size-secondary`（0.8em），一分未动。
 - 四个开关全部保留：`hideMadeWithLine` / `hideCopyright` /
   `hideRSSAndEmail` / `hideSitemap`。
-- 「打个招呼」仍是悬停浮层 + 点击复制（见 2026-11-20 那节）。
+- 「打个招呼」仍是悬停浮层 + 点击复制（见下面「问候浮层」一节）。
 
 ⚠️ 实现约定（改页脚前先看）：
 
@@ -1165,12 +1099,12 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 - 三处契约，改名要同改：`partials/hello.html`（标记）、
   `partials/hello-script.html`（内联脚本，类 `.hello-copy` / `.is-copied` / `.is-open`）、
   `assets/css/custom.css` 第 48 段（样式）。
-  2026-11-21 起正文也能用：`layouts/shortcodes/mail-link.html` 调同一个 partial，
+  正文也能用：`layouts/shortcodes/mail-link.html` 调同一个 partial，
   当前挂在 `/about/` 的「写信」。脚本已从「只取第一个 `.hello`」改成遍历所有实例，
   否则正文那处在 DOM 里靠前，会把页脚浮层的交互抢掉；正文卡片用第 52 段左对齐，
   避免窄屏从触发词中间向两边展开时溢出。
 
-### 全站装置：skip-link / 打印 / 跨页转场（2026-10-17 新增）
+### 全站装置：skip-link / 打印 / 跨页转场
 
 三样都不属于「某个页面的组件」，而是**每一页都挂的装置**，样式都在 `custom_head.html`
 第 29 / 30 段（全站生效），结构改动在 `baseof.html`。
@@ -1191,7 +1125,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
   下一次 Tab 又回到页头，等于白做。`-1` 让它能被程序化聚焦但不进 Tab 序列。
 - `main:focus { outline: none }` 必须有 —— 焦点环会沿整个 main 画一圈，在整页尺度上
   看着像渲染错误。
-- **2026-11-21 起全站统一键盘焦点环**：`a` / `button` / `summary` / `.heatmap-scroll`
+- **全站统一键盘焦点环**：`a` / `button` / `summary` / `.heatmap-scroll`
   在 `:focus-visible` 时统一 2px 链接蓝描边、offset 3px（`custom.css` 第 00d 段）。
   组件自己的 focus-visible 规则写在后面，会覆盖这里的宽度与 offset；
   `[tabindex]` 不能写进兜底选择器，否则 skip-link 聚焦 `<main>` 时会画出整块描边。
@@ -1204,7 +1138,7 @@ CNAME + 一条 301（重建子站项目，或在 Cloudflare 配 Bulk Redirect）
 | `div.toc` | 它是 `position: fixed`，**会叠在正文右上** |
 | `.back-top` / `.giscus-wrap` | 固定定位按钮会印在末页角落；评论区默认展开 |
 | `.breadcrumbs` / `.post-nav` / `.post-series` | 纸上点不了，是导航不是内容 |
-| `.heading-anchor` | 标题后的 `#` 是屏幕上的复制直链入口；2026-11-21 起默认常显，纸上不需要印一串蓝色 `#` |
+| `.heading-anchor` | 标题后的 `#` 是屏幕上的复制直链入口；默认常显，纸上不需要印一串蓝色 `#` |
 
 其余调整：`@page` 给 16mm / 14mm 边距；`body` 去掉 20px padding（纸边距由 `@page` 给，
 再留就是缩进两遍）但**保留 720px 限宽**（A4 可用宽约 673px，本来就装不满）；
@@ -1234,81 +1168,116 @@ CSS 拿不到 location，只能由模板给。
   不喜欢就删掉第 30 段，一行都不用回滚别处。
 - ⚠️ 固定定位的返回顶部按钮会随 root 快照一起淡入淡出 —— 这是**期望行为**，
   不要给它单独 `view-transition-name`，那会出现「按钮不动、内容在淡」的割裂感。
-- **深浅色切换复用同一套 API（2026-11-22）**：`toggleTheme()` 也用 `startViewTransition`，
+- **深浅色切换复用同一套 API**：`toggleTheme()` 也用 `startViewTransition`，
   但只在那 500ms 内给 `<html>` 挂 `.hl-vt-theme`；第 57b / 57c 段关默认淡入、图标快照的规则
   全部限定在这个类下，所以**不会**改动本节 0.2s 跨页淡入，也不会让图标在跨页时被单独摘出。
-
-### 子站（2026-10-12 全部下线）
-
-⚠️ **四个子站已全部下线，`sites/` 已从仓库删除**（`run` / `shot` / `share` / `profile`）。
-`profile` 的内容并入 `/about/`，`run` 的跑步页并入 `/run/`；`shot` / `share` 本来就是空壳。
-`scripts/build-subdomains.sh` 与 `sites/README.md` 也一并删除 —— 需要追溯就用 `git log --diff-filter=D`。
-当前主站不依赖任何子站。
 
 ---
 
 ## 5. 站点层偏离（`layouts/` + `assets/`，文件数见 MAINTENANCE.md 第 0 节）+ 改主题副本 4 处
 
-> ⚠️ **2026-10-14 起多了一类偏离：直接改主题样式。**
+> ⚠️ **还有一类偏离：直接改主题样式。**
 > 生效文件是 `assets/css/theme.css`，`themes/hugo-bearneo/layouts/partials/style.html`
 > 是它的镜像（主题内联 `<style>` 已被站点层空覆盖压掉）。镜像有**四处**改动：
-> ① `content { line-height }` 最终 1.5（2026-10-14 → 1.8 → 1.7 → 1.6 → 1.5）；
+> ① `content { line-height }` 改成 1.5；
 > ② 删掉未启用的 upvote 规则（`button.upvote-btn` / `button.upvoted` / `span.upvote-count`）
-> 与两个 `--upvoted-color` 变量（2026-11-03，每页省约 260B）；
-> ③ visited 链接色与 link 同色（2026-11-21，去掉 `#551a8b` / `#b388ff`）；
+> 与两个 `--upvoted-color` 变量（每页省约 260B）；
+> ③ visited 链接色与 link 同色（去掉 `#551a8b` / `#b388ff`）；
 > ④ 深色 `@media (prefers-color-scheme: dark) { :root {…} }` 改成
-> `[data-theme="dark"] {…}`（2026-11-21，手动深浅色开关）。
+> `[data-theme="dark"] {…}`（手动深浅色开关）。
 > 其余 26 个主题文件仍与上游逐字节一致。**同步上游时这四处要重新应用。**
 >
 > **为什么改主题而不是在站点层再叠一层**：文首那段定下的规矩 + MAINTENANCE.md 第 4 节
-> 的「改颜色 / 字体 / 宽度 / 圆角 → `themes/…/style.html`，改完在第 5 节登记」。
+> 「改颜色 / 字体 / 宽度 / 圆角」那一行（主题基础令牌改 `theme.css`，改完在本节登记）。
 > 行高属于**设计取舍**（不是修上游的 bug），按规矩落在主题那一份。
 > ⚠️ 代价：`diff -r` 对上游不再全清 —— 验的时候先 diff 再判。
-> 注释写在 CSS 里、minify 会剥掉，所以**体积零变化**（8675 / 12610 / 10404 / 9101 / 10509 / 10089 逐值不变）。
+> 改动处的注释写在 CSS 里，minify 会剥掉，不增加体积。
 
-| 文件 | 偏离 | 为什么 |
+#### 覆盖上游主题 / Hugo 内置的模板
+
+| 文件 | 做什么 | 为什么 / 注意 |
 | --- | --- | --- |
-| `layouts/_default/baseof.html` | ① `.Site.LanguageCode` → `.Site.Language.Locale`；② 补回 robots 分支；③ **2026-10-17 加 skip-link**（`<body>` 后第一个元素）+ **`<main id="main" tabindex="-1">`** + 长文页的 `.print-url`；④ **2026-11-21 删掉页内 `/` 快捷键脚本**（改由 `custom_body.html` 全局接管）；⑤ **2026-11-21 `<body>` 支持 `bodyClass` front matter**（`/roll/` 的专属排版钩子） | ① 前者 Hugo 0.158 起弃用，将来移除会让整站构建失败；② 上游**完全没有** robots 输出，而本站有两类页面本来就该 noindex（见下）；③ 无障碍：原来要按 8 次 Tab 才到正文（WCAG 2.4.1 A 级）。⚠️ skip-link 的目标是 `#main`，**不能**复用 `#top`（那是返回顶部的落点，跳过去等于跳到页头）；④ 两处同时监听会一次开两个面板，或面板打开后页面又跳走；⑤ 只输出 class，不改变原有 id |
-| `layouts/_default/single.html` | 去掉 `if eq .Type "blog"` 外层门槛；加 `hideDate` / `hideTitle`；加文末「系列坐标带」+「上一篇 / 下一篇」；加评论区；**2026-11-21 日期行改成「发布于 YYYY-MM-DD / 更新于 YYYY-MM-DD」普通灰字**（发布日期前加「发布于」；有更新时再显示「更新于」；不再用升级包的浅蓝徽章，按用户要求不强调；`lastmod` 与 `date` 不是同一天才显示） | 上游把标题日期写死给 `blog` 段；其余都是站点层新增（见第 4 节）。判据取**日历日不同**而不是「差 24 小时」—— 当天发当天改的两个日期长得一样，并排显示是噪音。样式沿用 `.byline` 的灰字，不做徽章；`enableGitInfo = true` 让 `lastmod` 跟 Git 提交走 |
-| `layouts/_default/list.html` | 5 处界面文案英译中；列表本体改用 `partials/post-list.html`；**2026-11-21 传 `desc=(ne .Section "weekly")`**（`/posts/` 显示一句话导语，`/weekly/` 不显示） | 上游文案写死英文、没走 i18n；列表与 `/archive/` 共用一份。周刊按用户要求去掉导语；归档页不传 `desc`，避免 143 条全部变三行 |
-| `layouts/partials/post-list.html` | **新增**：按年分组 + `orphan-safe` 标题的列表本体；**2026-11-21 加可选 `desc` 参数**，在标题链接内追加 `.hl-post-desc`；年份改成 `<li class="year-heading"><h2>…</h2></li>`，链接用 `.RelPermalink` | `/posts/`、`/weekly/`、`/archive/` 三处共用，避免复制粘贴漂移。⚠️ 导语必须放在 `<a>` 内部：`li` 是 flex，外置会成为第三个 flex 子项。⚠️ `<ul>` 的直接子元素只能是 `<li>`，裸放 `<h2>` 会被 axe 判为 serious；`.year-heading` 显式改回 `display:block` 让 h2 边距照旧 |
-| `layouts/_default/rss.xml` | 四处：① `xmlns:content` + **2026-10-15 起顶部不再挂 `<?xml-stylesheet?>`**（旧的 `/rss.xsl` 已删）；② 首页 feed 改成**只收文章页**（`Type` ∈ `posts`/`weekly`）；③ 补 `atom:updated` / `category` / 摘要式 `description` / 全文 `content:encoded`，并存 `params.RSS.pageLimit` 上限（20）；④ **2026-10-25 补 `<image>`**（144×144 PNG，走 `params.feedIcon`） | ① 旧版靠浏览器 XSLT 渲染，Chromium 正在移除 XSLT（弹横幅，移除后那页退化成 raw XML）→ 改由 `functions/_middleware.js` 内容协商到 `/feed/`，见第 4 节「订阅源」；② 迁移后新增的 `/about/` `/now/` `/roll/` `/privacy/` `/donate/` `/archive/` 都是 content 根下的普通页，会被一并收进订阅；③ 上游只发全文 `description`、没有「更新于」和分类；④ `<image>` 是订阅端**唯一有明文依据**的图标来源，缺了它阅读器只能猜（见 8.6） |
-| `layouts/_default/archive.html` | **新增**（且比上游 `list.html` 多「系列」一行入口 + 标签常显/折叠） | `/archive/` 是内容页不是 section，上游无对应模板 |
-| `layouts/_default/run.html` | **新增**（2026-10-12）：跑步数据页。从子站 `sites/run/layouts/index.html` 搬来，去掉子站自己的 `<head>` / `<header>` / `<footer>`，补一个页面级 `<h1>`，数据块包进 `<content>` | 跑步数据要从 `run.hulatu.com` 变成本站的 `/run/` 页，数据来自 `hugo.Data.runs`（`data/runs.json`）—— 上游没有任何读 `data/` 的模板 |
-| `layouts/_default/_markup/render-link.html` | **新增**：`</a>` 后**不留换行** | 上游模板末尾多一个换行，行内链接后紧跟中文标点时会被折叠成一个空格（「花墨 ：点评」）。迁移后实测 **26 页 / 70 处**，其中 `/roll/` 一页 15 处。见下 |
-| `layouts/feed/list.html` + `layouts/feed/single.html` | **新增**（2026-10-15）：把 `/feed/` 与 `/feed/weekly/` 挂到 `baseof` 上，内容全在 `partials/feed-view.html` | 「浏览器直接打开 feed 看到的那一页」的新家（旧版是 `static/rss.xsl`）。⚠️ **两个文件名都要有**：section 页（`/feed/`）走 `list.html`，它下面的普通页（`/feed/weekly/`）走 `single.html`，缺一个就会掉进 `_default/single.html` 被渲染成一篇「文章」（多出日期行、标签行、上下篇导航） |
-| `layouts/partials/feed-view.html` | **新增**（2026-10-15）：订阅源的浏览器视图 —— 标题 + 站点简介 + 订阅地址 + 条目（日期 / 标题 / 摘要）。⚠️ **页面集合口径必须与 `_default/rss.xml` 逐字一致**（`site` = Type ∈ posts/weekly；`weekly` = 周刊 section 的 `.RegularPages`） | 见第 4 节「订阅源」。两边算得不一样 = 「网页上比订阅里少一篇」，而且构建 0 警告 |
-| `layouts/index.html` | **新增**（且简介正文**不包 `<content>`**，与上游不同、与 yinji 一致） | 上游首页只有 `{{ .Content }}`，等于空页；`<content>` 那层见第 4 节「首页」 |
-| `layouts/partials/nav.html` | 完全由 `[[menu.main]]` 驱动；**2026-10-17 加 `aria-current="page"`** | 上游把 `Home` / `Blog` 写死，和 `[menu]` 语义打架。⚠️ 当前页判断必须**精确相等** `$.RelPermalink` —— 按前缀会让每篇文章页点亮 `Posts`（它指向 `/archive/`，而文章在 `/posts/…`）；样式**只改颜色**（不加下划线，用户 2026-10-17 当天否掉）、**不改字重**（Verdana 400→700 会让导航折行位置变） |
-| `layouts/partials/header.html` | **新增**（2026-10-18）：站名从 `<h1>` 降级成 `<p class="title">`，外观由 `custom.css` 第 00c 段补回 | 上游把站名写成 h1，而文章页的正文标题也是 h1 → **每篇文章页两个 h1**（实测 134 / 344 页）。改成 `<p>` 后文章页唯一 h1 = 文章标题；首页 / `/about/` / `/now/` / `/roll/` / 列表页变成 0 个 h1 —— 与第 7 节第 1 条「非文章页没有页面级 h1」一致。⚠️ `<p>` 与 `<h1>` 的默认样式差**四处**（color / font-size / font-weight / margin），少补哪一条都看不出来但页面会变；验收是改前改后各截一张首页跑 `magick compare -metric AE` = **0** |
-| `layouts/partials/favicon.html` | **新增**（2026-10-25）：一条 `shortcut icon` 扩成五条（SVG / 512 / 192 / apple-touch / ico）；**2026-10-26 再加一条 `rel="manifest"`** | 上游只输出 `params.favicon` **一条**，本站指向 SVG ⇒ head 里只有 SVG。而 RSS 阅读器与图标聚合服务的取图管线基本不吃 SVG，`/favicon.ico` 这个约定路径又不存在 → 订阅端拿不到图标、退回字母头像或地球图标，表现就是「订阅里的头像和网站不一样」；站内一切正常、构建 0 警告、本地截图也看不出来。见 8.6。manifest 是为了安卓「添加到主屏幕」——没有它，桌面图标是自动截图、名字取 `<title>`、点开还是浏览器界面（见 8.8） |
-| `layouts/partials/footer.html` | 版权独立成行；`Say hello` 大写；末行英文化 + `Privacy` 链接 + CC 带链接；**2026-11-21 页脚不放随机入口**（随机移到了 `/archive/` 计数行） | 上游版权和 Sitemap 挤一行，配置不出来；后三处是 2026-10-11 用户要求 |
-| `layouts/partials/breadcrumbs.html` | **新增**：面包屑 `<nav>` + `BreadcrumbList` JSON-LD | 上游与 yinji 都没有面包屑；只给有层级的文章页挂（见第 4 节） |
-| `layouts/partials/seo_tags.html` | **新增**（2026-10-14）：整份覆盖上游的同名 partial —— ① 删 `<meta name="keywords">` 与 `<meta name="title">`；② 删掉整块微数据（`itemscope` / `itemprop` 那套）；③ 补 `og:image:width` / `height`；④ 换成按页型输出的 JSON-LD；⑤ **2026-10-26 BlogPosting 补 `inLanguage` / `articleSection` / `keywords`** | 上游那份是「HTML 规范还在 2015 年」的写法（见 8.8）。现在全站每页都有 `ld+json`、`keywords` / `itemprop` / `pubdate` 全站归零。⑤ 三个都是**短值**（分类一个词、标签逗号拼接、locale），不破「JSON-LD 不放长文本」这条原则 —— 分类/标签为空时走 `merge` 条件追加，**不能塞空串**，否则富媒体测试会报「字段为空」 |
-| `layouts/partials/og-image.html` | **新增**（2026-10-26）：分享卡片图的**唯一**取值来源 —— 长文页按 `.Slug` 找 `images/og/<slug>.png`，取不到回落 `site.Params.images` 第一张；返回**绝对 URL** | 这段逻辑原本在 `_partials/opengraph.html` 与 `_partials/twitter_cards.html` 各写一份、靠注释提醒「必须逐字一致」；2026-10-26 给 JSON-LD 的 `image` 也用同一张图时正好会变成第三份，于是收成一份。见 8.8 |
-| `layouts/partials/noindex.html` | **新增**（2026-10-26）：`noindex` 判定的**唯一**来源（`tags` / `404` / `.Params.noindex`），返回 bool | 同上：原本 `_default/baseof.html` 与 `sitemap.xml` 各写一份 `or(...)`，漂移的后果是「sitemap 里混进 noindex 页」而构建 0 警告。分类页放行时正好要动它，于是收成一份。见 8.9 |
-| `layouts/partials/custom_body.html` | **2026-11-22 起只剩对话框 HTML，脚本搬到 `assets/js/palette.js`，按钮搬到 `partials/nav.html`。** 以下是原始说明：**新增**（2026-11-21）：**升级包原版** —— `⌘K` / `/` 命令面板、导航右侧 `搜索 /` 与内联 SVG 月亮/太阳按钮（尺寸在 `custom.css` 第 56 段）、归档计数行随机入口 `#archive-random`、`applyTheme()` 手动深浅色。**2026-11-22**：`toggleTheme()` 改为从点击处圆形绽开（View Transitions + WAAPI，见第 57b/57c 段的 `.hl-vt-theme` 约定），图标同拍转一圈；保留 `.hl-theme-transition` 作为无 View Transitions 时的降级。`loadIndex()` 里把本站 `t/u/g/h/k/d` 映射成升级包的 `title/url/summary/date/section/headings/keywords` | 用户要求完全采用升级包，但随机按钮从页脚改挂到归档页；月亮/太阳由文字换成 SVG 以消除跨平台字形差异。⚠️ 不要改回本站自己的数据形状：命令面板的字段映射依赖 `t/u/g/h/k/d`。⚠️ `applyTheme` 额外同步 `<meta id="hl-theme-color">`、giscus iframe 主题与按钮 `aria-label`。⚠️ `.hl-vt-theme` 用序号 `vtSeq` 防连点时旧过渡提前摘类 |
-| `assets/css/upgrade.css` | **新增**（2026-11-22）：升级包原样样式（`--hl-*` 令牌、`.hl-*` 组件、站点令牌桥接），原来是 `custom_head.html` 末尾的内联 `<style>` | 每页 4.8 KB 不能缓存。⚠️ 在 CSS 管道里必须排**最后**（theme → custom → upgrade），它靠「后出现」覆盖旧设计 |
-| `assets/js/palette.js` | **新增**（2026-11-22）：命令面板 / 深浅色切换 / 随机漫游，原 `custom_body.html` 的内联脚本 | 与 `hello.js`、`toc.js` 拼成 `/js/site.min.<hash>.js`，`<head>` 里 `defer`。⚠️ 必须在 `giscus.js` 之前执行（它要读 `applyTheme` 写好的主题），所以别挪到 `<body>` 末尾 |
-| `assets/js/hello.js` | **新增**（2026-11-22）：「问候」/「写信」邮箱浮层，原 `partials/hello-script.html`（已删除） | 拼进全站 site.js，省掉每页 1.5 KB 重复下载 |
-| `assets/js/toc.js` | **新增**（2026-11-22）：右侧目录显隐，原 `_default/single.html` 末尾的内联脚本 | 同上；没有 `div.toc` 的页面直接 return |
-| `layouts/shortcodes/projects.html` + `data/projects.toml` | **新增**（2026-11-21）：首页代表作列表。⚠️ **当前未挂载**（用户要求首页去掉该区块），模板与数据保留 | `projects.html` 用 `hugo.Data.projects`（`.Site.Data` 在 0.156 起弃用）。同批加入的 `shortcodes/now.html`、`partials/now-line.html`、`shortcodes/about-mac.html` 已按用户要求删除 |
-| `layouts/index.json` | **新增**（2026-10-26）：首页的 JSON 输出视图，产物 `/index.json` —— 144 篇的 `{t,u,g,h,k,d}`（标题 / 站内路径 / 标签 / h2·h3 章节 / 关键词 / 引用框）。**2026-11-22 起不再索引正文**：标题 > 章节 > 关键词 > 引用四级打分，章节命中显示「章节 · 短语」，关键词命中显示「相关 · 短语」 | 列表页搜索原来只 `title.includes`，搜正文里的词一条都出不来。⚠️ 文件名**必须**是 `index.json`：home 的输出格式按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`，那份带分页变量、结构也不对。⚠️ 体积约 137 KB / gzip 61 KB；命令面板只在呼出时 fetch 一次，别改成进页面就拉。见 8.7 |
-| `layouts/partials/search-box.html`（**已删除**） | 2026-10-26 新增的归档页搜索框 + 过滤脚本，2026-11-03 起只在 `/archive/` 使用；**2026-11-21 晚彻底删除**，连同 `postSearch` 参数与 CSS 47 段的 `.search-hit` 高亮。恢复需从 git 历史取回 | 同一段脚本原本在 `_default/list.html` 与 `_default/archive.html` **各抄一份**，只差计数文案。删除后全站搜索只剩 `custom_body.html` 的命令面板。见 8.7 |
-| `layouts/partials/inline-links.html` + `data/inline-links.json` | **新增**（2026-10-26）：渲染层正文内链 —— 词表 `{a: 锚点, u: 目标URL}`，在 `single.html` 的 `$content` 管线上把正文文本节点里的锚点词包成 `<a>`。词表 30 条，全部逐字校验过「确实在别的文章正文里出现过」 | 133 篇里 120 篇正文零内链，影响主题相关性；但挨篇插链接要动 120 个用户手写的 `.md`，不动。详见 8.10 |
-| `layouts/partials/custom_head.html` | CSS 管道 + **升级包完整 `<style>`（`--hl-*` 令牌与所有组件）** + 主题引导脚本 + 图床预连 + 单个 `theme-color` + GoatCounter | 升级包样式最后加载，覆盖站点旧设计；末尾「站点令牌桥接」把 `--bg-color-*` / `--text-color-*` / `--border-color` / `--link-*` 映射到 `--hl-*`，旧组件也换色。⚠️ 管道必须在升级包 `<style>` 之前，否则主题基础排版会被打回上游默认 |
-| `layouts/404.html` | **新增** | 上游默认只有 `<h1>404</h1>` + 一行颜文字 |
-| `layouts/_default/_markup/render-heading.html` | **新增**：标题末尾的 `#` 锚点 | 上游没有这个钩子（Goldmark 只给 id、不给可点入口） |
-| `layouts/partials/orphan-safe.html` | **新增**：标题末 2 字包 `nowrap` | 中文标题的孤行问题（取回旧主题的做法） |
-| `layouts/_default/_markup/render-image.html` | **新增**（2026-10-12）：正文图片补 `width` / `height`。⚠️ **2026-10-14 改了放大方案**：overlay 里原本还重复渲染一个 `<img>`，现在整段删掉、URL 改走 figure 上的 `--zoom-src` 自定义属性（见下）。⚠️ **2026-10-25 又加了三样**：`srcset` + `sizes`（400/720/1080 三档）、图床边缘转换前缀、首图 `fetchpriority="high"` | 上游只输出 `src` / `alt`，图片加载前高度为 0 → 页面跳动（CLS）。宽高取自 `data/image-dims.json`（`scripts/sync-image-dims.py` 采集）。⚠️ 必须配第 21 段的 `img { height: auto }`，否则 `height` 会当硬高度生效、图被**竖向拉伸**。**2026-10-25 的 srcset 走 Cloudflare Image Resizing**（`/cdn-cgi/image/width=W,format=auto,quality=82/`），实测省 47–71%，见 8.5 |
-| `layouts/partials/back-top.html` | **新增**：返回顶部（只长文页） | 上游没有；**纯 CSS 滚动驱动动画，零 JS**。⚠️ 同日曾有过「阅读进度条」，已按用户要求删除 |
-| `layouts/partials/code-copy.html` + `assets/js/code-copy.js` | **新增**：代码块复制按钮（只含代码的页） | 上游没有 |
-| `layouts/partials/giscus.html` + `assets/js/giscus.js` | **新增** | 上游没有评论区 |
-| `layouts/sitemap.xml` | **新增**（2026-10-17）：按 `$noindex` 过滤，336 条 → **134 条** | 内置 sitemap 把 197 个词条页 + `/posts/` `/donate/` `/privacy/` `/feed/` `/feed/weekly/` 一起交给爬虫 —— **202 / 336 = 60.1%** 是自带 noindex 的页。爬虫不会收录，但 Search Console 会持续报「已提交但被 noindex 排除」。⚠️ 过滤条件必须与 `baseof.html` 的 `$noindex` **逐字同口径**（四个判据），两处漂移时构建 0 警告 |
-| `layouts/_partials/opengraph.html` + `layouts/_partials/twitter_cards.html` | **新增**（2026-10-17）：按 slug 取 `images/og/<slug>.png`，**取不到就回落 `share.webp`** | 内置那份只会用 `site.Params.images` 一张图 → 337 页的 `og:image` 全是同一张，分享卡片长得一样（现已按 slug 分图，见 8.8）。⚠️ 两个文件的取图逻辑必须**逐字一致**，否则「微信卡片和 Twitter 卡片不是同一张」；⚠️ 覆盖的是 Hugo **内置**的 `_partials/` 命名空间（0.146+），不是主题的 `partials/` |
-| `scripts/gen-og.js` | sharp 把 SVG 光栅化成 1200×630 PNG，每篇文章一张 | 只用现在的 token：`#fdfdfd` 底 / `#1a1a1a` 墨 / `#8c8c8c` 三级灰 / `#d0d7de` 虚线；**不用链接蓝**（卡片上没有可点的东西，用了会让强调色失去语义） |
+| `layouts/_default/baseof.html` | ① `.Site.LanguageCode` → `.Site.Language.Locale`；② 补回 robots 分支（调 `noindex.html`）；③ skip-link（`<body>` 后第一个元素）+ `<main id="main" tabindex="-1">` + 长文页的 `.print-url`；④ `<body>` 支持 `bodyClass` front matter（`/roll/` 的专属排版钩子） | ① 前者 Hugo 0.158 起弃用，将来移除会让整站构建失败；② 上游完全没有 robots 输出；③ 无障碍：没有它要按 8 次 Tab 才到正文（WCAG 2.4.1）。⚠️ skip-link 的目标是 `#main`，**不能**复用 `#top`（那是返回顶部的落点）；④ 只输出 class，不改原有 id。⚠️ 页内别再加 `/` 快捷键的 `keydown`：命令面板已全局监听，两处同时监听会一次开两个面板 |
+| `layouts/_default/single.html` | 去掉 `if eq .Type "blog"` 外层门槛；`hideDate` / `hideTitle` 开关；日期行「发布于 YYYY-MM-DD / 更新于 YYYY-MM-DD」普通灰字；文末三选一（系列坐标带 → 相关文章 → 上一篇/下一篇）；评论区；正文经 `inline-links.html` 加内链 | 上游把标题日期写死给 `blog` 段，其余是站点层新增（见第 4 节「文章页」）。「更新于」只在 `lastmod` 与 `date` **日历日不同**时显示 —— 当天发当天改，两个日期一样，并排是噪音；不做徽章（用户要求不强调）。`enableGitInfo = true` 让 `lastmod` 跟 Git 提交走 |
+| `layouts/_default/list.html` | 5 处界面文案英译中；列表本体改用 `partials/post-list.html`；传 `desc=(ne .Section "weekly")`（`/posts/` 显示一句话导语，`/weekly/` 不显示）；周刊页计数行 + RSS 订阅链接 | 上游文案写死英文、没走 i18n；列表与 `/archive/` 共用一份。周刊不要导语是用户要求。⚠️ 订阅入口是普通文字链接，别加样式 |
+| `layouts/_default/rss.xml` | ① `xmlns:content`，顶部**不挂** `<?xml-stylesheet?>`；② 首页 feed **只收文章页**（`Type` ∈ `posts`/`weekly`）；③ 补 `atom:updated` / `category` / 摘要式 `description` / 全文 `content:encoded`，条数上限 `params.RSS.pageLimit`（20）；④ `<image>`（144×144 PNG，走 `params.feedIcon`） | ① 浏览器打开 feed 看到的那一页由 `functions/_middleware.js` 内容协商到 `/feed/`，不用 XSLT（见下面「订阅源」）；② `/about/` `/roll/` `/privacy/` `/donate/` `/archive/` 这些 content 根下的普通页不该进订阅；③ 上游只发全文 `description`，没有「更新于」和分类；④ `<image>` 是订阅端**唯一有明文依据**的图标来源（见 8.6）。⚠️ `<image>` 必须在 `<item>` 之前 |
+| `layouts/index.html` | 首页：简介 + 最新一期周刊块 + 最近更新列表 + 精选入口；简介正文**不包 `<content>`** | 上游首页只有 `{{ .Content }}`；`<content>` 那层为什么不包见第 4 节「首页」。⚠️ 最近更新**只取 posts**，周刊只在周刊块出现 |
+| `layouts/404.html` | 一级标题 + 「回首页 / 随便看一篇 / 看全部文章」三个出路 | 上游只有 `<h1>404</h1>` + 一行颜文字，没有任何出路。⚠️ 别加回「搜索」按钮：页面上没有搜索输入框了，全站搜索走 `⌘K` / `/` |
+| `layouts/_default/_markup/render-link.html` | `</a>` 后**不留换行**；外链按 `externalLinksNewTab` 开新窗口 | 上游末尾多一个换行，链接后紧跟中文标点时被折叠成空格（「花墨 ：点评」）。见下面「`render-link.html` 那个换行」 |
+| `layouts/_default/_markup/render-image.html` | 正文图片：`width` / `height`（读 `data/image-dims.json`）+ 加载前占位色 `--ph`（读 `data/image-colors.json`）+ `srcset` / `sizes`（400/720/1080，走 Cloudflare Image Resizing `/cdn-cgi/image/…`）+ 首图 `fetchpriority="high"`；放大用原生 Popover，放大图是 `--zoom-src` 背景 | 上游只输出 `src` / `alt`，图片晚到时页面跳动（CLS）。srcset 实测省 47–71%（见 8.5）。⚠️ 必须配第 21 段 `img { height: auto }`，否则图被竖向拉伸；⚠️ 首图不能同时写 `loading="lazy"`；⚠️ 每张图 DOM 里只有一个 `<img>`，放大层别再重复渲染一个 |
+| `layouts/partials/nav.html` | 完全由 `[[menu.main]]` 驱动；当前页 `aria-current="page"`；右侧静态输出「搜索 /」与深浅色按钮（事件在 `palette.js`） | 上游把 `Home` / `Blog` 写死，和 `[menu]` 打架。⚠️ 当前页判断必须**精确相等** `$.RelPermalink`：按前缀会让每篇文章都点亮「文章」（它指向 `/archive/`，文章在 `/posts/…`）。⚠️ 当前项**只改颜色**，不加下划线（用户否掉）、不改字重（会改变导航折行位置） |
+| `layouts/partials/header.html` | 站名从 `<h1>` 降级成 `<p class="title">`，外观由 `custom.css` 第 00c 段补回 | 上游站名是 h1，文章标题也是 h1 → 每篇文章页两个 h1；现在全站 0 页有两个 h1（2026-11-23 实测）。⚠️ `<p>` 与 `<h1>` 默认样式差四处（color / font-size / font-weight / margin），少补哪条都看不出来但页面会变；验收是改前改后各截一张首页跑 `magick compare -metric AE` = 0 |
+| `layouts/partials/favicon.html` | 一条 `shortcut icon` 扩成五条（SVG / 512 / 192 / apple-touch / ico）+ `rel="manifest"`，href 一律 `relURL` | 上游只输出 `params.favicon` 一条（本站是 SVG），RSS 阅读器和图标聚合服务基本不吃 SVG，`/favicon.ico` 又不存在 → 订阅端退回字母头像，而站内一切正常、构建 0 警告（见 8.6）。manifest 让安卓「添加到主屏幕」有正确的图标和名字。⚠️ 别改回 `absURL`：镜像域名下会把请求拽回 hulatu.com |
+| `layouts/partials/footer.html` | 两行：第一行订阅 / 问候 / 隐私 / 开往 / 虫洞 / 地图，第二行制作署名、版权与授权；「问候」走 `partials/hello.html` | 上游版权和 Sitemap 挤一行、配置不出来。⚠️ 页脚不放随机入口和搜索入口（用户要求，见第 4 节「页脚」）；开往 / 虫洞只放页脚（官方要求的位置） |
+| `layouts/partials/seo_tags.html` | 整份覆盖：① 删 `<meta name="keywords">` 与 `<meta name="title">`；② 删整块微数据（`itemscope` / `itemprop`）；③ 补 `og:image:width` / `height`；④ 按页型输出 JSON-LD，BlogPosting 带 `inLanguage` / `articleSection` / `keywords` | 上游是旧写法（见 8.8）。现在每页都有 `ld+json`，`keywords` / `itemprop` / `pubdate` 全站为 0。⚠️ JSON-LD 只放短值；分类 / 标签为空时用 `merge` 条件追加，**不能塞空串**（富媒体测试会报「字段为空」） |
+| `layouts/partials/custom_head.html` | CSS 管道（theme → custom → upgrade 拼成 `/css/main.min.<hash>.css`）+ JS 管道（palette / hello / toc / motion 拼成 `/js/site.min.<hash>.js`，`defer`）+ 主题引导脚本 + 图床预连 + 单个 `theme-color` + Speculation Rules + GoatCounter 加载器 | ⚠️ 新的站点补丁写 `custom.css`，别在管道之前插样式。⚠️ 别加 `<link rel=preload as=style>`：凭据模式与带 `integrity` 的 stylesheet 不一致，CSS 会下两次。⚠️ Speculation Rules 的 `eagerness` 保持 `moderate`，改成 `eager` 列表页会同时预渲染十几页 |
+| `layouts/partials/custom_body.html` | 只放命令面板的 `<dialog>` HTML | 脚本在 `assets/js/palette.js`，按钮在 `nav.html`；这里别再写内联脚本 |
+| `layouts/partials/style.html` | **空覆盖**，压掉主题的内联 `<style>` | 主题 CSS 已复制到 `assets/css/theme.css`、走外部文件长缓存。别往这里贴样式 |
+| `layouts/partials/toc.html` | 标记与上游逐字一致，只去掉上游内联的滚动高亮 `<script>`；点目录走原生锚点跳转（地址栏带 `#章节`） | 上游每帧滚动都对每个标题调 `getBoundingClientRect()`，长文在低端手机掉帧，且每篇内联约 1.6 KB 不能缓存；高亮改在 `toc.js` 用 IntersectionObserver。⚠️ `toc-anchors.html` 会对这段输出做字符串替换，别改标记写法 |
+| `layouts/sitemap.xml` | 覆盖 Hugo 内置：按 `noindex.html` 过滤 | 内置 sitemap 会把标签词条页、`/posts/` `/donate/` `/privacy/` `/feed/` 这些 noindex 页一起交给爬虫，Search Console 会持续报「已提交但被 noindex 排除」。条数见 MAINTENANCE.md 第 0 节 |
+| `layouts/_partials/opengraph.html` + `layouts/_partials/twitter_cards.html` | 覆盖 Hugo **内置**的这两个模板：分享图统一取 `og-image.html` | 内置那份只用 `site.Params.images` 一张图 → 全站分享卡片一模一样。⚠️ 覆盖的是 Hugo 内置的 `_partials/` 命名空间（0.146+），不是主题的 `partials/` |
 
-### ⚠️ `render-link.html` 那个换行（2026-10-11 修）
+#### 站点层新增的页面模板
+
+| 文件 | 做什么 | 为什么 / 注意 |
+| --- | --- | --- |
+| `layouts/_default/archive.html` | `/archive/`：计数行（「共 N 篇，随机阅读一篇。」）+「分类 / 系列」入口 + 按年分组列表 + 底部标签（≥3 篇常显，其余折叠） | `/archive/` 是内容页不是 section，上游没有对应模板。⚠️ `content/archive.md` 必须写 `layout: "archive"`，别改成 `content/archive/_index.md`（见 MAINTENANCE.md 第 6 节） |
+| `layouts/_default/categories.html` | `/categories/` 分类总览：按篇数从多到少，标题 / 描述取 `content/categories/<词>/_index.md` | 分类词条页一直可索引，但没有入口。⚠️ 这一页是普通内容页 `content/category.md` + `url` 占位，别把 taxonomy kind 打开（会连 `/tags/` 索引页一起生成）；类名与 `custom.css` 第 58 段是契约 |
+| `layouts/_default/featured.html` | `/featured/` 主编导读，数据全在 `data/featured.yaml`（intro / groups / items） | ⚠️ 条目用 `file`（相对 `content/` 的路径）而不是 slug / URL：改 slug、改日期都不会静默少一篇。⚠️ 找不到条目不报错，改完数一遍 `.featured-item` 是否等于条目数 |
+| `layouts/_default/series.html` | `/series/` 系列总览：每组按时间顺序列出 | 口径与文章页「系列坐标带」完全一致（`series:` 字段 + `.ByDate`），改一处要回来对另一处。⚠️ 页池限定 posts + weekly；标题前缀的剥法与系列带一致；类名与第 09b 段是契约 |
+| `layouts/_default/tools.html` | `/tools/` 工具索引：图标 + 名字 + GitHub 链接 + 一句话介绍，数据在 `data/tools.yaml` | ⚠️ `content/tools.md` 必须写 `layout: "tools"`，漏了不报错、工具列表整个消失；⚠️ 用 `hugo.Data`（`site.Data` 0.156 起弃用，会出 WARN）；⚠️ 手写的 `<a>` 不受 `externalLinksNewTab` 影响，要自己写 `target="_blank" rel="noopener noreferrer"`；样式第 41 段 |
+| `layouts/_default/run.html` | `/run/` 跑步数据页：4 个统计格子 + 月度柱状图 + 按年记录表，数据读 `hugo.Data.runs`（`data/runs.json`，CI 每天同步） | 上游没有读 `data/` 的模板。不经过 `single.html`，所以没有面包屑 / TOC / 评论区；样式第 25 段 |
+| `layouts/feed/list.html` + `layouts/feed/single.html` | 把 `/feed/` 与 `/feed/weekly/` 挂到 `baseof`，内容在 `partials/feed-view.html` | 「浏览器直接打开 feed 看到的那一页」。⚠️ 两个文件名都要有：`/feed/` 是 section 走 `list.html`，`/feed/weekly/` 是普通页走 `single.html`，缺一个就会被渲染成一篇「文章」（多出日期行、标签行、上下篇） |
+| `layouts/index.json` | 首页的 JSON 输出 `/index.json`：每篇 `{t,u,g,h,k,d}`（标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框），不含正文 | 命令面板的搜索索引。⚠️ 文件名**必须**是 `index.json`：home 按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`。⚠️ 体积见 MAINTENANCE.md 第 0 节；面板只在第一次呼出时 fetch，别改成进页面就拉。见 8.7 |
+
+#### 站点层新增的渲染钩子
+
+| 文件 | 做什么 | 为什么 / 注意 |
+| --- | --- | --- |
+| `layouts/_default/_markup/render-heading.html` | 标题输出拼音 id（调 `heading-slug.html`）+ 末尾可点的 `#` 锚点 | 上游没有这个钩子（Goldmark 只给 id、不给可点入口） |
+| `layouts/_default/_markup/render-blockquote.html` | 普通引用原样输出；`> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]` 输出 `blockquote.callout`，样式第 61 段 | ⚠️ 提示框仍输出 `<blockquote>`：`index.json` 按它收「引用」字段，换成 `aside` 还会触发 check-html 的「同名 landmark」。⚠️ 标题用 `<b>` 不用 `<strong>`：`index.json` 会把 strong 收进关键词 |
+
+#### 站点层新增的 partial
+
+| 文件 | 做什么 | 为什么 / 注意 |
+| --- | --- | --- |
+| `layouts/partials/post-list.html` | 按年分组 + `orphan-safe` 标题的列表本体；可选 `desc` 参数，在标题链接内追加 `.hl-post-desc`；年份是 `<li class="year-heading"><h2>` | `/posts/`、`/weekly/`、`/archive/` 三处共用。⚠️ 导语必须放在 `<a>` 内部（`li` 是 flex，外置会多一个 flex 子项）；⚠️ `<ul>` 的直接子元素只能是 `<li>`，裸放 `<h2>` 会被 axe 判 serious |
+| `layouts/partials/feed-view.html` | 订阅源的浏览器视图：标题 + 简介 + 订阅地址 + 条目（日期 / 标题 / 摘要） | ⚠️ 页面集合口径必须与 `rss.xml` 逐字一致（`site` = Type ∈ posts/weekly；`weekly` = 周刊 section 的 `.RegularPages`）：不一致就是「网页比订阅少一篇」，而且构建 0 警告 |
+| `layouts/partials/breadcrumbs.html` | 面包屑 `<nav>` + `BreadcrumbList` JSON-LD | 只给有层级的文章页挂（见第 4 节「面包屑」） |
+| `layouts/partials/og-image.html` | 分享图的**唯一**取值处：长文页按 `.Slug` 找 `images/og/<slug>.png`，取不到回落 `site.Params.images` 第一张；返回绝对 URL | `og:image` / `twitter:image` / JSON-LD `image` 三处都调它，免得三份逻辑各自漂移。⚠️ 调用方别再套 `absURL`。见 8.8 |
+| `layouts/partials/noindex.html` | `noindex` 判定的**唯一**来源（`tags` / `404` / `.Params.noindex`），返回 bool | `baseof.html` 与 `sitemap.xml` 都调它；两处各写一份时，漂移的后果是 sitemap 混进 noindex 页而构建 0 警告。见 8.9 |
+| `layouts/partials/inline-links.html` + `data/inline-links.json` | 渲染层正文内链：在 `single.html` 的 `$content` 上，把词表里的锚点词包成 `<a>` | 大部分文章正文没有内链，又不想挨篇改手写的 `.md`。⚠️ 新增词条前先确认那个词确实出现在别的文章正文里。见 8.10 |
+| `layouts/partials/orphan-safe.html` | 标题末 2 字包 `nowrap` | 中文标题最后一个字单独掉到下一行的问题 |
+| `layouts/partials/heading-slug.html` | 把 Goldmark 的标题 id 翻成拼音 slug（构建期算，查 `data/pinyin.json`） | md 里只写 `## 标题`，不用手写 `{#…}`。⚠️ 输入必须是 `.Anchor`，不是 `.PlainText`；表里缺字会回退成 `#%E4…`，跑 `scripts/sync-pinyin.py` 补。见 8.1 |
+| `layouts/partials/toc-anchors.html` | 把目录里的 href 换成拼音锚点 | 目录由 Hugo 从正文 AST 生成，href 还是原始中文 id，不换的话点目录没反应。⚠️ 用字符串替换而不是重画目录：重画容易弄错嵌套结构，而且错了不报错 |
+| `layouts/partials/back-top.html` | 返回顶部（只长文页），纯 CSS 滚动驱动动画，零 JS | 上游没有 |
+| `layouts/partials/code-copy.html` + `assets/js/code-copy.js` | 代码块复制按钮，只在含代码块的页面加载 | 上游没有 |
+| `layouts/partials/giscus.html` + `assets/js/giscus.js` | 评论区：「评论」+ 细线「＋ 变 －」开合，无外框 | 上游没有评论区。评论区主题跟随 `applyTheme`，所以 `palette.js` 必须先执行 |
+| `layouts/partials/hello.html` | 「打个招呼」邮箱浮层的标记：触发词是 `mailto:` 链接，卡片里只有邮箱 + 复制按钮 | 页脚与正文（`mail-link` 短代码）共用；脚本 `hello.js`，样式第 48 段。⚠️ 卡片里别加装饰（用户只要邮箱和复制）；复制按钮是 `<button>` 不是 `<a>`（它的动作是复制，不是导航） |
+| `layouts/_partials/tool-icon.html` | `/tools/` 的 Feather 风格线性 SVG 图标，按 `data/tools.yaml` 的 `icon` 名输出 | 加图标就在这里加一个分支。⚠️ 未知名字什么都不输出、也不报错 |
+
+#### 站点层新增的短代码
+
+| 文件 | 做什么 | 为什么 / 注意 |
+| --- | --- | --- |
+| `layouts/shortcodes/home-stats.html` | 首页身份条「文章 N 篇，周刊 N 篇，运行 N 天。」 | ⚠️ 只输出纯内联文本 + 句号，不加 span / class / `<br>`：要和后面的「支持一下」连成一段（用户要求）。天数靠每天的构建前进 |
+| `layouts/shortcodes/writing-stats.html` | 关于页「写作统计」+ 过去 365 天发布热力图，构建期算好输出静态 span | 只统计 posts + weekly；字数算法同 byline（汉字每字 1、英文每词 1）；热力图按发布日期。⚠️ 别把 `.Plain` 换成 `.Content`（会把 HTML 标签算进字数）；样式第 51 段 |
+| `layouts/shortcodes/mail-link.html` | 正文里的邮箱浮层（`about.md`「联系我」、`roll.md`「交友原则」） | 复用 `hello.html`，不另写标记。⚠️ `hello.js` 必须遍历页面上所有 `.hello`；正文里的卡片左对齐（`content .hello-card`），居中会在窄屏溢出 |
+
+#### 样式、脚本与生成器
+
+| 文件 | 做什么 | 为什么 / 注意 |
+| --- | --- | --- |
+| `assets/css/theme.css` | 主题 CSS 的生效副本（复制自主题 `style.html`，有四处登记过的改动，见本节开头） | 主题的内联 `<style>` 被 `style.html` 空覆盖压掉，换成外部文件可以长缓存 |
+| `assets/css/custom.css` | 站点补丁，按「第 N 段」编号 | 本文件里的「第 N 段」都指这里。⚠️ 新补丁都写这里；空号保留，不复用 |
+| `assets/css/upgrade.css` | 升级包原样样式（`--hl-*` 令牌、`.hl-*` 组件、站点令牌桥接） | ⚠️ 管道里必须排**最后**（theme → custom → upgrade），它靠「后出现」覆盖旧设计；新补丁别写这里 |
+| `assets/js/palette.js` | 命令面板 / 深浅色切换（View Transitions 从点击处圆形绽开）/ 随机漫游；`loadIndex()` 把 `t/u/g/h/k/d` 映射成面板字段 | ⚠️ 必须在 `giscus.js` 之前执行（它要读 `applyTheme` 写好的主题），别挪到 `<body>` 末尾；⚠️ 别改索引的数据形状；`applyTheme` 同时同步 `theme-color`、giscus 主题和按钮 `aria-label`；`vtSeq` 防连点时旧过渡提前摘类 |
+| `assets/js/hello.js` | 邮箱浮层交互：悬停 / 聚焦浮出，点击复制；触屏改为点开 | 拼进全站 site.js |
+| `assets/js/toc.js` | 右侧目录显隐 + 当前节高亮（IntersectionObserver） | 没有 `div.toc` 的页面直接 return |
+| `assets/js/motion.js` | 全站小动效：图片加载淡入、`#` 跳转并复制本节链接、图表入场生长、列表 ↔ 文章的标题过渡、图片放大的 View Transition（样式第 64–68 段） | ⚠️ 所有「先藏后显」的类都由它自己加：它没加载成功时，什么都不会被藏住。减少动态效果时什么都不做 |
+| `scripts/gen-og.js` | sharp 把 SVG 光栅化成 1200×630 分享卡：每篇一张 `images/og/<slug>.png`，外加站点兜底卡 `images/share.png`（站名 + 简介，`siteSvg()`）；按 SVG 原文的 sha1 增量重画 | 色值取升级包浅色令牌：`--hl-bg` `#FCFCFA` 底 / `--hl-ink` `#111315` 墨 / `--hl-mute` `#6B7280` 灰 / `--hl-hair` `#E5E7EB` 虚线；只画浅色一套。**不用强调色**（卡片上没有可点的东西，用了会让强调色失去语义）。⚠️ 改了 `upgrade.css` 这四个值要同步改脚本顶部的常量，下次发布会自动全部重画 |
+
+### ⚠️ `render-link.html` 那个换行
 
 上游模板最后一行是 `<a {{ $attributes }}>{{ $text }}</a>` **加一个换行**，Hugo 原样写进产物；
 行内链接后面紧跟中文标点时 HTML 把换行折叠成一个空格 → 渲染成「花墨 ：一个很有设计感的网站」。
@@ -1319,7 +1288,7 @@ CSS 拿不到 location，只能由模板给。
 - 验收：`re.findall(r"</a>\n[，。：；！？、）」』》〈【（]", html)` 应为 **0**。
 - ⚠️ 内容层**不要**在 `</a>` 和中文标点之间手写空格来「补」—— 源文件贴紧写就对了。
 
-### 订阅源：两个 feed、只收文章页、以及「RSS 页面」长什么样（2026-10-11）
+### 订阅源：两个 feed、只收文章页、以及「RSS 页面」长什么样
 
 **全站只有两个 `.xml`**，靠 `hugo.toml` 的 `[outputs]` 把 section / taxonomy / term 都压回 HTML-only：
 
@@ -1338,7 +1307,7 @@ CSS 拿不到 location，只能由模板给。
 与「要不要进订阅」是两件事（`/donate/` 恰好两者都占，但挡住它的是这里的 Type 白名单）。
 ⚠️ 周刊那一路走 `.RegularPages`（本 section 自己的页面），本来就是全文章，不用再过滤。
 
-**② 「浏览器打开 feed 看到的那一页」改由边缘函数分派（2026-10-15）。**
+**② 「浏览器打开 feed 看到的那一页」改由边缘函数分派。**
 feed 本身是一份**纯 RSS 2.0** —— 顶部不再有 `<?xml-stylesheet?>`，`static/rss.xsl` 已删除。
 原因是 Chromium 正在移除 XSLT（见本节末尾那条 ⚠️）。现在分成两条腿：
 
@@ -1384,7 +1353,7 @@ Pages 项目里 Functions 目录被改过或关掉的话，横幅消失、页面
 **④ `<lastBuildDate>` 用「最新一篇的 `Lastmod`」，不是构建时间。** 否则每天推送的
 跑步数据 / 依赖同步这类不带新内容的构建，会让订阅端以为 feed 更新了。
 
-⚠️ **为什么不用 XSLT 了（2026-10-15）**：Chromium 家族会弹
+⚠️ **为什么不用 XSLT 了**：Chromium 家族会弹
 `This site uses XSLT; that functionality is being removed from this browser very soon.`
 （实测 Chromium 155）。等它真移除，靠 `<?xml-stylesheet?>` 渲染的那一页就**直接退化成
 raw XML**。旧方案（`static/rss.xsl` + feed 顶部那行）因此整体撤掉，换成上面 ② 的内容协商 ——
@@ -1393,7 +1362,7 @@ Firefox / Safari 目前仍支持 XSLT，但**这套方案已经不需要任何�
 所以那边的支持与否不再影响本站。想回退到旧方案：`git show <本次改动前的提交> -- static/rss.xsl`
 能取回样式表，但**不建议** —— 回退等于把横幅一起带回来。
 
-### ⚠️ robots / `noindex` 的现状（2026-10-11）
+### ⚠️ robots / `noindex` 的现状
 
 `baseof.html` 里恢复的条件与旧站**逐字相同**：
 
@@ -1458,9 +1427,8 @@ Firefox / Safari 目前仍支持 XSLT，但**这套方案已经不需要任何�
 
 ## 7. 已知缺口
 
-1. **非文章页大多没有页面级 `<h1>`**：页头站名是 `<p class="title">`，文章页唯一 h1 = 文章标题；首页、列表页、词条页是 0 个 h1。这是有意接受的上游行为。`/about/` `/roll/` 2026-11-21 起恢复可见 h1；`hideTitle: true` 的极简页仍输出 `.sr-only` h1。
+1. **非文章页大多没有页面级 `<h1>`**：页头站名是 `<p class="title">`，文章页唯一 h1 = 文章标题；首页、列表页、词条页是 0 个 h1。这是有意接受的上游行为。`/about/` `/roll/` 有可见 h1；`hideTitle: true` 的极简页仍输出 `.sr-only` h1。
 2. **`scripts/sync-lastmod.py`**：`lastmod` 喂 RSS / sitemap，以及文章页日期行的「更新于」（`lastmod` 晚于 `date` 且日历日不同才显示）。
-3. **`/media/`（书影音）仍是已删除状态**：要恢复得同时取回页面模板、`data/media.json`、`static/images/media/` 与同步脚本（都在 git 历史里）。
 
 ---
 
@@ -1501,18 +1469,16 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 
 `partials/favicon.html` 输出 SVG / 512 / 192 / apple-touch / ico 五条，外加 `rel="manifest"`；feed 图标走 `hugo.toml` 的 `params.feedIcon`（144×144）。
 
-换图标：从母版 `H_avatar.jpg` 用 potrace 描摹成 `static/favicon.svg`，再生成各档光栅；`favicon.ico` 必须带 `-type TrueColorAlpha`（少了抗锯齿全丢）；最后把 `favicon.html` 里的 `$iconV` 加 1，否则浏览器 7 天内不会重抓。光栅图别手工裁，会和 SVG 分叉。分享图兜底是 `static/images/share.webp`，宽高在 `params.ogImageWidth` / `ogImageHeight`。
+换图标：从母版 `H_avatar.jpg` 用 potrace 描摹成 `static/favicon.svg`，再生成各档光栅；`favicon.ico` 必须带 `-type TrueColorAlpha`（少了抗锯齿全丢）；最后把 `favicon.html` 里的 `$iconV` 加 1，否则浏览器 7 天内不会重抓。光栅图别手工裁，会和 SVG 分叉。分享图兜底是 `static/images/share.png`（`scripts/gen-og.js` 的 `siteSvg()` 生成，与文章卡同版式），宽高在 `params.ogImageWidth` / `ogImageHeight`。
 
 ### 8.7 站内搜索
 
-**2026-11-21 起站内搜索只剩全局命令面板**（`partials/custom_body.html`）：
-`⌘K` / `/` 呼出，`/archive/` 顶部的输入框**已彻底删除**（partial、`postSearch`
-参数、CSS 47 段一并移除，恢复需从 git 历史取回）。
+**站内搜索只有全局命令面板**（`partials/custom_body.html`），`⌘K` / `/` 呼出，页面上没有搜索输入框。
 面板读 `layouts/index.json` 生成的 `/index.json`，`loadIndex()` 把
 `t/u/g/h/k/d` 映射成 `title/url/summary/date/section/headings/keywords`；
 搜索按**标题 > 章节（h）> 关键词（k）> 引用（d）**四级打分，
 章节/关键词命中时在右侧胶囊显示「章节 · …」「相关 · …」，同分保持索引里的日期倒序。
-2026-11-22 起索引只收这四类重点信息（不再收正文全文），体积见 MAINTENANCE.md 第 0 节自动区块。
+索引只收这四类重点信息（不再收正文全文），体积见 MAINTENANCE.md 第 0 节自动区块。
 空查询展示最近 10 篇 +「随机读一篇文章」「切换深浅色」两条快捷指令。
 
 ↑↓ 键盘选择时，如果选中项移出结果列表的可视区，只改 `.hl-cmd-results` 的
@@ -1520,8 +1486,8 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 后者会把背后的页面一起滚。选到最后一项再按 ↓ 会回到第一项并滚回顶部。
 
 ⚠️ 升级包原版用 `innerHTML` 拼结果项。本站标题全部由作者控制，暂时没有注入面；
-（2026-11-23 起结果在拼 HTML 前一律转义，命中处才包 `<mark>`；以前「不可信文本进索引前要先改成 textContent」的提醒已经不需要了。）
-⚠️ 面板脚本 2026-11-22 起是 `assets/js/palette.js`（`<head>` 里 `defer`，DOM 解析完才执行），
+（结果在拼 HTML 前一律转义，命中处才包 `<mark>`；以前「不可信文本进索引前要先改成 textContent」的提醒已经不需要了。）
+⚠️ 面板脚本是 `assets/js/palette.js`（`<head>` 里 `defer`，DOM 解析完才执行），
 对话框标记仍在 `custom_body.html`，所以可以直接 `getElementById`。将来若再加页内输入框，它通常仍在 `<head>` 之后，
 必须等 `DOMContentLoaded` 再跑，否则 `querySelectorAll` 拿到空列表、打字零反应且零报错。
 这类问题 DOM stub 测不出来，要用真浏览器。
@@ -1544,7 +1510,7 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 
 ### 8.11 页面级 h1
 
-页头站名是 `<p class="title">`，不是 h1。文章页唯一 h1 = 文章标题；`/about/` `/roll/` 2026-11-21 起也有可见 h1；`hideTitle: true` 的极简页仍输出一个 `.sr-only` h1（clip 方案，不是 `display:none`）；列表页没有 h1，这是有意接受的上游行为。
+页头站名是 `<p class="title">`，不是 h1。文章页唯一 h1 = 文章标题；`/about/` `/roll/` 也有可见 h1；`hideTitle: true` 的极简页仍输出一个 `.sr-only` h1（clip 方案，不是 `display:none`）；列表页没有 h1，这是有意接受的上游行为。
 
 ### 8.12 HTML 边缘缓存
 

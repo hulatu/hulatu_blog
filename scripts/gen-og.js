@@ -12,14 +12,19 @@
  * 纸底 #f6f6f8、印章红方块、宋体标题、衬线站名。
  * 那套语言在 2026-10-10 迁到 Bear Neo 时**整体作废**了
  * （DESIGN.md 第 1 节：「纸账 + 印章」不要再往这些方向提方案）。
- * 所以这里不是「改几个色值」，是按现在的真值重画：
+ * 所以这里不是「改几个色值」，是按现在的真值重画。
  *
- *   底    #fdfdfd  (--bg-color-primary)
- *   墨    #1a1a1a  (--text-color-primary)
- *   三级  #6e6e6e  (--text-color-tertiary，2026-10-18 浅色提亮后的值)
- *   线    #d0d7de  (--border-color)
+ * 色值取升级包的浅色令牌（assets/css/upgrade.css 的 :root），与网页上看到的一致：
  *
- * ⚠️ **刻意不用 `--link-color`（#0066cc）**。那个蓝在站点里只表示「这是个链接」，
+ *   底    #FCFCFA  (--hl-bg，暖白)
+ *   墨    #111315  (--hl-ink，标题色)
+ *   灰    #6B7280  (--hl-mute，对底 4.7:1，过 WCAG AA)
+ *   线    #E5E7EB  (--hl-hair，与页面 <hr> 同色)
+ *
+ * ⚠️ 改了 upgrade.css 的这四个值，这里要跟着改（改完下次发布会自动全部重画）。
+ *    分享卡只画浅色一套：卡片是给别的平台显示的，不跟随访客的深浅色设置。
+ *
+ * ⚠️ **刻意不用强调色 `--hl-accent`（#1D4ED8）**。那个蓝在站点里只表示「这是个链接」，
  *    而卡片上没有可点的东西 —— 用了会让颜色失去语义，且和「只有一个强调色、
  *    而且要稀缺」这条设计原则相悖。整张卡只有墨色、灰、虚线。
  *
@@ -40,6 +45,10 @@
  * 只有标题和日期都没变、PNG 也还在的文章会被跳过。换电脑 / 删了 resources/ 就是全量重画。
  *
  * 输出：static/images/og/<slug>.png
+ *       static/images/share.png —— 站点兜底卡（首页、关于页、词条页等非文章页的 og:image，
+ *       由 hugo.toml 的 params.images 引用）。与文章卡同一套版式和色值，只在全量跑时生成。
+ *       ⚠️ 换文案或版式改 siteSvg()；文件名一变要同步改 hugo.toml 的 params.images。
+ *
  * 用 slug 而不是文件名做图名 —— 文件名里有「：」「！」「+」「，」这类字符，
  * 进 URL 要转义，而 slug 都是干净的英文。
  *
@@ -63,15 +72,16 @@ try {
 
 const ROOT = path.resolve(__dirname, '..');
 const OUT_DIR = path.join(ROOT, 'static', 'images', 'og');
+const SITE_OUT = path.join(ROOT, 'static', 'images', 'share.png');
 const CACHE_FILE = path.join(ROOT, 'resources', 'og-cache.json');
 /* sharp 的输出参数也参与缓存键：改了压缩方式要重画。 */
 const PNG_OPTS = { compressionLevel: 9, palette: true };
 
-/* ── 设计 token（与 themes/hugo-bearneo/layouts/partials/style.html 的 :root 一一对应）── */
-const PAPER = '#fdfdfd';
-const INK = '#1a1a1a';
-const MUTED = '#6e6e6e';
-const LINE = '#d0d7de';
+/* ── 设计 token（与 assets/css/upgrade.css 的浅色 :root 一一对应）── */
+const PAPER = '#FCFCFA'; // --hl-bg
+const INK = '#111315'; // --hl-ink
+const MUTED = '#6B7280'; // --hl-mute
+const LINE = '#E5E7EB'; // --hl-hair
 
 const SANS = 'Verdana, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif';
 const MONO = 'Menlo, "SF Mono", Consolas, monospace';
@@ -157,6 +167,23 @@ function ogSvg({ title, date }) {
 ${titleSvg}
 <line x1="${PAD}" y1="505" x2="${W - PAD}" y2="505" stroke="${LINE}" stroke-width="1.5" ${dash}/>
 <text x="${PAD}" y="562" font-family='${MONO}' font-size="25" fill="${MUTED}">${esc(date)}</text>
+<text x="${W - PAD}" y="562" text-anchor="end" font-family='${MONO}' font-size="22" fill="${MUTED}">hulatu.com</text>
+</svg>`;
+}
+
+/* ── 站点兜底卡：上下虚线、左对齐与文章卡一致；中间是站名 + 一句简介 ──────────
+   文案取自 hugo.toml 的 params.description。底部左侧用顿号而不是「·」：
+   Verdana 的间隔号两侧留白不匀，中文顿号最稳。 */
+function siteSvg() {
+  const dash = 'stroke-dasharray="3 3"';
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+<rect width="${W}" height="${H}" fill="${PAPER}"/>
+<line x1="${PAD}" y1="72" x2="${W - PAD}" y2="72" stroke="${LINE}" stroke-width="1.5" ${dash}/>
+<text x="${PAD}" y="146" font-family='${SANS}' font-size="23" letter-spacing="3" fill="${MUTED}">个人博客</text>
+<text x="${PAD}" y="352" font-family='${SANS}' font-size="96" letter-spacing="4" fill="${INK}">胡拉图说</text>
+<text x="${PAD}" y="428" font-family='${SANS}' font-size="34" fill="${MUTED}">记录思考、分享日常、观察生活</text>
+<line x1="${PAD}" y1="505" x2="${W - PAD}" y2="505" stroke="${LINE}" stroke-width="1.5" ${dash}/>
+<text x="${PAD}" y="562" font-family='${SANS}' font-size="24" fill="${MUTED}">运动、健康、成长、科研与工具折腾</text>
 <text x="${W - PAD}" y="562" text-anchor="end" font-family='${MONO}' font-size="22" fill="${MUTED}">hulatu.com</text>
 </svg>`;
 }
@@ -278,7 +305,7 @@ async function main() {
        但尺寸不是 OG 图的标准值，而且白白多占 78% 的像素）。
        SVG 自己写了 width/height，用默认密度就正好是 1200×630。
 
-       palette: true 走 8 位调色板 PNG：这张图只有「白底 + 黑字 + 一点蓝」，
+       palette: true 走 8 位调色板 PNG：这张图只有「浅底 + 深字 + 灰字和虚线」，
        量化后 45KB → 24KB 左右，肉眼无差别（纯色底 + 抗锯齿文字是量化的最佳场景）。 */
     const info = await sharp(Buffer.from(svg))
       .png(PNG_OPTS)
@@ -286,6 +313,19 @@ async function main() {
     cache[a.slug] = key;
     total += info.size;
     if (!sizeSeen) sizeSeen = `${info.width}×${info.height}`;
+  }
+
+  /* 站点兜底卡：只在全量跑时生成（--only / --limit 是调试单篇用的）。
+     缓存键用 __site__，不会和 slug 撞（slug 都是 kebab-case）。 */
+  let siteMade = false;
+  if (!only && !limit) {
+    const svg = siteSvg();
+    const key = crypto.createHash('sha1').update(svg).update(JSON.stringify(PNG_OPTS)).digest('hex');
+    if (!(cache.__site__ === key && fs.existsSync(SITE_OUT))) {
+      await sharp(Buffer.from(svg)).png(PNG_OPTS).toFile(SITE_OUT);
+      cache.__site__ = key;
+      siteMade = true;
+    }
   }
 
   const ms = Date.now() - t0;
@@ -299,6 +339,7 @@ async function main() {
   const made = arts.length - bad.length - skipped;
   console.log(`生成 ${made} 张${skipped ? `，未变跳过 ${skipped} 张` : ''}${made ? `，尺寸 ${sizeSeen || '—'}，共 ${(total / 1024 / 1024).toFixed(2)} MB` : ''}，用时 ${ms} ms`);
   console.log(`输出目录：${path.relative(ROOT, OUT_DIR)}`);
+  if (siteMade) console.log(`站点兜底卡：${path.relative(ROOT, SITE_OUT)}`);
   if (bad.length) {
     console.log(`\n⚠️  ${bad.length} 篇没有英文 slug，已跳过（图名会带中文，进 URL 要转义）：`);
     for (const b of bad) console.log(`   ${b.path}`);

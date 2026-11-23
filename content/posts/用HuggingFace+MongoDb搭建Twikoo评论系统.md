@@ -3,7 +3,7 @@ title: 用 HuggingFace + MongoDb 搭建 Twikoo 评论系统
 categories: ["工具"]
 tags: ["Hugo", "Twikoo", "评论", "博客"]
 date: 2026-01-26T10:19:41+08:00
-lastmod: 2026-01-26T10:19:41+08:00
+lastmod: 2026-11-23T16:21:52+08:00
 slug: "set-up-twikoo-comment-system"
 
 summary: “缺少评论系统的博客，总觉得缺少点灵魂。“
@@ -11,6 +11,9 @@ description: "没有评论系统的博客总觉得缺了点灵魂。这篇记录
 draft: false
 comments: true
 ---
+
+> [!NOTE] 2026 年 11 月补记
+> 这篇写于还在用 PaperMod 主题的时候。现在本站已经换回了 giscus（基于 GitHub Discussions），不再用 Twikoo；主题也早就换了。下面的步骤我没再验证过，HuggingFace 和 MongoDB Atlas 的界面可能已经变了，照着做的时候留个心眼。
 
 如果你想有一个个人网站，市面上有很多搭建教程，我就先不写了，基于 <strong>Hexo、Hugo、WordPress、VuePress……</strong>这些平台都可以，挑选一款喜欢的主题，比如我的主题是 hugo-PaperMod，然后就可以开始搭建了，把网站放在 GitHub 的仓库里。
 

@@ -3,7 +3,7 @@ title: PaperMod 主题仿 BearBlog 的极简化
 categories: ["工具"]
 tags: ["博客", "Hugo"]
 date: 2026-01-24T11:23:53+08:00
-lastmod: 2026-01-24T11:23:53+08:00
+lastmod: 2026-11-23T16:21:52+08:00
 slug: blog-beautification-papermodbearblog
 
 summary: 你在意的博客布局，可能只有你自己关注。
@@ -11,6 +11,9 @@ description: "看到一篇博客后，对 BearBlog 的极简风格一见钟情�
 draft: false
 comments: true
 ---
+
+> [!NOTE] 2026 年 11 月补记
+> 这篇记的是 PaperMod 时期的魔改。本站后来已经不用 PaperMod 了，现在是 hugo-bearneo 主题，文中的 Daily 页、导航栏和首页布局都已经看不到了，就当是一份折腾存档吧。
 
 参考来源：[So!azy 博客从选型到搭建上线](https://blog.solazy.me/solazy-on-fire/ )
 
