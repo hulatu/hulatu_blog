@@ -72,6 +72,7 @@ draft: false
 <p class="roll-group">朋友</p>
 
 - [花墨](https://flowersink.com)：一个很有设计感、很温暖的网站。
+- [Mello](https://www.rua.ink/)：在这里写写画画。
 - [Cytrogen](https://blog.cytrogen.icu/)：一个在美国上学的中国女孩，网站的首页同样很有个性，很有想象力的城堡。
 - [梁某银的博客](https://liangmouyin.com/)：日更的小梁，网站很清爽、简约，我很喜欢。
 

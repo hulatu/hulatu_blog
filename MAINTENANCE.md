@@ -22,16 +22,16 @@
 | 根级独立页 | 15 个（`content/*.md`，不含首页 `_index.md`） |
 | 站点层 | `layouts/` 52 个文件 + `assets/js/` 8 个 + `assets/css/` 3 个 |
 | 主题副本 | `themes/hugo-bearneo/` 27 个文件 |
-| 脚本 | `scripts/` 17 个；GitHub Actions 2 个 |
+| 脚本 | `scripts/` 16 个；GitHub Actions 2 个 |
 | 301 | `static/_redirects` 17 条 |
 | 产出 HTML | 408 个 |
 | sitemap | 164 条 |
 | 标签词条页 | 235 个（`noindex`） |
-| CSS | `/css/main.min.*.css` 57.5 KB，gzip 12.2 KB |
-| 全站 JS | `/js/site.min.*.js` 16.0 KB，gzip 5.6 KB |
+| CSS | `/css/main.min.*.css` 64.3 KB，gzip 13.3 KB |
+| 全站 JS | `/js/site.min.*.js` 18.3 KB，gzip 6.4 KB |
 | 搜索索引 | `/index.json` 139.6 KB，gzip 61.8 KB |
-| 文章页 HTML | 中位数 24.4 KB，gzip 9.1 KB |
-| 首页 HTML | 10.9 KB，gzip 4.6 KB |
+| 文章页 HTML | 中位数 24.8 KB，gzip 9.2 KB |
+| 首页 HTML | 11.3 KB，gzip 4.7 KB |
 <!-- status:end -->
 
 | 项 | 值 |
