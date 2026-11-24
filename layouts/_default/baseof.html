@@ -59,12 +59,9 @@
   {{- /* 脚注就地预览：只在含脚注的页面加载（判断在 partial 里）。2026-11-24 */ -}}
   {{- partial "footnote.html" . -}}
 
-  {{- /* 搜索快捷键：2026-11-21 起由全局命令面板接管（脚本 assets/js/palette.js，面板 HTML 在 custom_body.html）
-         （`/` 与 `⌘K` 在任何页面都能呼出，不再跳 /archive/）。
+  {{- /* 搜索快捷键由全局命令面板接管（脚本 assets/js/palette.js，面板 HTML 在 custom_body.html）。
          ⚠️ 别在这里再加一份 keydown —— 两处同时监听会一次开两个面板，
-            或出现「面板打开后页面又跳走」。
-         ⚠️ /archive/ 的搜索框 2026-11-21 已彻底删除（partial 与 postSearch 参数都没了）；
-            将来若再加输入框，记得补回 `/` 的 typing 守卫。 */ -}}
+            或出现「面板打开后页面又跳走」。 */ -}}
 
   <!-- A partial to be overwritten by the user.
   Simply place a custom_body.html into

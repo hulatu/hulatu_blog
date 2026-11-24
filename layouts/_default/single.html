@@ -70,10 +70,8 @@
 {{- /* 表格包一层 .table-wrap，让窄屏只横滚表格。
        ⚠️ replaceRE 会把 template.HTML 降级成 string，末尾必须 safeHTML。
        ⚠️ 不要为这一层 div 重写 render-table 钩子，字符串替换更简单。
-       2026-11-22：顺手给表头补 scope="col"（Goldmark 只输出裸 <th>，
-       读屏无法把表头和列关联）。表体单元格是 <td>，不会误伤。
-       2026-11-24：设了列对齐（| :--- |）的表头是 <th style="text-align:…">，原来的 "<th>" 匹配不到，
-       全站 11 个表头漏掉（《分享 3 个开源工具》8 个、/style/ 3 个）。现在也认带 style 的写法；
+       表头补 scope="col"（Goldmark 只输出裸 <th>，读屏无法关联表头和列）。
+       设了列对齐（| :--- |）的表头是 <th style="text-align:…">，也要匹配；
        已经写了 scope 的手写表格不会再被加一次。 */ -}}
 {{- $content := .Content | replaceRE "<table" "<div class=\"table-wrap\"><table" | replaceRE "</table>" "</table></div>" | replaceRE `<th( style="[^"]*")?>` `<th scope="col"${1}>` -}}
 {{- /* 正文内链：词表 data/inline-links.json。 */ -}}
@@ -227,7 +225,7 @@
 {{- $tocHTML := partial "toc.html" . -}}
 {{- partial "toc-anchors.html" (dict "html" $tocHTML "page" .) | safeHTML -}}
 </div>
-{{- /* 目录显隐脚本 2026-11-22 起在 assets/js/toc.js（拼进全站 site.js，defer）。 */ -}}
+{{- /* 目录显隐脚本在 assets/js/toc.js（拼进全站 site.js，defer）。 */ -}}
 {{ end }}
 
 {{- /* Mermaid：页面里有 ```mermaid 代码块才加载（render-codeblock-mermaid.html 记的标记）。

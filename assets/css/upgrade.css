@@ -78,81 +78,6 @@ blockquote {
   line-height: 1.55;
 }
 
-/* Last Updated：按用户要求不再强调，和 byline 其他项一样是普通灰字。
-   2026-11-21 去掉了升级包的浅蓝底徽章样式。 */
-
-/* 正在折腾与代表作区块 */
-.hl-section {
-  margin: 34px 0 38px;
-}
-
-.hl-section-head {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--hl-hair);
-  margin-bottom: 6px;
-}
-
-.hl-section-title {
-  font-size: 0.95rem;
-  font-weight: 600;
-  margin: 0;
-  color: var(--hl-ink);
-}
-
-.hl-more-link {
-  font-size: 0.85rem;
-  text-decoration: none;
-}
-
-.hl-project-list {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.hl-project-item {
-  border-bottom: 1px solid var(--hl-hair);
-  transition: opacity 0.18s ease;
-}
-
-.hl-project-item:last-child {
-  border-bottom: none;
-}
-
-.hl-project-link {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 12px 0;
-  text-decoration: none !important;
-}
-
-.hl-project-main {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.hl-project-name {
-  font-weight: 600;
-  color: var(--hl-ink);
-  transition: color 0.15s ease;
-}
-
-.hl-project-link:hover .hl-project-name {
-  color: var(--hl-accent);
-}
-
-.hl-project-desc {
-  font-size: 0.88em;
-  color: var(--hl-mute);
-  line-height: 1.5;
-}
-
 .hl-tag-pill {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 0.76em;
@@ -245,8 +170,8 @@ blockquote {
   outline: none;
   background: transparent;
   color: var(--hl-ink);
-  /* 2026-11-23：15px → 16px。iOS Safari 对 <16px 的输入框聚焦时会自动放大整页；
-     custom.css 第 26 段的 `input { font-size: 16px }` 会被这里的类选择器盖掉，所以直接改这里。 */
+  /* iOS Safari 对 <16px 的输入框聚焦时会自动放大整页；
+     custom.css 第 26 段的 `input { font-size: 16px }` 被类选择器盖掉，所以直接改这里。 */
   font-size: 16px;
 }
 
@@ -256,7 +181,7 @@ blockquote {
   list-style: none;
   padding: 8px;
   margin: 0;
-  /* 2026-11-23：滚到列表尽头不再带着背后的页面一起滚。 */
+  /* 滚到列表尽头不再带着背后的页面一起滚。 */
   overscroll-behavior: contain;
 }
 
@@ -277,7 +202,7 @@ blockquote {
   text-decoration: none;
 }
 
-/* 2026-11-23：去掉 :hover —— 悬停由 palette.js 的 pointermove 同步成 .selected，
+/* 去掉 :hover —— 悬停由 palette.js 的 pointermove 同步成 .selected，
    否则「鼠标停在一条、键盘选了另一条」时会同时亮两条。
    结果项改成 <a> 之后，主题的 `a:hover { text-decoration: underline }`（0,1,1）比
    `.hl-cmd-item`（0,1,0）高，下面那条把下划线压回去。 */
@@ -307,7 +232,7 @@ a.hl-cmd-item:hover {
   color: var(--hl-mute);
 }
 
-/* 2026-11-23：触屏设备没有方向键 / Enter / ⌘K，底部提示整行藏掉（与页头按钮里的 .hl-kbd 同一判据）。 */
+/* 触屏设备没有方向键 / Enter / ⌘K，底部快捷键提示整行藏掉。 */
 @media (hover: none) and (pointer: coarse) {
   .hl-cmd-foot {
     display: none;
