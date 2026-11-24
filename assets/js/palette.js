@@ -30,10 +30,11 @@
     }
   }
 
-  /* 深浅色按钮的图标：内联 SVG，不依赖系统 emoji 字体。
-     dark 时显示太阳（点击回浅色），light 时显示月亮（点击去深色）。 */
-  var ICON_MOON = '<svg class="hl-theme-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>';
-  var ICON_SUN = '<svg class="hl-theme-svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>';
+  /* 深浅色按钮图标：nav.html 静态输出含 .hl-i-moon 和 .hl-i-sun 两个 SVG，
+     custom.css 第 59 段按 data-theme 只显示其中一个（display:none 切换）。
+     applyTheme 只要写好 data-theme，图标自动跟——无需操作 innerHTML。
+     唯一的 SVG 源在 layouts/partials/nav.html，改图标只改那里。 */
+  /* ICON_MOON / ICON_SUN 已移除，SVG 由 nav.html 负责，兜底插入时同步输出两个 SVG。 */
 
   /* 2026-11-23：缓存 Promise 本身。原来只缓存结果，索引还在下载时每敲一个字
      就会再发一次 fetch；现在下载中的请求被共用。失败时清空，下次打开会重试。 */
@@ -107,8 +108,7 @@
       }, 360);
     }
     document.documentElement.setAttribute('data-theme', theme);
-    var icon = document.getElementById('hlThemeIcon');
-    if (icon) icon.innerHTML = theme === 'dark' ? ICON_SUN : ICON_MOON;
+    /* 图标切换由 CSS 第 59 段负责（data-theme 写好后 .hl-i-moon / .hl-i-sun 自动 display:none 切换）。 */
     var themeBtn = document.getElementById('hlThemeBtn');
     if (themeBtn) themeBtn.setAttribute('aria-label', theme === 'dark' ? '切换到浅色模式' : '切换到深色模式');
     /* 手动切换后同步地址栏配色与 giscus 主题（两者原本只认系统）。 */
@@ -261,10 +261,12 @@
   if (nav && !document.getElementById('hlThemeBtn')) {
     var bar = document.createElement('span');
     bar.className = 'hl-toolbar';
-    var curTheme = document.documentElement.getAttribute('data-theme') || 'light';
+    /* 兜底：nav.html 未静态输出按钮时才走这里（模板被换掉等异常情况）。
+       图标 HTML 与 nav.html 保持一致，改图标时两处同步。
+       CSS 第 59 段按 data-theme 决定显示哪个，这里无需判断 theme。 */
     bar.innerHTML =
       '<button type="button" class="hl-ctrl-btn" id="hlOpenCmdBtn" aria-label="站内搜索">搜索 <span class="hl-kbd">/</span></button>' +
-      '<button type="button" class="hl-ctrl-btn" id="hlThemeBtn" aria-label="切换深浅色模式"><span id="hlThemeIcon">' + (curTheme === 'dark' ? ICON_SUN : ICON_MOON) + '</span></button>';
+      '<button type="button" class="hl-ctrl-btn" id="hlThemeBtn" aria-label="切换深浅色模式"><span id="hlThemeIcon"><svg class="hl-theme-svg hl-i-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="hl-theme-svg hl-i-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></button>';
     nav.appendChild(bar);
   }
   var openCmdBtn = document.getElementById('hlOpenCmdBtn');

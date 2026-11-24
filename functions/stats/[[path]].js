@@ -21,9 +21,10 @@
  * ── 回退 ──────────────────────────────────────────────────────────────
  * 如果 Functions 被关掉，这两个地址会 404，统计随之失效（页面不报错）。
  * 本站的内容协商（/feed/）本来就依赖 Functions，所以这不是新增的单点。
- * 想临时绕过代理：把 hugo.toml 的 `analytics.goatcounter` 改回
- * `https://hulatu.goatcounter.com/count`，并把 custom_head.html 里的
- * `s.src` 改回 `https://gc.zgo.at/count.js`。
+ * 想临时绕过代理：
+ *   1. hugo.toml 的 `[params.analytics] goatcounter` 改回
+ *      `https://hulatu.goatcounter.com/count`
+ *   2. custom_head.html 里的 `s.src` 改回 `https://gc.zgo.at/count.js`
  *
  * ⚠️ 计数端点必须同时接受 **POST**：count.js 优先用
  *    `navigator.sendBeacon(url)`，那是 POST（body 为空）。只放行 GET 的话，

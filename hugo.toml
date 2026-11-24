@@ -88,7 +88,8 @@ disableKinds = ["taxonomy"]
     lang = "zh-CN"
     theme = "preferred_color_scheme"
 
-  # GoatCounter 走同源代理 functions/stats/[[path]].js；绕过时两处一起改回。
+  # GoatCounter 走同源代理 functions/stats/[[path]].js；
+  # 绕过时改 [params.analytics] goatcounter 与 custom_head.html 里的 s.src（见代理文件注释）。
   [params.analytics]
     goatcounter = "https://hulatu.com/stats/count"
 

@@ -3663,9 +3663,9 @@
   }
 
   /*
-  56 深浅色按钮图标（2026-11-21）
+  56 深浅色按钮图标
   用内联 SVG 替换 ☾/☀ 文字：月亮/太阳在不同系统字体里大小与基线不一致。
-  ⚠️ 图标由 assets/js/palette.js 的 ICON_MOON / ICON_SUN 注入（首帧由 nav.html 静态输出，见第 59 段），尺寸在这里统一。
+  ⚠️ 两个 SVG 由 nav.html 静态输出（第 59 段控制显示/隐藏），尺寸在这里统一。
   */
   .hl-theme-svg {
     display: block;
@@ -3841,11 +3841,12 @@
   }
 
 /*
-  59 页头「深浅色」按钮的静态图标（2026-11-22）
-  partials/nav.html 同时输出月亮和太阳，脚本加载前按 data-theme 只显示一个
-  （data-theme 由 <head> 里的内联引导脚本同步写好，所以第一帧就是对的）。
-  palette.js 的 applyTheme 运行后会把 #hlThemeIcon 换成不带这两个类的单个图标，
-  这两条规则随即不再命中。
+  59 页头「深浅色」按钮的静态图标
+  partials/nav.html 同时输出月亮（.hl-i-moon）和太阳（.hl-i-sun）两个 SVG，
+  这两条规则按 data-theme 只显示其中一个。
+  data-theme 由 <head> 里的内联引导脚本同步写好，所以第一帧就是对的，无闪烁。
+  palette.js 的 applyTheme 只写 data-theme，图标切换由这里负责，不操作 innerHTML。
+  ⚠️ 两个 SVG 的唯一真值在 nav.html；兜底插入路径（palette.js）同步输出相同 HTML。
 */
 :root[data-theme="dark"] #hlThemeIcon .hl-i-moon,
 :root:not([data-theme="dark"]) #hlThemeIcon .hl-i-sun {

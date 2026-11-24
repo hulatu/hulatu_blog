@@ -6,8 +6,10 @@
 #   4. 拉取远端提交
 #   5. 最后完整推送一次
 # 用法：
-#   在终端输入 up（已配置到 ~/.config/zsh/.zshrc，先跑本脚本，再构建并部署 Cloudflare）
-#   也可以直接：cd ~/Blog && ./publish.sh
+#   ./publish.sh                  # 交互终端时提示输入提交信息，直接回车用默认值
+#   ./publish.sh "修复导航样式"    # 直接用传入的信息，不提示
+#   up                            # 同上（已配置到 ~/.config/zsh/.zshrc）
+# 默认提交信息：改动全在 content/ 时为「博客：新增/修改文章」，否则为「博客：更新站点」
 set -uo pipefail
 
 cd "$(dirname "$0")" || exit 1
@@ -121,8 +123,32 @@ else
   echo "       手动补跑：NODE_PATH=/Users/hulatu/.workbuddy-ai/binaries/node/workspace/node_modules node scripts/gen-og.js" >&2
 fi
 
-# ⚠️ 2026-11-22：git add 失败必须停下 —— 旧脚本不检查退出码，
+# ⚠️ git add 失败必须停下 —— 旧脚本不检查退出码，
 # 失败后仍会打印「没有需要提交」，把 push/pull 全带偏。
+
+# 提交信息：① 命令行参数 → ② 交互终端提示 → ③ 自动默认值
+COMMIT_MSG=""
+if [ -n "${1:-}" ]; then
+  # 参数传入
+  COMMIT_MSG="$1"
+else
+  # 自动默认值：改动全在 content/ 时认为是文章；否则是站点改动
+  _changed=$(git status --porcelain 2>/dev/null | awk '{print $2}')
+  _non_content=$(echo "$_changed" | grep -v '^content/' | grep -v '^$' || true)
+  if [ -z "$_non_content" ]; then
+    _default="博客：新增/修改文章"
+  else
+    _default="博客：更新站点"
+  fi
+  unset _changed _non_content
+  # 交互终端时才提示（管道、CI、非 TTY 直接用默认值）
+  if [ -t 0 ] && [ -t 1 ]; then
+    printf "提交信息（直接回车用默认值「%s」）：" "$_default"
+    IFS= read -r COMMIT_MSG </dev/tty || COMMIT_MSG=""
+  fi
+  [ -z "$COMMIT_MSG" ] && COMMIT_MSG="$_default"
+  unset _default
+fi
 if ! git add -A; then
   echo "!! git add 失败，已停止（否则未提交的改动会被当成「没有改动」）。" >&2
   exit 1
@@ -130,7 +156,7 @@ fi
 if git diff --cached --quiet; then
   echo "    没有需要提交的本地改动"
 else
-  if ! git commit -m "博客：新增/修改文章"; then
+  if ! git commit -m "$COMMIT_MSG"; then
     echo "!! 本地提交失败，请先检查 git 配置" >&2
     exit 1
   fi

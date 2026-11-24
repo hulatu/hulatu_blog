@@ -241,7 +241,10 @@ hugo --gc --minify --cleanDestinationDir --destination /tmp/hb-check
 ```bash
 ./deploy.sh     # 干净构建到临时目录 → 查 livereload → rsync -a --delete 到 public/
 ./publish.sh    # git 提交 + 推送（终端敲 up 同效）
+./publish.sh "修复导航样式"  # 指定提交信息；不传参数时交互终端会提示，直接回车用默认值
 ```
+
+默认提交信息：改动全在 `content/` 时为「博客：新增/修改文章」，否则为「博客：更新站点」。
 
 `publish.sh` 在 `git add` 前依次跑四个脚本（失败都不阻断发布）：
 

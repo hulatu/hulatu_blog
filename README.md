@@ -216,7 +216,10 @@ hugo new content/posts/文章名.md           # 周刊：hugo new content/weekly
 
 ```bash
 up                          # 或 cd ~/Blog && ./publish.sh
+./publish.sh "修复导航样式"  # 指定提交信息；不传参数时交互终端会提示输入，直接回车用默认值
 ```
+
+`publish.sh` 提交信息规则：传入参数直接用；不传时，改动全在 `content/` 用「博客：新增/修改文章」，否则用「博客：更新站点」；交互终端下会先提示手动确认/修改。
 
 `publish.sh` 提交前会自动做两件事（失败不阻断发布）：给新写的中文标题补 `{#pinyin}` 锚点、
 刷新改动过文章的 `lastmod`。
