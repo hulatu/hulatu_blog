@@ -1,0 +1,11 @@
+{{- /* ============================================================
+     Mermaid 图（2026-11-23）
+
+     ```mermaid 代码块不走 Chroma 高亮，原样输出成 <pre class="mermaid">（源码 HTML 转义），
+     并在页面上记一个 hasMermaid 标记；_default/single.html 看到标记才加载 partials/mermaid.html。
+       · 没有 JS / 脚本没加载到 / RSS 阅读器里：读者看到的是图的源码，不是一片空白。
+       · 渲染在 assets/js/mermaid-init.js：浅色、深色各画一份，深浅色切换时不用重画。
+     ⚠️ 别给它加 class="highlight"：partials/code-copy.html 按这个类决定加载复制按钮。
+     ============================================================ */ -}}
+<pre class="mermaid">{{ .Inner | htmlEscape | safeHTML }}</pre>
+{{- .Page.Store.Set "hasMermaid" true -}}

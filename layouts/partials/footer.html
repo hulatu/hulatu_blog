@@ -8,6 +8,8 @@
   ⚠️ 隐私链接挂在 hideSitemap 开关里；关掉 Sitemap 会连它一起关。
   ⚠️ 分隔符一律用 `.`，不用 `·`；每块自带结尾 <br />，搬动时别丢。
   ⚠️ 开往 / 虫洞只放页脚，别挪进导航或正文。
+  ⚠️ 2026-11-23：第一行的 emoji 一律包 `<span aria-hidden="true">`，读屏不会念成「锁」「地铁」；
+     新加图标照这个写法。
   ⚠️ 「问候」浮层的标记 / 脚本 / 样式分别在 partials/hello.html、
      assets/js/hello.js、custom.css 第 48 段，三处一起改。
 */}}
@@ -23,14 +25,14 @@
 {{ $showCopyright := ne .Site.Params.Footer.hideCopyright true }}
 {{ if or $showRSS $showHello $showMeta }}
   {{- if and $showRSS $showHello -}}
-通过 <a href="/index.xml">RSS</a> 订阅，或直接 ✉️ {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
+通过 <a href="/index.xml">RSS</a> 订阅，或直接 <span aria-hidden="true">✉️</span> {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
   {{- else if $showRSS -}}
 通过 <a href="/index.xml">RSS</a> 订阅。
   {{- else if $showHello -}}
-直接 ✉️ {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
+直接 <span aria-hidden="true">✉️</span> {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
   {{- end }}
-  {{- if $showMeta }} 🔒 <a href="/privacy/">隐私</a>.{{ end }} 🚇 <a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>. 🌀 <a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>.
-  {{- if $showMeta }} 🗺️ <a href="{{ "map/" | relURL }}">地图</a>.{{ end }}
+  {{- if $showMeta }} <span aria-hidden="true">🔒</span> <a href="/privacy/">隐私</a>.{{ end }} <span aria-hidden="true">🚇</span> <a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>. <span aria-hidden="true">🌀</span> <a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>.
+  {{- if $showMeta }} <span aria-hidden="true">🗺️</span> <a href="{{ "map/" | relURL }}">地图</a>.{{ end }}
 <br />
 {{ end }}
 

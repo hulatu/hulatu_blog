@@ -1,0 +1,10 @@
+{{- /* 脚注就地预览的脚本（2026-11-24）—— **只在含脚注的页面加载**
+
+       判据：.Content 里有 Goldmark 输出的 class="footnote-ref"。2026-11-24 全站 3 页命中
+       （《为何很多人重启，从跑步开始》8 条、《财富杠杆》1 条、/style/）。
+       接入方式与 code-copy.html 一致（minify + fingerprint + SRI + defer）。
+       脚本本体在 assets/js/footnote.js，样式在 custom.css 第 71 段。 */ -}}
+{{- if and .IsPage (strings.Contains .Content "class=\"footnote-ref\"") -}}
+{{- $fnJs := resources.Get "js/footnote.js" | minify | fingerprint -}}
+<script src="{{ $fnJs.RelPermalink }}" integrity="{{ $fnJs.Data.Integrity }}" crossorigin="anonymous" defer></script>
+{{- end -}}

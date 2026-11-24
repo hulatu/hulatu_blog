@@ -1,0 +1,20 @@
+{{- /* ============================================================
+     数学公式渲染钩子（2026-11-23）
+
+     Goldmark passthrough 扩展（hugo.toml）把 \( … \)（行内）与 $$ … $$ / \[ … \]（独立成行）
+     原样交到这里，transform.ToMath 在构建期用 Hugo 内置的 KaTeX 渲染成 MathML。
+       · 输出 MathML（ToMath 的默认 output）：浏览器原生排版，不用 KaTeX 的 CSS 和字体，
+         页面上零 JS、零外链。代价是排版比 KaTeX 自己的 HTML 版略朴素，字体靠系统数学字体
+         （custom.css 第 70 段）。
+       · 独立成行的公式包一层 div.math-block：窄屏下长公式只横滚这一块，不撑破正文。
+       · 写错时让构建失败并报出位置 —— 不用 throwOnError=false，那样会在页面上留一段红字。
+     ⚠️ try 需要 Hugo 0.141+，transform.ToMath 需要 0.132+；本站钉在 0.170。
+     ============================================================ */ -}}
+{{- $block := eq .Type "block" -}}
+{{- with try (transform.ToMath .Inner (dict "displayMode" $block)) -}}
+  {{- with .Err -}}
+    {{- errorf "数学公式渲染失败（KaTeX：%s）。位置：%s" . $.Position -}}
+  {{- else -}}
+    {{- if $block -}}<div class="math-block">{{ .Value }}</div>{{- else -}}{{ .Value }}{{- end -}}
+  {{- end -}}
+{{- end -}}

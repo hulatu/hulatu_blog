@@ -20,6 +20,34 @@
 {{- $text := .Text -}}
 {{- $title := .Title -}}
 {{- $page := .Page -}}
+{{- /* 2026-11-24：站内链接可以直接写文件名 —— [上一篇](../weekly/胡拉图的周刊-第30期.md)、
+       [地图](map.md)（Typora / Obsidian 里点得开，GitHub 上也点得开）。构建时换成那篇文章的正式网址，
+       #后面的锚点原样带上。上游 Hugo 自带的链接钩子会做这一步，本站覆盖了它，原来就丢了。
+       · 只处理以 .md 结尾、不带协议的地址；/about/ 这类已经是网址的不碰。
+       · 先按当前页所在目录找，再按 content/ 根目录找（GetPage 自己也会这样试）。
+       · 找不到就原样输出并在构建日志里报一条 WARN，不让构建失败。
+       ⚠️ 文件名有空格时 Markdown 要写成 [x](<有 空格.md>) 或把空格写成 %20，否则根本不算链接。
+       ⚠️ 用 .PageInner：短代码里嵌进来的内容按它自己的位置找。 */ -}}
+{{- if and (not (strings.Contains $url "://")) (not (hasPrefix $url "mailto:")) (not (hasPrefix $url "#")) -}}
+  {{- with try (urls.Parse $url) -}}
+    {{- with .Value -}}
+      {{- $u := . -}}
+      {{- if strings.HasSuffix (lower $u.Path) ".md" -}}
+        {{- $inner := $.PageInner -}}
+        {{- $target := $inner.GetPage $u.Path -}}
+        {{- if and (not $target) $inner.File -}}
+          {{- $target = $inner.GetPage (printf "/%s" (path.Join $inner.File.Dir $u.Path)) -}}
+        {{- end -}}
+        {{- with $target -}}
+          {{- $url = .RelPermalink -}}
+          {{- with $u.Fragment -}}{{- $url = printf "%s#%s" $url . -}}{{- end -}}
+        {{- else -}}
+          {{- warnf "站内链接 %q 找不到对应的文章（在 %s）" $url $inner.RelPermalink -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
 {{- $newTabEnabled := $page.Site.Params.externalLinksNewTab | default false -}}
 {{- $isExternal := or (hasPrefix $url "http://") (hasPrefix $url "https://") -}}
 {{- $isInternal := and $isExternal (hasPrefix $url $page.Site.BaseURL) -}}

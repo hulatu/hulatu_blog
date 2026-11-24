@@ -51,6 +51,18 @@
     document.body.removeChild(ta);
   }
 
+  /* 2026-11-23：代码块开了行号（```js {linenos=true}）时，innerText 会把行号一起带走。
+     这时改成逐行取 `.cl`（Chroma 的「代码本体」span，每行末尾自带换行），跳过行号 `.ln`。
+     没开行号的块照旧用 innerText（原因见文件头）。 */
+  function codeText(pre) {
+    if (!pre.querySelector('.ln')) return pre.innerText;
+    var parts = [];
+    pre.querySelectorAll('.cl').forEach(function (el) {
+      parts.push(el.textContent);
+    });
+    return parts.join('');
+  }
+
   function init() {
     var boxes = document.querySelectorAll('div.highlight');
     if (!boxes.length) return;
@@ -93,7 +105,7 @@
 
       var timer = null;
       btn.addEventListener('click', function () {
-        copyText(pre.innerText, function () {
+        copyText(codeText(pre), function () {
           btn.textContent = '已复制';
           /* 2026-11-15：aria-label 必须跟着文字一起换。
              按钮上有一个固定的 aria-label「复制这段代码」，它在无障碍树里

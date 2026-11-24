@@ -16,7 +16,7 @@ draft: false
 
 但这，都不耽误我们要主观的拥抱英语。
 
-我特意查阅了 [全球热门网站排行榜](https://zh.wikipedia.org/zh-hans/%E6%9C%80%E5%8F%97%E6%AC%A2%E8%BF%8E%E7%BD%91%E7%AB%99%E5%88%97%E8%A1%A8) ，如下：
+我特意查阅了 [全球热门网站排行榜](https://zh.wikipedia.org/zh-hans/%E6%9C%80%E5%8F%97%E6%AC%A2%E8%BF%8E%E7%BD%91%E7%AB%99%E5%88%97%E8%A1%A8)，如下：
 
 ![全球热门网站](https://img.hulatu.com/post/jIBUDw.webp)
 

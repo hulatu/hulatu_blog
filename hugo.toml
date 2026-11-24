@@ -142,10 +142,46 @@ disableKinds = ["taxonomy"]
 [markup.goldmark.parser]
   wrapStandAloneImageWithinParagraph = false
 
+# 2026-11-23：中文段落里折行写的地方不再多出一个空格。
+# Markdown 把段内单个换行当成空格，浏览器在两个汉字之间也照样显示（全站 26 处，12 处在
+# 《为何很多人重启，从跑步开始》）。simple 规则只在换行两边都是汉字 / 假名 / 、。「」这类 CJK 符号时
+# 去掉它；有一边是英文就照旧留空格。只去空格，不会把一行变成一段 —— 要分段仍然空一行。
+# ⚠️ 别换成 eastAsianLineBreaksStyle = "css3draft"：它在任一侧是标点或汉字时都去空格，
+#    第 17 期周刊里 12 行「英文标题 + 换行 + 中文译文」会粘成一串（模拟 Goldmark 源码规则得出）。
+# ⚠️ 已知边界：换行前是全角 ，？！（U+FF0C 等，不在 simple 的字表里）时仍留空格，全站 6 处；
+#    换行前一行以加粗 / 链接等结尾时也留空格，全站 1 处（2026-11-24 按实际构建结果核对）。
+# ⚠️ 它会让带自定义标题的提示框（> [!NOTE] 标题 + 换行 + 正文）把正文吞进标题 ——
+#    2026-11-24 在 _markup/render-blockquote.html 里补救，原因写在那里。
+[markup.goldmark.extensions.cjk]
+  enable = true
+  eastAsianLineBreaks = true
+  eastAsianLineBreaksStyle = "simple"
+
+# 2026-11-23：数学公式在构建期渲染成 MathML（_markup/render-passthrough.html → transform.ToMath）。
+# 页面上零 JS、零 CSS、不连任何 CDN。行内写 \( … \)，独立成行写 $$ … $$ 或 \[ … \]。
+# ⚠️ 刻意没开行内 $ … $（Typora / Obsidian 的习惯写法）：Hugo 文档说明，用构建期 KaTeX 时，
+#    正文里单独出现的 $（「花了 $5」）没法可靠地转义，会被当成公式。要开先想清楚以后写不写美元。
+# ⚠️ 公式写错时构建直接失败并报出文件和行号（钩子里的 errorf），不会在页面上留红字。
+[markup.goldmark.extensions.passthrough]
+  enable = true
+  [markup.goldmark.extensions.passthrough.delimiters]
+    block = [['\[', '\]'], ['$$', '$$']]
+    inline = [['\(', '\)']]
+
+# 2026-11-23：==高亮== → <mark>。extras 里只开这一项：
+# · 下标 H~2~O 要求关掉删除线，而且中文常写「3~5 公里」「1~2 天」，同一段出现两次就会被吃成下标；
+# · 上标 1^st^ / 插入 ++文字++ 中文几乎用不上，后者还可能和 C++ 撞。
+[markup.goldmark.extensions.extras.mark]
+  enable = true
+
 # 代码高亮：noClasses=false 让 Chroma 输出类名，配色由 custom.css 第 12 段提供。
 # ⚠️ 改回 true 会写内联 monokai 前景 + 主题浅底，代码块几乎看不见。
 [markup.highlight]
   noClasses = false
+  # 2026-11-23：```js {linenos=true} 的行号改成行内 span.ln（默认是两栏表格）。
+  # 表格版会被 single.html 包进 .table-wrap、吃到正文表格的边框和内边距，复制时也难剔掉行号。
+  # ⚠️ 别在文章里写 linenos=table，理由同上。
+  lineNumbersInTable = false
 
 # 目录只收 h2 / h3。
 [markup.tableOfContents]

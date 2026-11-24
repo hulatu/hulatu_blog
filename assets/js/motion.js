@@ -1,6 +1,6 @@
 /* 全站小动效（2026-11-23）。与 palette.js / hello.js / toc.js 拼成 /js/site.min.<hash>.js（defer）。
    四件事，互不依赖，每一段都自带「找不到元素就跳过」：
-     1. 正文图片：加载前占位底色，加载完淡入（custom.css 第 64 段）
+     1. 正文图片：加载前占位底色，解码完淡入（custom.css 第 64 段）
      2. 标题旁的 #：跳转的同时复制本节链接，底部提示「已复制本节链接」（第 65 段）
      3. 跑步页柱状图 / 关于页热力图：第一次进入视口时生长一次（第 66 段）
      4. 列表 ↔ 文章的标题过渡：离开页这一侧（pageswap）。进入页那一侧（pagereveal）
@@ -23,9 +23,18 @@
     each(lazyImgs, function (img) {
       if (img.complete) return;
       img.classList.add('img-wait');
-      var done = function () { img.classList.remove('img-wait'); };
+      var show = function () { img.classList.remove('img-wait'); };
+      /* 2026-11-23：等解码完再淡入。图片带 decoding="async"，load 只代表下载完 ——
+         手机上解码一张 1080px 的图要几十毫秒，原来一下载完就开始淡，前半段淡的是空白，
+         图会在中途「啪」地出现。decode() 失败（格式不支持、换了 srcset 档位）也照样显示；
+         800ms 是兜底：万一 decode() 一直不返回，也不会把图永远藏着。 */
+      var done = function () {
+        if (typeof img.decode !== 'function') return show();
+        setTimeout(show, 800);
+        img.decode().then(show, show);
+      };
       img.addEventListener('load', done, { once: true });
-      img.addEventListener('error', done, { once: true });
+      img.addEventListener('error', show, { once: true });
     });
   }
 

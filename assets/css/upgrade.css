@@ -245,7 +245,9 @@ blockquote {
   outline: none;
   background: transparent;
   color: var(--hl-ink);
-  font-size: 15px;
+  /* 2026-11-23：15px → 16px。iOS Safari 对 <16px 的输入框聚焦时会自动放大整页；
+     custom.css 第 26 段的 `input { font-size: 16px }` 会被这里的类选择器盖掉，所以直接改这里。 */
+  font-size: 16px;
 }
 
 .hl-cmd-results {
@@ -254,6 +256,8 @@ blockquote {
   list-style: none;
   padding: 8px;
   margin: 0;
+  /* 2026-11-23：滚到列表尽头不再带着背后的页面一起滚。 */
+  overscroll-behavior: contain;
 }
 
 .hl-cmd-item {
@@ -273,10 +277,24 @@ blockquote {
   text-decoration: none;
 }
 
-.hl-cmd-item:hover,
+/* 2026-11-23：去掉 :hover —— 悬停由 palette.js 的 pointermove 同步成 .selected，
+   否则「鼠标停在一条、键盘选了另一条」时会同时亮两条。
+   结果项改成 <a> 之后，主题的 `a:hover { text-decoration: underline }`（0,1,1）比
+   `.hl-cmd-item`（0,1,0）高，下面那条把下划线压回去。 */
 .hl-cmd-item.selected {
   background: var(--hl-bg-hover);
   color: var(--hl-accent);
+}
+
+a.hl-cmd-item:hover {
+  text-decoration: none;
+}
+
+/* 没搜到时列表顶部那行提示（palette.js renderCmd 的 noMatch 分支）。 */
+.hl-cmd-empty {
+  padding: 8px 10px 6px;
+  color: var(--hl-mute);
+  font-size: 13px;
 }
 
 .hl-cmd-foot {
@@ -287,6 +305,13 @@ blockquote {
   justify-content: space-between;
   font-size: 12px;
   color: var(--hl-mute);
+}
+
+/* 2026-11-23：触屏设备没有方向键 / Enter / ⌘K，底部提示整行藏掉（与页头按钮里的 .hl-kbd 同一判据）。 */
+@media (hover: none) and (pointer: coarse) {
+  .hl-cmd-foot {
+    display: none;
+  }
 }
 
 /* ── 站点令牌桥接（2026-11-21 按用户要求完全采用升级包配色）────────

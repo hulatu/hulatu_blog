@@ -20,7 +20,7 @@
 | 分类 | 8 个：思考 40 / 周刊 31 / 工具 22 / 记录 19 / 运动 13 / 学习科研 10 / 饮食 5 / 健康 4 |
 | 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
 | 根级独立页 | 15 个（`content/*.md`，不含首页 `_index.md`） |
-| 站点层 | `layouts/` 48 个文件 + `assets/js/` 6 个 + `assets/css/` 3 个 |
+| 站点层 | `layouts/` 52 个文件 + `assets/js/` 8 个 + `assets/css/` 3 个 |
 | 主题副本 | `themes/hugo-bearneo/` 27 个文件 |
 | 脚本 | `scripts/` 17 个；GitHub Actions 2 个 |
 | 301 | `static/_redirects` 17 条 |
@@ -182,6 +182,9 @@ layouts/                  ★ 站点层覆盖（另有 data/ 下的词表与站�
 
 assets/js/giscus.js       评论区脚本（只在挂评论的页加载）
 assets/js/code-copy.js    代码块复制按钮（只在含代码块的 5 页加载）
+assets/js/footnote.js     脚注就地预览（只在含脚注的页加载，判断在 partials/footnote.html）
+assets/js/mermaid-init.js Mermaid 图的渲染：浅、深两份 SVG（只在有 mermaid 代码块的页加载）
+assets/js/vendor/mermaid.min.js  Mermaid 11.17.2 本体（3.6 MB，本站自带，不连 CDN；升级见 partials/mermaid.html）
 
 themes/hugo-bearneo/      ★ 上游副本；style.html 有 4 处登记改动（见 DESIGN.md 第 5 节），其余逐字节未改
 
@@ -323,7 +326,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | `draft` | ✅ | |
 | `toc` | ✅ | `false` 关掉**两侧目录**。闸门 `default .Site.Params.toc .Params.toc`，`hugo.toml` 的 `params.toc = true` → 不写 `toc` 的页（`/about/` `/privacy/`、文章页）>1200px 有右侧悬浮目录、≤1200px 有正文顶部折叠目录 |
 | `hideDate` | ✅ | `true` 藏掉页面日期行（`date` 字段仍要留） |
-| `mermaid` | ✅ | `true` 才加载 Mermaid |
+| `mermaid` | ⛔ 不用写 | 2026-11-23 起页面里有 `mermaid` 代码块就自动加载画图脚本，这个字段不再读（全站没人写过） |
 | `menu` | ✅ | 有值时 `single.html` 不输出 `<h1>` / 日期行 |
 
 ### 周刊 front matter（`archetypes/weekly.md`）
@@ -380,7 +383,9 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改标题锚点 `#` | `layouts/_default/_markup/render-heading.html` + 第 19 段。⚠️ **只给文章页**（两边都判 `$longForm`，改一处要一起改） |
 | 改孤行保护 | `layouts/partials/orphan-safe.html` + 四处调用；⚠️ **别信「HTML 里有 span 就等于生效」**，`content .nowrap` 那条规则必须有 |
 | 改返回顶部 | `layouts/partials/back-top.html` + 第 16 段。⚠️ **零 JS**，靠 `animation-timeline: scroll()` |
+| 改脚注弹出预览 | `assets/js/footnote.js` + `custom.css` 第 71 段 + `partials/footnote.html` 的加载判断。⚠️ 状态要在 `beforetoggle` 里改（`toggle` 是异步的、会合并）；⚠️ 链接本身别改成按钮 —— 没有 JS 时要能跳到文末；⚠️ 悬停时长在脚本顶部 `HOVER_OPEN` / `HOVER_CLOSE`（300 / 200ms）；悬停只认 `pointerType === 'mouse'`，别改成 `mouseenter`（触屏点按也会触发） |
 | 改代码复制按钮 | `assets/js/code-copy.js` + 第 18 段 + `partials/code-copy.html` 的加载判断（三处类名 / 判据一致） |
+| 改公式 / Mermaid / 高亮 / 任务列表 / 行号等扩展语法 | 开关在 `hugo.toml` 的 `[markup.goldmark.extensions.*]` 与 `[markup.highlight]`；公式 `_markup/render-passthrough.html`；Mermaid `_markup/render-codeblock-mermaid.html` + `partials/mermaid.html` + `assets/js/mermaid-init.js`；样式全在 `custom.css` 第 70 段；样例 `/style/`。⚠️ 行内 `$ … $` 刻意没开、下标 `~` 刻意没开，理由写在 `hugo.toml`。⚠️ 别写 `linenos=table` |
 | 改「系列」分组口径 | ⚠️ **两处必须同口径**（`series` 字段 + `.ByDate` 升序）：`single.html` 与 `archive.html` |
 | 改评论区 | `layouts/partials/giscus.html` + `assets/js/giscus.js` + 第 07 段 |
 | 改 robots / `noindex` | **`layouts/partials/noindex.html`**（是唯一判定处，`baseof.html` 与 `sitemap.xml` 都调它）。⚠️ 改完两处会同时生效，不需要再手动对齐；口径见 DESIGN.md 8.9 |
@@ -395,7 +400,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改 SEO 头（keywords / JSON-LD / og / referrer / theme-color） | `layouts/partials/seo_tags.html`（2026-10-14 新增，整份覆盖上游同名 partial）。⚠️ `theme-color` 现在只有一条 `<meta id="hl-theme-color">`（`custom_head.html`），由 `assets/js/palette.js` 的 `applyTheme()` 在深浅色切换时改；`color-scheme` 与 `input{font-size}` 在第 26 段；`referrer` 在 `baseof.html`。⚠️ 上游那份是「HTML 规范还在 2015 年」的写法，**别回退** |
 | 改分享卡片图 / JSON-LD 的 `image` | **`layouts/partials/og-image.html`**（是唯一取值处，`og:image` / `twitter:image` / JSON-LD `image` 三处都调它）。⚠️ 返回的是**绝对 URL**，调用方不要再套 `absURL` |
 | 改分类页的标题 / 描述 | `content/categories/<词>/_index.md`（8 个，2026-10-26 新增）。⚠️ `title` 必须写，否则 `<title>` 会退化成「 \| 胡拉图说」；标签页没有对应文件（它们仍是 noindex） |
-| 改引用框 / 提示框 | 普通引用：`custom.css` 第 39-b 段；提示框：`layouts/_default/_markup/render-blockquote.html`（类型 → 默认中文标题）+ `custom.css` 第 61 段（颜色变量 `--callout-*`）。⚠️ 提示框必须仍输出 `<blockquote>`（搜索索引按它收「引用」）；标题用 `<b>` 不用 `<strong>`（否则进关键词）。样例页 `/style/` |
+| 改引用框 / 提示框 | 普通引用：`custom.css` 第 39-b 段；提示框：`layouts/_default/_markup/render-blockquote.html`（类型 → 默认中文标题）+ `custom.css` 第 61 段（颜色变量 `--callout-*`）。⚠️ 提示框必须仍输出 `<blockquote>`（搜索索引按它收「引用」）；标题用 `<b>` 不用 `<strong>`（否则进关键词）。样例页 `/style/`。⚠️ 自定义标题后面紧跟中文正文时，Hugo 会把正文并进标题（中文换行设置导致），钩子里有补救；嵌在别的引用里的提示框补救不到，在标题下面空一行 `>` 即可 |
 | 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有命令面板（脚本 `assets/js/palette.js`，对话框 HTML 在 `layouts/partials/custom_body.html`）。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch（鼠标悬停在「搜索」按钮上也会预取，只认鼠标、只一次）；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
 | 改分享卡上的日期 / 作者 / 标签（`article:*`） | `layouts/_partials/opengraph.html`。⚠️ 只对 `posts` / `weekly` 输出，首页与列表页的 `og:type` 是 `website`，挂 `article:*` 非法；⚠️ `article:author` 按协议是**作者主页 URL**（本站指 `/about/`），不是名字 |
 | 改「更新于」的显示条件 / 日期行排版 | `layouts/_default/single.html` 日期行（`$showUpdated`）。⚠️ 判据是「`lastmod` 晚于 `date` **且** 日历日不同」，不是「差 24 小时」——当天发当天改的两个日期长得一样，显示出来是噪音；⚠️ 日期行是 flex 一行（`.byline`，`custom.css` 第 39 段），日期、更新、时长、字数之间用间距分开，不用中点串 |

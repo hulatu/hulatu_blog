@@ -21,7 +21,7 @@ draft: false
 >
 > 关于脚本的专业介绍，借助了 Claude 的帮助。
 >
-> 地址：[Pin-MacOS 屏蔽 macOS 更新](https://github.com/hulatu/Pin-MacOS) 。
+> 地址：[Pin-MacOS 屏蔽 macOS 更新](https://github.com/hulatu/Pin-MacOS)。
 
 ## 更新红点
 

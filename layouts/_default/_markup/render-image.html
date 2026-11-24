@@ -97,7 +97,19 @@
     {{- else }}
     <img src="{{ $src | safeURL }}"{{ $srcsetAttr }} alt="{{ $alt }}"{{ $dim | safeHTMLAttr }}{{ $loadAttr | safeHTMLAttr }} />
     {{- end }}
-    {{- /* alt 已经由 <img> 读一次；再放进 figcaption 会被读屏念第二遍。
-           alt 非空时把可见图注从无障碍树里摘掉（视觉不变）。 */}}
-    <figcaption{{ if strings.TrimSpace $alt }} aria-hidden="true"{{ end }}>{{ $alt }}</figcaption>
+    {{- /* 图注（2026-11-24 改）：
+           · 写了标题 ![alt](src "标题") 时，图注用标题；alt 只给读屏和图片加载失败时。
+             两段文字不同，读屏两段都念，图注不藏。
+           · 没写标题时，图注就是 alt（原来的行为）。alt 已经由 <img> 读一次，
+             再放进 figcaption 会被念第二遍，所以从无障碍树里摘掉（视觉不变）。
+           · 两样都空时不输出 <figcaption>（原来会留一个空的）。
+           ⚠️ 比较用 alt 的纯文本（plainify + htmlUnescape）：.Text 里的 & 是 &amp;，直接比会判成不同。
+           ⚠️ 输出 alt 时仍用 $alt 本身，别换成纯文本版本，否则 & 会被转义两次。 */ -}}
+    {{- $altPlain := $alt | plainify | htmlUnescape | strings.TrimSpace -}}
+    {{- $cap := strings.TrimSpace .Title -}}
+    {{- if and $cap (ne $cap $altPlain) }}
+    <figcaption>{{ $cap }}</figcaption>
+    {{- else if $altPlain }}
+    <figcaption aria-hidden="true">{{ $alt }}</figcaption>
+    {{- end }}
 </figure>

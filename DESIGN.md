@@ -45,24 +45,28 @@ description: >
 | 行高来源 | **只在 `assets/css/theme.css` 的 `content` 声明一次 1.5**；`custom.css` 不再覆盖 |
 | 正文内链 | `content.long-form a` 默认 1px 三级灰虚线（`text-underline-offset: 3px`），悬停变实线 + 当前色；标题锚点、脚注引用/返回排除 |
 | 列表与表格 | 列表项之间 `0.3em`（只给无 class 的直接子级，`ul.blog-posts` 不受影响）；表格单元格 `0.5em 0.65em`、表头 600、数字 tabular |
-| 脚注 / 图注 | 脚注 16px 二级灰；图注 0.85em 二级灰，alt 非空时加 `aria-hidden="true"`（避免读屏把 alt 念两遍） |
+| 脚注 / 图注 | 脚注 16px 二级灰；点正文编号就地弹出、鼠标悬停 0.3 秒也弹出（原生 Popover，第 71 段 + `footnote.js`，⌘ 点 / 无 JS 仍跳文末）；图注 0.85em 二级灰，alt 非空时加 `aria-hidden="true"`（避免读屏把 alt 念两遍） |
 | 阅读进度条 | 长文页（posts + weekly）顶部 3px 链接蓝；`animation-timeline: scroll(root block)`，零 JS；不支持时整条隐藏 |
 | 断点 | **480 / 800 / 1200** 三档（2026-11-23 由 400 / 480 / 600 / 640 / 700 / 800 / 1200 收拢，只往上并、不往下并 —— 窄屏布局提前生效不会溢出）。新规则请从这三档里选 |
-| 弹层动效 | 图片放大淡入 0.18s（关闭瞬间）；搜索面板淡入淡出 0.16s + 面板下沉 6px、0.98 → 1 放大；`@starting-style`，零 JS（`custom.css` 第 60 段） |
+| 弹层动效 | 图片放大：打开淡入 0.18s、关闭淡出 0.14s；搜索面板：打开 0.16s + 面板下沉 6px、0.98 → 1 放大（0.18s），关闭 0.12s；打开用 `--hl-ease-out`、关闭用 `--hl-ease-in`（第 69 段）；`@starting-style`，零 JS（`custom.css` 第 60 / 68 段） |
 | 引用框 | 长文页蓝竖线 + 浅蓝底 + 左上角 **2em** Georgia 引号（2026-11-23 由 5em 缩小，左内边距 3.2em → 2.4em）（第 39-b 段） |
-| 提示框 | `> [!NOTE]` / TIP / IMPORTANT / WARNING / CAUTION，`render-blockquote.html` 输出 `blockquote.callout`；左边框 + 小标题换色，底色 7% 混色，默认标题 说明 / 提示 / 重要 / 注意 / 警告（第 61 段） |
+| 提示框 | `> [!NOTE]` / TIP / IMPORTANT / WARNING / CAUTION，`render-blockquote.html` 输出 `blockquote.callout`；左边框 + 小标题换色，底色 7% 混色，默认标题 说明 / 提示 / 重要 / 注意 / 警告；类型后跟 `-` / `+` 可折叠，外层仍是 blockquote，里面套 `<details>`（第 61 / 70 段） |
 | 选中文字 | 浅色链接蓝 20%、深色 32% 底色（第 62 段） |
 | 正文颜色 | **所有页面**的阅读区（`content` + `main`）都是 `--hl-ink`，引用块统一二级灰，与文章页一致（首页、404、邻居页、精选导读原来更淡）。页眉、页脚、日期等元信息仍是 ink-2 / 三级灰 |
 | 邮箱浮层 | 页脚「问候」、关于页「写信」、邻居页「写信给我」、评论区「写信」共用 `partials/hello.html`（悬浮显示邮箱、点按复制）；`mail-link` 与 partial 都支持 `subject`。正文里的卡片左对齐，评论区的右对齐（第 52 段 / 第 48 段末尾） |
 | 图片段落 | 单独一行的图片不包 `<p>`（`hugo.toml` `wrapStandAloneImageWithinParagraph = false`），消除 `<p><figure>` 产生的约 700 个空段落；间距不变 |
+| 中文换行 | Goldmark cjk 扩展 `eastAsianLineBreaks`（simple，`hugo.toml`）：段内单个换行两边都是汉字 / 假名 / 、。「」等时不显示成空格；有一边是英文照旧是空格。⚠️ 换行前是全角 ，？！ 时仍有空格（不在 simple 字表里）；要分段就空一行。链接与全角标点之间不留空格，命令参数放行内代码（`--` 否则会被换成短破折号）。样例在 `/style/`「中文排版」 |
+| 中英文间距 | 手打空格为主；`main { text-autospace: normal }` 给紧贴的地方补约 2px（Chrome / Edge 140+、Safari 18.4+、Firefox 145+），代码 / 按键 / 公式 / Mermaid 不加（第 43 段） |
+| Markdown 扩展 | 数学公式构建期渲染成 MathML（`\( … \)` 行内、`$$ … $$` 独立成行；不开行内 `$`）；Mermaid 本站自带 11.17.2、只在有图的页加载，浅深两份 SVG 按 `data-theme` 显示；`==高亮==` 浅黄底；任务列表复选框占圆点的位置；代码行高亮蓝底 + 左竖线、行号不可选；定义列表、`<kbd>`；可折叠提示框 `> [!TIP]-` / `+`（第 70 段） |
 | 锚点跳转 | 正文 h2–h4 `scroll-margin-top: 1.25rem`（第 63 段）；跳到后标题底色亮一下 1.4s（第 65 段） |
-| 加载过渡 | 懒加载图片：占位块是**这张图的主色**（`data/image-colors.json` → `--ph`，没有就浅灰）+ 0.28s 淡入（首图不做，免拖 LCP）；搜索索引未到时 3 条占位、失败可重试、鼠标悬停「搜索」按钮即预取；结果里命中的字用 `<mark>` 标出；评论区展开淡入（第 64 段 + `motion.js` / `palette.js`） |
-| 交互反馈 | 链接变色 0.15s；触屏按压 `scale: .96` 并去掉系统灰块；折叠块高度动画（Chrome 131+）；点 `#` 同时复制本节链接并在底部提示（第 65 段 + `motion.js`） |
+| 加载过渡 | 懒加载图片：占位块是**这张图的主色**（`data/image-colors.json` → `--ph`，没有就浅灰）+ **解码完**再 0.32s 淡入（`img.decode()`，不是一下载完就淡；占位色等图片完全不透明后才撤）（首图不做，免拖 LCP）；搜索索引未到时 3 条占位、失败可重试、鼠标悬停「搜索」按钮即预取；结果里命中的字用 `<mark>` 标出；评论区展开淡入（第 64 段 + `motion.js` / `palette.js`） |
+| 交互反馈 | 链接变色 0.15s；触屏按压 `scale: .96`（按下 0.08s 跟手、松开 0.18s 回弹）并去掉系统灰块；折叠块高度动画（Chrome 131+；展开 0.26s、收起 0.18s）；点 `#` 同时复制本节链接并在底部提示（第 63 / 65 段 + `motion.js`） |
+| 缓动 | **全站两条**（`custom.css` 第 69 段）：`--hl-ease-out` `(.33,1,.68,1)` 管进场 / 位移 / 展开 / 生长，与深浅色绽开同一条（`palette.js` 直接读它）；`--hl-ease-in` `(.32,0,.67,0)` 管退场，配比进场短约 1/3 的时长。悬停变色仍用 `ease`。⚠️ 新动效别写裸 `cubic-bezier`；例外只有 `.hl-theme-spin` 与搜索占位的 `hl-skel` |
 | 图表入场 | 跑步页柱状图、关于页热力图第一次进入视口时生长一次（IntersectionObserver，**不用滚动驱动** —— 停在半高会显示错的数字）（第 66 段） |
-| 图片放大 | **原生 Popover**（原来是 checkbox + 两个 label）：`button[popovertarget]` 包原图，弹层整块是关闭按钮；Esc / 读屏语义 / 顶层显示由浏览器负责，仍零 JS。有 View Transitions 时 `motion.js` 第 5 段让放大图**从原图位置长出来、关闭缩回原位**；否则淡入淡出 0.18s。放大图仍是背景图（每张图 DOM 里只有一个 `<img>`）（第 68 段）。RSS 里会把这套标记拆掉，只留 `<img>` |
-| 搜索面板 | **原生 `<dialog>` + `showModal()`**：焦点困在面板内、背后页面 inert、Esc 关闭都是原生；`.open` 类仍保留给淡入淡出 |
+| 图片放大 | **原生 Popover**（原来是 checkbox + 两个 label）：`button[popovertarget]` 包原图，弹层整块是关闭按钮；Esc / 读屏语义 / 顶层显示由浏览器负责，仍零 JS。有 View Transitions 时 `motion.js` 第 5 段让放大图**从原图位置长出来、关闭缩回原位**；否则淡入 0.18s、淡出 0.14s。放大图仍是背景图（每张图 DOM 里只有一个 `<img>`）（第 68 段）。RSS 里会把这套标记拆掉，只留 `<img>` |
+| 搜索面板 | **原生 `<dialog>` + `showModal()`**：焦点困在面板内、背后页面 inert、Esc 关闭都是原生；`.open` 类仍保留给淡入淡出。输入框 **16px**（防 iOS 聚焦放大）；结果是 **`<a href>`**（⌘/中键新标签、悬停预渲染）；ARIA **combobox + listbox** + `role=status` 播报篇数；输入法组字时不响应方向键 / 回车 |
 | 目录高亮 | 站点层覆盖主题 `toc.html`（只留标记），高亮改在 `toc.js` 用 IntersectionObserver + `scrollend` 校正，滚动中不再每帧测量；点目录走原生锚点（地址栏带 `#`，触发 :target 高亮） |
-| 标题过渡（试行） | 列表 ↔ 文章跨页时标题移动到 h1 位置，`view-transition-name: post-title` 只在那次跳转期间挂上（第 67 段 + `motion.js` 第 4 段 + `custom_head.html` 内联 pagereveal） |
+| 标题过渡（试行） | 列表 ↔ 文章跨页时标题移动到 h1 位置；新旧两张标题快照在前 0.14s 交叉淡化完、后段只剩新标题在动（防两层字重影），`view-transition-name: post-title` 只在那次跳转期间挂上（第 67 段 + `motion.js` 第 4 段 + `custom_head.html` 内联 pagereveal） |
 
 2026-11-21 新增两个根级页：`/style/`（所有 Markdown 元素的样式样本，`long-form: true`）与 `/map/`（人类可读的站点地图，同时收技术栈、排版、评论与隐私、站史；原 `/colophon/` 当天并入，301 到 `/map/`）。`/about/` 底部新增「写作统计」：文章/周刊数、累计字数、写作天数，以及过去 365 天的发布热力图（`layouts/shortcodes/writing-stats.html` + `custom.css` 第 51 段，纯构建期生成，无 JS）。2026-11-21 当天改版：统计条改成「小标签在上、大数字带单位」，四列之间用发丝线分隔；热力图加月份刻度与范围/有发布天数，配色改成 `--hl-*` 强调色混合（`color-mix`），注脚用虚线分隔；窄屏 2×2 统计 + 月份与格子一起横向滚动。
 
@@ -88,7 +92,7 @@ description: >
 `publish.sh` 增加 `.git/index.lock`、未完成 rebase 和 `git add` 失败的前置检查。
 
 同日按用户要求把深浅色切换改成**从点击处圆形绽开**（参考 directoryyy.com 的主题切换）：
-View Transitions API + `clip-path: circle()`，500ms、`cubic-bezier(.645,.045,.355,1)`；
+View Transitions API + `clip-path: circle()`，500ms、`cubic-bezier(.645,.045,.355,1)`（2026-11-23 起缓动改为 easeOutCubic `(.33,1,.68,1)`，见第 2 节）；
 月亮/太阳图标在同一拍转 360°。Firefox / 关闭动效时退回原来的 0.3s 颜色过渡。
 细节见第 2 节「切换动效」与第 8.13 节。
 
@@ -240,7 +244,9 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   里所有 `@media (prefers-color-scheme: …)` 已改成 `[data-theme="…"]`，切换后全站一致。
 - **切换动效**：优先用 View Transitions API 抓新旧整页快照，
   从**点击坐标**用 `clip-path: circle()` 绽开到铺满屏幕（`custom.css` 第 57b 段只关掉
-  默认淡入，动画在 `custom_body.html` 里用 WAAPI 驱动：500ms、`cubic-bezier(.645,.045,.355,1)`）。
+  默认淡入，动画在 `assets/js/palette.js` 里用 WAAPI 驱动：500ms、easeOutCubic `cubic-bezier(.33,1,.68,1)`，
+  取自 `custom.css` 第 69 段的 `--hl-ease-out`（读不到时退回同值常量 `VT_EASE_FALLBACK`），圆和图标共用；2026-11-23 前是 ease-in-out `(.645,.045,.355,1)`，前 100ms 圆几乎不动）。
+  ⚠️ 不支持 View Transitions 时的 `.hl-theme-spin` 仍是旧曲线：它是三段关键帧，换 ease-out 会在中间顿一下。
   图标在切换期间单独快照、转一圈（55% 段落带回弹，第 57c 段）；按钮中心点用
   `getBoundingClientRect()` 兜键盘触发。**降级**：`prefers-reduced-motion: reduce` 或
   不支持 `startViewTransition`（Firefox）时，退回原来的 `.hl-theme-transition` 0.3s 颜色过渡
@@ -248,6 +254,13 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
   `.hl-theme-transition`：新快照在过渡起步时抓取，颜色可能还是旧的。⚠️ 第 57b/57c 段的
   规则全部挂在 `.hl-vt-theme` 下（只在切换期间挂到 `<html>`），否则会把第 30 段跨页转场的
   0.2s 淡入一起关掉 / 让图标从整页淡入里被单独摘出来。
+- **切换不抖的三条约定**（2026-11-23）：
+  ① `.hl-vt-theme` 挂着的那 0.5s 里**全站 transition 一律关掉**（第 57b 段）—— 新快照是实时画面，
+  `html, body` 常驻的 0.2s 颜色过渡会让圆里先露出旧颜色、再翻成新颜色。⚠️ 以后给任何元素加颜色过渡都不用再单独排除。
+  ② 新快照和图标快照的**第一帧由 CSS 定好**（圆心 0 半径的圆，坐标走 `--hl-vt-x` / `--hl-vt-y`；图标 0.55 倍），
+  WAAPI 用 `fill: both`。⚠️ 别去掉 `fill`：CSS 里有了 0 半径的初始圆，动画一结束不带 fill 就会退回去，闪一下旧主题。
+  ③ 绽开进行中再点**直接忽略**（`vtRunning`），不打断当前这一圈。
+- **Firefox 退回路径**（不支持 View Transitions）：`.hl-theme-transition` 只过渡背景色 / 文字色 / 边框色三项，0.3s、`--hl-ease-out`。2026-11-23 前还有 outline-color / fill / stroke：全页每个元素都要起过渡，属性越少越不卡；站里 SVG 图标都是 `currentColor`，跟着文字色走。
 - **正文用最深 ink**：升级包把 `body` 设为 `--hl-ink-2`（浅 `#374151` / 深 `#C8CDD6`），
   长文正文偏淡；站点层只在 `<content>` 上覆盖为 `--hl-ink`（浅 `#111315` / 深 `#F3F4F6`），
   页眉、页脚、日期等元信息仍保持 ink-2，层级不被拉平。对比度：浅色 10.3:1 → 18.6:1，
@@ -738,7 +751,7 @@ md 里**不要**再手写 `{#pin-yin}`。
 #### 全局命令面板
 
 `layouts/partials/custom_body.html`（升级包原版）在任何页面底部输出对话框：
-按 `⌘K` 或 `/` 呼出，搜标题、章节、关键词与引用框，`↑↓` 选择、`Enter` 跳转、`ESC` 关闭。
+按 `⌘K`（非苹果设备 `Ctrl K`）或 `/` 呼出，搜标题、章节、关键词与引用框，`↑↓` 选择、`Enter` 跳转、`⌘/Ctrl+Enter` 新标签打开、`ESC` 关闭。
 
 - **索引仍是 `layouts/index.json` 的 `/index.json`**，字段 `t/u/g/h/k/d`
   （标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框）。
@@ -752,7 +765,19 @@ md 里**不要**再手写 `{#pin-yin}`。
 - 空查询展示最近 10 篇 + 「随机读一篇文章」+「切换深浅色」两条快捷指令。
 - ⚠️ 如果再加页内输入框，记得给 `/` 快捷键补回 `typing` 守卫。
 - ⚠️ 别再加第二份 `keydown`（比如「`/` 跳到某个输入框」）—— 两处同时监听会一次开两个面板，或面板打开后页面又跳走。
-- 样式在 `custom_head.html` 末尾（`.hl-cmd-*`），面板 520px / 12px 圆角 / 模糊遮罩。
+- 样式在 `assets/css/upgrade.css`（`.hl-cmd-*`），面板 520px / 12px 圆角 / 模糊遮罩；输入框 **16px**
+  （<16px 时 iOS Safari 聚焦会放大整页；`custom.css` 第 26 段的 `input` 规则会被类选择器盖掉，所以改在 upgrade.css）。
+- **结果项**：文章 / 归档 / 地图是 `<a href>`（⌘ / Ctrl / Shift 点击、中键、右键复制链接、悬停预渲染都是原生行为）；
+  随机 / 深浅色 / 重试三条快捷指令没有地址，仍是 `<button>`。⚠️ 别改回 `<button>` + `location.href`。
+- **读屏**：APG 的 combobox + listbox 模式 —— 输入框 `role=combobox` + `aria-activedescendant`，
+  列表 `role=listbox`，`role=option` 直接挂在 `<a>` / `<button>` 上（`<li role=none>`，option 里不能再嵌可聚焦元素）；
+  焦点始终留在输入框。`#hlCmdStatus`（`.sr-only` + `role=status`）停手 400ms 后播报「找到 N 篇」。
+- **选中态只有一个**：`.hl-cmd-item:hover` 已删，悬停由 `pointermove` 同步成 `.selected`；方向键与悬停都走 `setSelected()`，不重画列表。
+- **输入法**：`keydown` 在面板打开时先判 `e.isComposing || e.keyCode === 229`，组字期间的方向键 / 回车归输入法。
+- **没搜到**：列表顶部一行灰字提示 + 「归档 / 网站地图 / 随机读一篇」三个去处，不再是死胡同。
+- 占位文字用省略号字符「…」，不是三个点。
+- 底部提示行按平台写 `⌘K` / `Ctrl K`（`#hlCmdHint`）；触屏设备（`hover: none` + `pointer: coarse`）整行隐藏。
+  结果列表 `overscroll-behavior: contain`，滚到底不带动背后页面。
 
 #### 「分类 / 系列」入口与总览页
 
@@ -1009,7 +1034,7 @@ md 里**不要**再手写 `{#pin-yin}`。
 
 - `$tocEnabled` = `default .Site.Params.toc .Params.toc`；`hugo.toml` 的 `params.toc = true`，`/roll/` `/archive/` `/donate/` 用 front matter `toc: false` 单独关。
 - 桌面目录 `position: fixed`，贴视口右缘 10px；折叠态 36px 宽（只装 24px 指示线），展开按 `max-content`，上限 280px，窄视口再按 `min(280px, (100vw − 720px) / 2 − 22px)` 收窄，不压正文。
-- 展开时指示线**不搬家**，仍钉在同一列（`right: 0`），标签从左侧长出；当前节用链接蓝、横线由 24px 拉长到 32px，悬停项也拉长到 32px（只变蓝为反馈），其余用三级灰；过渡 0.18s，reduced-motion 下关闭。页面顶部还没有当前节时，首条默认按当前节拉长（`:has` 兜底），否则刚打开文章时整排 24px，看起来像效果丢了。
+- 展开时指示线**不搬家**，仍钉在同一列（`right: 0`），标签从左侧长出；当前节用链接蓝、横线由 24px 拉长到 32px（实现：32px 横线 `scale: .75 1` ↔ `1`、以右端为原点伸缩，不触发布局），悬停项也拉长到 32px（只变蓝为反馈），其余用三级灰；过渡 0.18s，reduced-motion 下关闭。页面顶部还没有当前节时，首条默认按当前节拉长（`:has` 兜底），否则刚打开文章时整排 24px，看起来像效果丢了。
 - 手机折叠目录只给 **h2 ≥ 3** 的页；用原生 `<details>`，零 JS。类名不能用 `.toc-nav`（会抢走主题 `toc.html` 的 `querySelector`，且主题给 `.toc-nav a` 设了透明色）。
 - 目录锚点与正文 id 由 `render-heading` / Goldmark 生成，和目录是否显示无关；`partials/toc-anchors.html` 把主题目录里的 href 换成同一套拼音锚点。
 - 打印时两份目录都隐藏。
@@ -1203,8 +1228,8 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/_default/rss.xml` | ① `xmlns:content`，顶部**不挂** `<?xml-stylesheet?>`；② 首页 feed **只收文章页**（`Type` ∈ `posts`/`weekly`）；③ 补 `atom:updated` / `category` / 摘要式 `description` / 全文 `content:encoded`，条数上限 `params.RSS.pageLimit`（20）；④ `<image>`（144×144 PNG，走 `params.feedIcon`） | ① 浏览器打开 feed 看到的那一页由 `functions/_middleware.js` 内容协商到 `/feed/`，不用 XSLT（见下面「订阅源」）；② `/about/` `/roll/` `/privacy/` `/donate/` `/archive/` 这些 content 根下的普通页不该进订阅；③ 上游只发全文 `description`，没有「更新于」和分类；④ `<image>` 是订阅端**唯一有明文依据**的图标来源（见 8.6）。⚠️ `<image>` 必须在 `<item>` 之前 |
 | `layouts/index.html` | 首页：简介 + 最新一期周刊块 + 最近更新列表 + 精选入口；简介正文**不包 `<content>`** | 上游首页只有 `{{ .Content }}`；`<content>` 那层为什么不包见第 4 节「首页」。⚠️ 最近更新**只取 posts**，周刊只在周刊块出现 |
 | `layouts/404.html` | 一级标题 + 「回首页 / 随便看一篇 / 看全部文章」三个出路 | 上游只有 `<h1>404</h1>` + 一行颜文字，没有任何出路。⚠️ 别加回「搜索」按钮：页面上没有搜索输入框了，全站搜索走 `⌘K` / `/` |
-| `layouts/_default/_markup/render-link.html` | `</a>` 后**不留换行**；外链按 `externalLinksNewTab` 开新窗口 | 上游末尾多一个换行，链接后紧跟中文标点时被折叠成空格（「花墨 ：点评」）。见下面「`render-link.html` 那个换行」 |
-| `layouts/_default/_markup/render-image.html` | 正文图片：`width` / `height`（读 `data/image-dims.json`）+ 加载前占位色 `--ph`（读 `data/image-colors.json`）+ `srcset` / `sizes`（400/720/1080，走 Cloudflare Image Resizing `/cdn-cgi/image/…`）+ 首图 `fetchpriority="high"`；放大用原生 Popover，放大图是 `--zoom-src` 背景 | 上游只输出 `src` / `alt`，图片晚到时页面跳动（CLS）。srcset 实测省 47–71%（见 8.5）。⚠️ 必须配第 21 段 `img { height: auto }`，否则图被竖向拉伸；⚠️ 首图不能同时写 `loading="lazy"`；⚠️ 每张图 DOM 里只有一个 `<img>`，放大层别再重复渲染一个 |
+| `layouts/_default/_markup/render-link.html` | `</a>` 后**不留换行**；外链按 `externalLinksNewTab` 开新窗口；指向 `.md` 文件的站内链接换成正式网址（2026-11-24），找不到时报 WARN | 上游末尾多一个换行，链接后紧跟中文标点时被折叠成空格（「花墨 ：点评」）。见下面「`render-link.html` 那个换行」 |
+| `layouts/_default/_markup/render-image.html` | 正文图片：`width` / `height`（读 `data/image-dims.json`）+ 加载前占位色 `--ph`（读 `data/image-colors.json`）+ `srcset` / `sizes`（400/720/1080，走 Cloudflare Image Resizing `/cdn-cgi/image/…`）+ 首图 `fetchpriority="high"`；放大用原生 Popover，放大图是 `--zoom-src` 背景；图注取标题（没写取 alt，都空不输出） | 上游只输出 `src` / `alt`，图片晚到时页面跳动（CLS）。srcset 实测省 47–71%（见 8.5）。⚠️ 必须配第 21 段 `img { height: auto }`，否则图被竖向拉伸；⚠️ 首图不能同时写 `loading="lazy"`；⚠️ 每张图 DOM 里只有一个 `<img>`，放大层别再重复渲染一个 |
 | `layouts/partials/nav.html` | 完全由 `[[menu.main]]` 驱动；当前页 `aria-current="page"`；右侧静态输出「搜索 /」与深浅色按钮（事件在 `palette.js`） | 上游把 `Home` / `Blog` 写死，和 `[menu]` 打架。⚠️ 当前页判断必须**精确相等** `$.RelPermalink`：按前缀会让每篇文章都点亮「文章」（它指向 `/archive/`，文章在 `/posts/…`）。⚠️ 当前项**只改颜色**，不加下划线（用户否掉）、不改字重（会改变导航折行位置） |
 | `layouts/partials/header.html` | 站名从 `<h1>` 降级成 `<p class="title">`，外观由 `custom.css` 第 00c 段补回 | 上游站名是 h1，文章标题也是 h1 → 每篇文章页两个 h1；现在全站 0 页有两个 h1（2026-11-23 实测）。⚠️ `<p>` 与 `<h1>` 默认样式差四处（color / font-size / font-weight / margin），少补哪条都看不出来但页面会变；验收是改前改后各截一张首页跑 `magick compare -metric AE` = 0 |
 | `layouts/partials/favicon.html` | 一条 `shortcut icon` 扩成五条（SVG / 512 / 192 / apple-touch / ico）+ `rel="manifest"`，href 一律 `relURL` | 上游只输出 `params.favicon` 一条（本站是 SVG），RSS 阅读器和图标聚合服务基本不吃 SVG，`/favicon.ico` 又不存在 → 订阅端退回字母头像，而站内一切正常、构建 0 警告（见 8.6）。manifest 让安卓「添加到主屏幕」有正确的图标和名字。⚠️ 别改回 `absURL`：镜像域名下会把请求拽回 hulatu.com |
@@ -1225,7 +1250,7 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/_default/categories.html` | `/categories/` 分类总览：按篇数从多到少，标题 / 描述取 `content/categories/<词>/_index.md` | 分类词条页一直可索引，但没有入口。⚠️ 这一页是普通内容页 `content/category.md` + `url` 占位，别把 taxonomy kind 打开（会连 `/tags/` 索引页一起生成）；类名与 `custom.css` 第 58 段是契约 |
 | `layouts/_default/featured.html` | `/featured/` 主编导读，数据全在 `data/featured.yaml`（intro / groups / items） | ⚠️ 条目用 `file`（相对 `content/` 的路径）而不是 slug / URL：改 slug、改日期都不会静默少一篇。⚠️ 找不到条目不报错，改完数一遍 `.featured-item` 是否等于条目数 |
 | `layouts/_default/series.html` | `/series/` 系列总览：每组按时间顺序列出 | 口径与文章页「系列坐标带」完全一致（`series:` 字段 + `.ByDate`），改一处要回来对另一处。⚠️ 页池限定 posts + weekly；标题前缀的剥法与系列带一致；类名与第 09b 段是契约 |
-| `layouts/_default/tools.html` | `/tools/` 工具索引：图标 + 名字 + GitHub 链接 + 一句话介绍，数据在 `data/tools.yaml` | ⚠️ `content/tools.md` 必须写 `layout: "tools"`，漏了不报错、工具列表整个消失；⚠️ 用 `hugo.Data`（`site.Data` 0.156 起弃用，会出 WARN）；⚠️ 手写的 `<a>` 不受 `externalLinksNewTab` 影响，要自己写 `target="_blank" rel="noopener noreferrer"`；样式第 41 段 |
+| `layouts/_default/tools.html` | `/tools/` 工具索引：图标 + 名字 + GitHub 链接（可选「打开」在线版）+ 一句话介绍 + 可选类型行，数据在 `data/tools.yaml` | ⚠️ `content/tools.md` 必须写 `layout: "tools"`，漏了不报错、工具列表整个消失；⚠️ 用 `hugo.Data`（`site.Data` 0.156 起弃用，会出 WARN）；⚠️ 手写的 `<a>` 不受 `externalLinksNewTab` 影响，要自己写 `target="_blank" rel="noopener noreferrer"`；样式第 41 段 |
 | `layouts/_default/run.html` | `/run/` 跑步数据页：4 个统计格子 + 月度柱状图 + 按年记录表，数据读 `hugo.Data.runs`（`data/runs.json`，CI 每天同步） | 上游没有读 `data/` 的模板。不经过 `single.html`，所以没有面包屑 / TOC / 评论区；样式第 25 段 |
 | `layouts/feed/list.html` + `layouts/feed/single.html` | 把 `/feed/` 与 `/feed/weekly/` 挂到 `baseof`，内容在 `partials/feed-view.html` | 「浏览器直接打开 feed 看到的那一页」。⚠️ 两个文件名都要有：`/feed/` 是 section 走 `list.html`，`/feed/weekly/` 是普通页走 `single.html`，缺一个就会被渲染成一篇「文章」（多出日期行、标签行、上下篇） |
 | `layouts/index.json` | 首页的 JSON 输出 `/index.json`：每篇 `{t,u,g,h,k,d}`（标题 / 路径 / 标签 / h2·h3 章节 / 关键词 / 引用框），不含正文 | 命令面板的搜索索引。⚠️ 文件名**必须**是 `index.json`：home 按 `layouts/index.<ext>` 找模板，找不到会退到 `_default/list.<ext>`。⚠️ 体积见 MAINTENANCE.md 第 0 节；面板只在第一次呼出时 fetch，别改成进页面就拉。见 8.7 |
@@ -1236,6 +1261,10 @@ CSS 拿不到 location，只能由模板给。
 | --- | --- | --- |
 | `layouts/_default/_markup/render-heading.html` | 标题输出拼音 id（调 `heading-slug.html`）+ 末尾可点的 `#` 锚点 | 上游没有这个钩子（Goldmark 只给 id、不给可点入口） |
 | `layouts/_default/_markup/render-blockquote.html` | 普通引用原样输出；`> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]` 输出 `blockquote.callout`，样式第 61 段 | ⚠️ 提示框仍输出 `<blockquote>`：`index.json` 按它收「引用」字段，换成 `aside` 还会触发 check-html 的「同名 landmark」。⚠️ 标题用 `<b>` 不用 `<strong>`：`index.json` 会把 strong 收进关键词 |
+| （同上，2026-11-24） | 自定义标题吞正文的补救：标题 ≠ 源文件标题且以它开头时，从 `.Page.RawContent` 重新渲染标题和正文 | cjk 中文换行去掉了标题与正文之间的换行，Hugo 按第一个换行切标题 |
+| `layouts/_default/_markup/render-passthrough.html` | 数学公式：`transform.ToMath` 构建期渲染成 MathML，独立成行的包 `div.math-block`；写错时 `errorf` 让构建失败 | 上游没有（2026-11-23） |
+| `layouts/_default/_markup/render-codeblock-mermaid.html` | ```` ```mermaid ```` 输出 `pre.mermaid`（源码转义）并记 `hasMermaid` 标记 | 上游没有：没有这个钩子时 Mermaid 代码块只会被当成普通代码高亮 |
+| `layouts/partials/mermaid.html` | 覆盖上游：加载本站 `assets/js/vendor/mermaid.min.js`（11.17.2）+ `assets/js/mermaid-init.js`，指纹 + SRI + defer | 上游从 jsDelivr 拉、主题写死浅色、靠 front matter 开关 |
 
 #### 站点层新增的 partial
 
@@ -1252,6 +1281,7 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/partials/toc-anchors.html` | 把目录里的 href 换成拼音锚点 | 目录由 Hugo 从正文 AST 生成，href 还是原始中文 id，不换的话点目录没反应。⚠️ 用字符串替换而不是重画目录：重画容易弄错嵌套结构，而且错了不报错 |
 | `layouts/partials/back-top.html` | 返回顶部（只长文页），纯 CSS 滚动驱动动画，零 JS | 上游没有 |
 | `layouts/partials/code-copy.html` + `assets/js/code-copy.js` | 代码块复制按钮，只在含代码块的页面加载 | 上游没有 |
+| `layouts/partials/footnote.html` + `assets/js/footnote.js` | 脚注就地预览，只在含脚注的页面加载 | 上游没有（2026-11-24）；Hugo 没有脚注渲染钩子，所以是运行时增强，链接本身不动 |
 | `layouts/partials/giscus.html` + `assets/js/giscus.js` | 评论区：「评论」+ 细线「＋ 变 －」开合，无外框 | 上游没有评论区。评论区主题跟随 `applyTheme`，所以 `palette.js` 必须先执行 |
 | `layouts/partials/hello.html` | 「打个招呼」邮箱浮层的标记：触发词是 `mailto:` 链接，卡片里只有邮箱 + 复制按钮 | 页脚与正文（`mail-link` 短代码）共用；脚本 `hello.js`，样式第 48 段。⚠️ 卡片里别加装饰（用户只要邮箱和复制）；复制按钮是 `<button>` 不是 `<a>`（它的动作是复制，不是导航） |
 | `layouts/_partials/tool-icon.html` | `/tools/` 的 Feather 风格线性 SVG 图标，按 `data/tools.yaml` 的 `icon` 名输出 | 加图标就在这里加一个分支。⚠️ 未知名字什么都不输出、也不报错 |
@@ -1452,6 +1482,12 @@ id 由 `partials/heading-slug.html` 从 `.Anchor` 算出：汉字逐字查 `data
 ### 8.3 `/tools/`
 
 `content/tools.md`（必须写 `layout: "tools"`）+ `layouts/_default/tools.html`。数据在 `data/tools.yaml`，加工具只改数据文件；图标由 `partials/tool-icon.html` 按 `icon` 字段输出；样式在 `custom.css` 第 41 段。漏写 `layout` 不会报错，但整份工具列表会消失。2026-11-21 追加第 4、5 个工具：Medium 免费阅读（`unlock`）与 Pin-MacOS（`shield`）。
+
+- **整张卡片可点**：主链接 `GitHub ↗`，`.tool-repo::after` 铺满 `.tool`（stretched link）；悬停整卡时图标与链接一起变蓝，键盘聚焦链接时图标同样变蓝。卡片文字不能拖选是已知代价。
+- **可选字段**（`data/tools.yaml`）：`url` → GitHub 左边多一个「打开 ↗」（`.tool-open`，目前只有文章分发台 `https://publish.hulatu.com`）；`kind` → 介绍下面一行 0.8rem 三级灰，只用三种写法：网页应用 / 浏览器脚本 · 需 Tampermonkey 等扩展 / macOS 终端脚本。
+- ⚠️ 卡片里任何额外的链接 / 按钮都要 `position: relative; z-index: 1` 浮在铺满层之上（照 `.tool-open`）；悬停「打开」时整卡悬停态让开（`:not(:has(.tool-open:hover))`），只有它自己变蓝。
+- **读屏**：链接 `aria-label="GitHub 仓库：<工具名>（在新窗口打开）"`，以可见文字开头（WCAG 2.5.3），`↗` 是 `aria-hidden` 装饰。
+- **不写数量**：`tools.md` 的 description 与导语不再写「五个」，数量以 `data/tools.yaml` 为准。
 
 ### 8.4 滚动条
 

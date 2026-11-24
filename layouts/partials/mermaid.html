@@ -1,0 +1,15 @@
+{{- /* 站点层覆盖：themes/hugo-bearneo/layouts/partials/mermaid.html（2026-11-23）
+
+       上游从 jsDelivr 拉 mermaid@11，主题写死 default（深色模式下也是浅色图），
+       还要在 front matter 写 mermaid: true 才加载。这里改成：
+         · Mermaid 放在本站 assets/js/vendor/mermaid.min.js（11.17.2，3.6 MB，gzip 约 1 MB），
+           不连 CDN（jsDelivr 在国内时好时坏）。指纹化后落在 /js/vendor/…，
+           吃 static/_headers 里 /js/* 的一年 immutable 缓存；
+         · 只在页面真有 ```mermaid 代码块时加载（single.html 判断 .Store "hasMermaid"）；
+         · 渲染与深浅色由 assets/js/mermaid-init.js 负责，两个脚本都 defer，按顺序执行。
+       ⚠️ 升级 Mermaid：用新版的 dist/mermaid.min.js 覆盖 vendor 里那份，再把这里和 DESIGN.md 的版本号一起改。
+       ⚠️ 本体不要 minify：已经是压缩版，Hugo 再压一遍 3.6 MB 只会拖慢构建。 */ -}}
+{{- $lib := resources.Get "js/vendor/mermaid.min.js" | fingerprint -}}
+{{- $init := resources.Get "js/mermaid-init.js" | minify | fingerprint -}}
+<script src="{{ $lib.RelPermalink }}" integrity="{{ $lib.Data.Integrity }}" crossorigin="anonymous" defer></script>
+<script src="{{ $init.RelPermalink }}" integrity="{{ $init.Data.Integrity }}" crossorigin="anonymous" defer></script>

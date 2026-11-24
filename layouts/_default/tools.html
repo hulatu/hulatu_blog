@@ -17,7 +17,15 @@
           改类名要两处一起改。
        ⚠️ 外链一律 `target="_blank" rel="noopener noreferrer"`：主题的
           `externalLinksNewTab` 只管 Markdown 里的链接（走 render-link hook），
-          这里是手写的 <a>，不受那个参数影响。 */ -}}
+          这里是手写的 <a>，不受那个参数影响。
+       2026-11-23：
+       · 整张卡片可点：主链接 `GitHub ↗` 由 custom.css 第 41 段的 `.tool-repo::after`
+         铺满整个 `.tool`。原来悬停整张卡图标就变蓝，实际只有右边那几个字能点。
+       · 可选字段（data/tools.yaml）：`url` → 多一个「打开 ↗」（在线版）；`kind` → 介绍下面一行灰字。
+         ⚠️ 卡片里任何**额外**的链接 / 按钮都必须 `position: relative; z-index: 1`（`.tool-open` 的做法），
+            否则会被那层 ::after 盖住、点不到。
+       · 读屏：五个链接原来都念「GitHub 右上箭头」，现在 aria-label 以可见文字「GitHub」开头、
+         带上工具名和「在新窗口打开」；↗ 只是装饰，aria-hidden。 */ -}}
 {{ define "main" }}
 <content>
   <h1>{{ partial "orphan-safe.html" .Title }}</h1>
@@ -32,9 +40,17 @@
       <div class="tool-body">
         <div class="tool-head">
           <h2 class="tool-name">{{ $t.name }}</h2>
-          <a class="tool-repo" href="{{ $t.repo }}" target="_blank" rel="noopener noreferrer">GitHub ↗</a>
+          <span class="tool-links">
+            {{- with $t.url }}
+            <a class="tool-open" href="{{ . }}" target="_blank" rel="noopener noreferrer" aria-label="打开在线版：{{ $t.name }}（在新窗口打开）">打开 <span aria-hidden="true">↗</span></a>
+            {{- end }}
+            <a class="tool-repo" href="{{ $t.repo }}" target="_blank" rel="noopener noreferrer" aria-label="GitHub 仓库：{{ $t.name }}（在新窗口打开）">GitHub <span aria-hidden="true">↗</span></a>
+          </span>
         </div>
         <p class="tool-tagline">{{ $t.tagline }}</p>
+        {{- with $t.kind }}
+        <p class="tool-kind">{{ . }}</p>
+        {{- end }}
       </div>
     </article>
     {{- end }}

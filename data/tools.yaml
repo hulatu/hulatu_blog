@@ -16,29 +16,44 @@
 #     会把换行变成**空格** —— 英文里无所谓，中文里就是「头条 要清洗」这种
 #     凭空多出来的空格，而构建不报错、编辑器里也看不出来（2026-11-08 实测）。
 #     一行太长就用编辑器的软换行，别真的敲回车。
+#
+#  2026-11-23 加两个**可选**字段（按用户要求）：
+#    url   在线版地址。有它的条目在「GitHub ↗」左边多一个「打开 ↗」；
+#          整张卡片点击仍然进 GitHub 仓库（repo 是主入口）。
+#    kind  工具类型，显示在介绍下面的一行灰字。统一用这三种写法，别各写各的：
+#            网页应用
+#            浏览器脚本 · 需 Tampermonkey 等扩展
+#            macOS 终端脚本
+#          同样**一行写完**，规则与 tagline 相同。
 # ============================================================================
 
 - name: 文章分发台
   tagline: 一篇 Markdown 文章，转换后可分发到多个平台。
   icon: send
+  kind: 网页应用
   repo: https://github.com/hulatu/Publishing_Platform
+  url: https://publish.hulatu.com
 
 - name: 少数派阅读增强
   tagline: 把少数派改成更适合阅读的地方。
   icon: book-open
+  kind: 浏览器脚本 · 需 Tampermonkey 等扩展
   repo: https://github.com/hulatu/sspai-tidy
 
 - name: 网页全屏
   tagline: 一个键，把视频变成网页全屏。
   icon: maximize-2
+  kind: 浏览器脚本 · 需 Tampermonkey 等扩展
   repo: https://github.com/hulatu/Video-Fullscreen
 
 - name: Medium 免费阅读
   tagline: 打开 Medium 文章，自动跳到 Freedium 镜像读全文。
   icon: unlock
+  kind: 浏览器脚本 · 需 Tampermonkey 等扩展
   repo: https://github.com/hulatu/medium-freedium
 
 - name: Pin-MacOS
   tagline: 让 Mac 停在当前大版本，同时不错过小版本更新与 Safari 补丁。
   icon: shield
+  kind: macOS 终端脚本
   repo: https://github.com/hulatu/Pin-MacOS

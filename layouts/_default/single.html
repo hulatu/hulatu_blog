@@ -71,8 +71,11 @@
        ⚠️ replaceRE 会把 template.HTML 降级成 string，末尾必须 safeHTML。
        ⚠️ 不要为这一层 div 重写 render-table 钩子，字符串替换更简单。
        2026-11-22：顺手给表头补 scope="col"（Goldmark 只输出裸 <th>，
-       读屏无法把表头和列关联）。表体单元格是 <td>，不会误伤。 */ -}}
-{{- $content := .Content | replaceRE "<table" "<div class=\"table-wrap\"><table" | replaceRE "</table>" "</table></div>" | replaceRE "<th>" "<th scope=\"col\">" -}}
+       读屏无法把表头和列关联）。表体单元格是 <td>，不会误伤。
+       2026-11-24：设了列对齐（| :--- |）的表头是 <th style="text-align:…">，原来的 "<th>" 匹配不到，
+       全站 11 个表头漏掉（《分享 3 个开源工具》8 个、/style/ 3 个）。现在也认带 style 的写法；
+       已经写了 scope 的手写表格不会再被加一次。 */ -}}
+{{- $content := .Content | replaceRE "<table" "<div class=\"table-wrap\"><table" | replaceRE "</table>" "</table></div>" | replaceRE `<th( style="[^"]*")?>` `<th scope="col"${1}>` -}}
 {{- /* 正文内链：词表 data/inline-links.json。 */ -}}
 {{- $content = partial "inline-links.html" (dict "c" $content "p" .) -}}
 {{- /* long-form 类只给长文页与 /style/，引用框新样式挂这个类。 */ -}}
@@ -227,8 +230,10 @@
 {{- /* 目录显隐脚本 2026-11-22 起在 assets/js/toc.js（拼进全站 site.js，defer）。 */ -}}
 {{ end }}
 
-{{/* Load Mermaid only when this page contains Mermaid diagrams. */}}
-{{ if .Params.mermaid }}
+{{- /* Mermaid：页面里有 ```mermaid 代码块才加载（render-codeblock-mermaid.html 记的标记）。
+       2026-11-23 起不再看 front matter 的 mermaid: true —— 全站没有一篇写过它，
+       写了却没有图的话会白下载约 1 MB。上面已经取过 .Content，这里拿得到标记。 */ -}}
+{{ if .Store.Get "hasMermaid" }}
 {{ partial "mermaid.html" . }}
 {{ end }}
 

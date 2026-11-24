@@ -175,6 +175,7 @@ Blog/
 | 🔗 | 标题锚点 / 孤行保护 | `_markup/render-heading.html`（只文章页）+ `partials/orphan-safe.html`（全站） |
 | ⬆️ | 返回顶部 | `partials/back-top.html` + `custom.css` 第 16 段 |
 | 📋 | 代码复制按钮 | `assets/js/code-copy.js` + `partials/code-copy.html` + 第 18 段 |
+| 🔖 | 脚注弹出预览 | `assets/js/footnote.js` + `partials/footnote.html` + `custom.css` 第 71 段 |
 | 📄 | 分页 | **全站都不分页**（上游不用 `.Paginate`）。旧地址由 `static/_redirects` 301 兜底 |
 | 📖 | 目录 | **>1200px** 右侧悬浮（`custom.css` 第 20 段）；**≤1200px** 正文顶部折叠（第 46 段） |
 | 🖼 | 图标 | `static/favicon.svg` + 各档 PNG / ICO + `manifest.webmanifest`；重生成步骤见 DESIGN.md 8.6 |
@@ -202,6 +203,14 @@ hugo new content/posts/文章名.md           # 周刊：hugo new content/weekly
 | `categories` | 文章面包屑的第三段 + `/categories/<词>/` 词条页。周刊也写 `["周刊"]`（词条页要用），只是面包屑模板对周刊跳过这一段（分类名与栏目名重复） |
 
 **提示框**：引用块第一行写 `[!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]`，类型后面可以跟自定义标题（`> [!WARNING] 先看这里`）。不写就是普通引用。样例见 `/style/`。
+
+**中文折行**：段落里一句一行地写，渲染出来会连成一段、汉字之间不多空格；想分段就空一行。链接和全角标点之间别加空格；命令、参数（`--burn`）放进反引号，否则 `--` 会被换成短破折号。
+中英文、中文和数字之间照旧手打一个空格；漏了的，新浏览器会自动补一点间距，但比手打的窄。
+
+**扩展语法**（样例都在 `/style/`）：行内公式 `\( E = mc^2 \)`、独立成行的公式 `$$ … $$`（行内 `$` 没开）；
+```` ```mermaid ```` 代码块画图；`==高亮==`；任务列表 `- [ ]`；代码块 `{linenos=true,hl_lines=[2]}`；
+定义列表；`<kbd>⌘</kbd>`；可折叠提示框 `> [!TIP]- 标题`（`-` 默认收起、`+` 默认展开）。
+图片 `![alt](地址 "标题")` 写了标题时图注用标题；站内链接可以直接写文件名 `[地图](map.md)`，构建时换成正式网址。
 
 日常一条命令：
 
