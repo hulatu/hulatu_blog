@@ -7,7 +7,7 @@
        ⚠️ 数字是 float64，printf %d 前必须 int()，否则产物出现 %!d(float64=…)。
        ⚠️ 带连字符的 data key 用 index hugo.Data "image-dims"；with 会重绑 .，
           所以先把 $dest 存下来。
-       ⚠️ 放大层用原生 Popover（2026-11-23，原来是 checkbox + 两个 label）：
+       ⚠️ 放大层用原生 Popover（原来是 checkbox + 两个 label）：
           <button popovertarget> 打开，弹层里整块是一个 popovertargetaction="hide" 的按钮。
           Esc / 读屏语义 / 顶层显示都是浏览器自带的，仍然零 JS。
           放大图仍是 --zoom-src 背景（每张图 DOM 里只有一个 <img>），画在 .image-zoom-pic 上；
@@ -74,8 +74,8 @@
 {{- $zoomStyle := "" -}}
 {{- /* --zw / --zh 是原图宽高：放大层按这个比例给 .image-zoom-pic 定尺寸，
        「从原图位置长出来」的过渡才能对得严丝合缝。查不到尺寸就不写，退回满屏 contain。 */ -}}
-{{- /* 2026-11-23：--ph 是这张图的主色（scripts/sync-image-colors.py → data/image-colors.json），
-       图片加载前的占位块用它（custom.css 第 64 段）。查不到就不写，CSS 退回浅灰。
+{{- /* --ph 是这张图的主色（data/image-colors.json），
+       图片加载前的占位块用它（custom.css 第 64 段）。
        ⚠️ 只认 #rrggbb 六位小写，防止数据文件里混进别的东西进了 style 属性。 */ -}}
 {{- $ph := "" -}}
 {{- with index hugo.Data "image-colors" -}}
@@ -97,12 +97,11 @@
     {{- else }}
     <img src="{{ $src | safeURL }}"{{ $srcsetAttr }} alt="{{ $alt }}"{{ $dim | safeHTMLAttr }}{{ $loadAttr | safeHTMLAttr }} />
     {{- end }}
-    {{- /* 图注（2026-11-24 改）：
-           · 写了标题 ![alt](src "标题") 时，图注用标题；alt 只给读屏和图片加载失败时。
-             两段文字不同，读屏两段都念，图注不藏。
-           · 没写标题时，图注就是 alt（原来的行为）。alt 已经由 <img> 读一次，
-             再放进 figcaption 会被念第二遍，所以从无障碍树里摘掉（视觉不变）。
-           · 两样都空时不输出 <figcaption>（原来会留一个空的）。
+    {{- /* 图注：
+           · 写了标题时，图注用标题；alt 只给读屏和图片加载失败时。
+           · 没写标题时，图注就是 alt；alt 已经由 <img> 读一次，
+             再放进 figcaption 会被念第二遍，所以从无障碍树里摘掉。
+           · 两样都空时不输出 <figcaption>。
            ⚠️ 比较用 alt 的纯文本（plainify + htmlUnescape）：.Text 里的 & 是 &amp;，直接比会判成不同。
            ⚠️ 输出 alt 时仍用 $alt 本身，别换成纯文本版本，否则 & 会被转义两次。 */ -}}
     {{- $altPlain := $alt | plainify | htmlUnescape | strings.TrimSpace -}}

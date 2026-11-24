@@ -1,18 +1,14 @@
-{{- /* 正文里的邮箱浮层（2026-11-21）
-       —— 把页脚「打个招呼」那套邮箱卡片复用到正文。当前调用点是
-          content/about.md 的「联系我」一节和 content/roll.md 的「交友原则」末尾，shortcode 名是 mail-link。
+{{- /* 正文里的邮箱浮层 shortcode，把页脚「打个招呼」那套邮箱卡片复用到正文。
+       调用点：content/about.md 和 content/roll.md。
 
        参数与 partials/hello.html 一致：text（触发词）、email（默认取
-       site.Params.Author.email）。标记、样式、脚本都不在这里重复，
-       三处仍然是 partials/hello.html + assets/js/hello.js +
-       custom.css 第 48 段。
+       site.Params.Author.email）、subject（可选邮件主题）。
+       标记、样式、脚本：partials/hello.html + assets/js/hello.js + custom.css 第 48 段。
 
-       ⚠️ 脚本已改成遍历页面上所有 `.hello`（页脚有一个、正文可能有一个），
-          不能再退回 querySelector 只绑第一个，否则其中一处会失去复制/触屏行为。
+       ⚠️ 脚本遍历页面上所有 `.hello`，不能退回 querySelector 只绑第一个。
        ⚠️ 正文里的卡片在 custom.css 里单独左对齐（`content .hello-card`）——
           页脚居中没问题，正文列表里居中会在窄屏溢出左边。 */ -}}
 {{- $text := .Get "text" | default "写信" -}}
 {{- $email := .Get "email" | default site.Params.Author.email -}}
-{{- /* subject：可选，点触发词时邮件主题（2026-11-23，/roll/ 的「友链申请」在用）。 */ -}}
 {{- $subject := .Get "subject" | default "" -}}
 {{- partial "hello.html" (dict "text" $text "email" $email "subject" $subject) -}}

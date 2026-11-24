@@ -1,44 +1,25 @@
 {{- /* ============================================================
-     引用块渲染钩子（2026-11-23）
-
-     两种引用块走同一个钩子：
-       · 普通引用 `> …` —— 原样输出 <blockquote>，与 Goldmark 默认结果一致；
+     引用块渲染钩子。两种引用块走同一个钩子：
+       · 普通引用 `> …` —— 原样输出 <blockquote>；
        · 提示框 `> [!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]`
-         （GitHub 写法，Hugo 原生识别）—— 输出 `blockquote.callout.callout-<类型>`，
-         首行是小标题，按类型换左边框颜色。样式在 custom.css 第 61 段。
+         —— 输出 `blockquote.callout.callout-<类型>`。样式在 custom.css 第 61 段。
 
-     写法：
-         > [!WARNING]
-         > 这个脚本会连安全补丁一起屏蔽。
-
-         > [!TIP] 自定义标题
-         > 类型后面跟文字就是标题；不写就用下面的中文默认标题。
-
-     ⚠️ 提示框**仍然输出 <blockquote>**（不用 div / aside）：
+     ⚠️ 提示框仍然输出 <blockquote>：
         · layouts/index.json 按 `<blockquote>` 收「引用」字段，换标签会让搜索少一级；
         · aside 在 main 里是 landmark，一页几个无名 aside 会触发 check-html 的「同名 landmark」。
      ⚠️ 标题用 <b> 不用 <strong>：index.json 把所有 <strong> 收进关键词，
-        用 strong 的话每篇带提示框的文章都会多一个「注意」「提示」关键词。
-        <b> 在 RSS 阅读器里仍是粗体。
-     ⚠️ 旧文章不用改：没写 [!TYPE] 的引用块一律走普通分支。
+        用 strong 会让每篇带提示框的文章多一个「注意」「提示」等关键词。
      ============================================================ */ -}}
 {{- if eq .Type "alert" -}}
 {{- $type := lower .AlertType -}}
 {{- $titles := dict "note" "说明" "tip" "提示" "important" "重要" "warning" "注意" "caution" "警告" -}}
 {{- $title := or .AlertTitle (index $titles $type) (title $type) -}}
 {{- $text := .Text -}}
-{{- /* 2026-11-24：自定义标题把正文吞进去的修复。
-       Hugo 取标题的办法是：渲染好的 HTML 里，「[!TYPE]」后面到第一个换行为止都算标题
-       （hugo/markup/goldmark/blockquotes）。而 hugo.toml 开了中文换行（cjk 扩展），
-       标题最后一个字和正文第一个字都是汉字时，中间那个换行被去掉了 —— 标题和正文
-       变成同一行，整段正文都成了标题（2026-11-23 当晚两篇文章的「2026 年 11 月补记」中招）。
-       不带自定义标题时第一行以「]」结尾，换行保留，不受影响。
+{{- /* 自定义标题把正文吞进去的修复（cjk 换行扩展导致标题和正文合并）。
        修法：只在「标题 ≠ 源文件里那一行的标题、且以它开头」时启用 —— 回到源文件
-       （.Page.RawContent）找到这条提示框，标题和正文各自重新渲染一遍。
-       ⚠️ 只认顶层提示框（行首一个 >）。嵌在别的引用里、或正文行没写 > 的懒续行，
-          仍会按原来的错法输出；遇到时在标题下面空一行 >（只写一个 >）就能绕开。
-       ⚠️ 同一页里两条提示框标题相同、又都中招时，两条都按第一条的正文出 —— 别这样写。
-       ⚠️ 两次 RenderString 都在源文件层面，正文里的脚注会在提示框里单独编号。 */ -}}
+       找到这条提示框，标题和正文各自重新渲染一遍。
+       ⚠️ 只认顶层提示框（行首一个 >）。
+       ⚠️ 同一页里两条提示框标题相同时，两条都按第一条的正文出 —— 别这样写。 */ -}}
 {{- with .AlertTitle -}}
   {{- $got := string . -}}
   {{- $exact := false -}}
@@ -60,13 +41,9 @@
     {{- $text = $.Page.RenderString (dict "display" "block") (replaceRE `(?m)^[ \t]*>[ \t]?` "" $bestBody) -}}
   {{- end -}}
 {{- end -}}
-{{- /* 2026-11-23：可折叠写法（Obsidian 的扩展语法）—— 类型后面跟 - 默认收起，跟 + 默认展开：
-         > [!TIP]- 点开看答案
-         > 收起时只露出标题。
-       外层仍是 blockquote（理由见文件头），里面套原生 <details>：展开收起不用 JS，
-       高度动画沿用全站 details 那条（custom.css 第 65 段），箭头在第 70 段。
-       ⚠️ GitHub 不认这个写法，在仓库里预览会显示成普通引用。
-       ⚠️ 正文统一用 $text（上面可能已经替换成重新渲染的版本），别再写 .Text / $.Text。 */ -}}
+{{- /* 可折叠提示框（Obsidian 写法）—— 类型后面跟 - 默认收起，跟 + 默认展开。
+       外层仍是 blockquote，里面套原生 <details>。样式在 custom.css 第 70 段。
+       ⚠️ 正文统一用 $text，别再写 .Text / $.Text。 */ -}}
 {{- with .AlertSign -}}
 <blockquote class="callout callout-{{ $type }} callout-fold" role="note">
 <details{{ if eq . "+" }} open{{ end }}>
