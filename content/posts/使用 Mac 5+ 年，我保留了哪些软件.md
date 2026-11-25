@@ -130,7 +130,7 @@ Mac 端系统自带的 PPT 软件，我已经不止一次夸赞过它。它不�
 
 软件官网：https://www.apple.com/keynote/ 
 
-App Store 下载链接：[Keynote for Mac](https://apps.apple.com/us/app/keynote/id409183694?mt=12)
+App Store 下载链接：[Keynote for Mac](https://apps.apple.com/us/app/keynote-design-presentations/id361285480)
 
 **预览**
 

@@ -30,11 +30,13 @@
   {{- end -}}
 {{- end -}}
 
-{{- /* ② 边缘转换 + srcset。只有图床的图才拼前缀，外站图原样输出。 */ -}}
+{{- /* ② 边缘转换 + srcset。只有图床的图才拼前缀，外站图原样输出。
+       ⚠️ GIF 不走边缘转换：Cloudflare 图片缩放对部分动图直接 403（2026-11-25 实测
+       ZiNZLY.gif、oow88O.gif 全档位 403，原图 200），走原图才能显示。 */ -}}
 {{- $src := $dest -}}
 {{- /* ⚠️ 必须 safeHTMLAttr：$srcsetAttr 插在属性名位置，普通空串会被转成 zgotmplz。 */ -}}
 {{- $srcsetAttr := "" | safeHTMLAttr -}}
-{{- if strings.HasPrefix $dest "https://img.hulatu.com/" -}}
+{{- if and (strings.HasPrefix $dest "https://img.hulatu.com/") (not (strings.HasSuffix (lower $dest) ".gif")) -}}
   {{- $path := strings.TrimPrefix "https://img.hulatu.com/" $dest -}}
   {{- $fmtW := "https://img.hulatu.com/cdn-cgi/image/width=%d,format=auto,quality=82/%s" -}}
   {{- $fmtF := "https://img.hulatu.com/cdn-cgi/image/format=auto,quality=82/%s" -}}
