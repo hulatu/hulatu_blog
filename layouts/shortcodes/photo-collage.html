@@ -1,12 +1,18 @@
 {{- /* ============================================================
        相册拼贴：关于页的散落照片墙（2026-11-25）
        数据在 data/photo-collage.yaml；样式在 custom.css 第 72 段；
-       拖动 / 视频悬停播放增强在 assets/js/motion.js 第 6 段。
+       拖动 / 点击放大 / 音效 / 视频悬停播放见 assets/js/motion.js 第 5、6 段。
        ⚠️ 坐标一律用百分比，拖动后写回的也是百分比，窗口缩放不会错位。
        ⚠️ 图片只给 img.hulatu.com 拼边缘缩放；外站图原样输出。
+       ⚠️ 放大层必须放在旋转的 figure 外面：figure 有 transform，
+          会让 position: fixed 的后代以 figure 为包含块；放到 bar 后面。
+          放大层用 View Transition 从缩略图长出来，不支持时原生淡入淡出；
+          data-zoom-thumb 指回缩略图，--zw/--zh 在打开时按缩略图比例写入。
        ============================================================ */ -}}
 {{- $data := index hugo.Data "photo-collage" -}}
 {{- with $data.items -}}
+{{- $overlays := slice -}}
+<div class="hl-collage-wrap">
 <section class="hl-collage" data-collage aria-label="生活相册">
   {{- range $i, $item := . -}}
     {{- $type := default "photo" $item.type -}}
@@ -28,6 +34,22 @@
       {{- $imgSrc = printf "https://img.hulatu.com/cdn-cgi/image/width=%d,format=auto,quality=78/%s" $w $path -}}
     {{- else if hasPrefix $imgSrc "/" -}}
       {{- $imgSrc = $imgSrc | relURL -}}
+    {{- end -}}
+
+    {{- /* 放大源：图床图给 1200px（邮票 600px），比缩略图大但不拉原图；
+           本地图沿用完整路径；只在点击放大时才下载。 */ -}}
+    {{- $zoomSrc := $imgSrc -}}
+    {{- if hasPrefix $item.src "https://img.hulatu.com/" -}}
+      {{- $path := strings.TrimPrefix "https://img.hulatu.com/" $item.src -}}
+      {{- $zw := 1200 -}}
+      {{- if eq $shape "stamp" }}{{ $zw = 600 }}{{ end -}}
+      {{- $zoomSrc = printf "https://img.hulatu.com/cdn-cgi/image/width=%d,format=auto,quality=82/%s" $zw $path -}}
+    {{- end -}}
+
+    {{- $zoomId := printf "collage-zoom-%d" $i -}}
+    {{- $thumbId := printf "collage-thumb-%d" $i -}}
+    {{- if ne $type "video" -}}
+      {{- $overlays = $overlays | append (dict "id" $zoomId "thumb" $thumbId "alt" $item.alt "src" $zoomSrc) -}}
     {{- end -}}
 
     {{- $poster := $item.poster -}}
@@ -57,7 +79,13 @@
   <span class="hl-collage-stamp">
     <span class="hl-collage-stamp-paper">
       <span class="hl-collage-media">
-        <img src="{{ $imgSrc | safeURL }}" alt="{{ $item.alt }}" loading="lazy" decoding="async" draggable="false" />
+        {{- if eq $type "video" }}
+        <video class="hl-collage-video" data-collage-video data-src-mp4="{{ $videoSrc | safeURL }}"{{ with $webmSrc }} data-src-webm="{{ . | safeURL }}"{{ end }}{{ with $poster }} poster="{{ . | safeURL }}"{{ end }} muted loop playsinline preload="none" draggable="false" aria-label="{{ $item.alt }}"></video>
+        {{- else }}
+        <button type="button" class="image-zoom-label hl-collage-zoom" popovertarget="{{ $zoomId }}" aria-label="放大图片：{{ $item.alt }}">
+          <img id="{{ $thumbId }}" src="{{ $imgSrc | safeURL }}" alt="{{ $item.alt }}" loading="lazy" decoding="async" draggable="false" class="zoomable-image" />
+        </button>
+        {{- end }}
         <span class="hl-collage-grain" aria-hidden="true"></span>
       </span>
       {{- with $item.label }}
@@ -74,7 +102,9 @@
       {{- if eq $type "video" }}
       <video class="hl-collage-video" data-collage-video data-src-mp4="{{ $videoSrc | safeURL }}"{{ with $webmSrc }} data-src-webm="{{ . | safeURL }}"{{ end }}{{ with $poster }} poster="{{ . | safeURL }}"{{ end }} muted loop playsinline preload="none" draggable="false" aria-label="{{ $item.alt }}"></video>
       {{- else }}
-      <img src="{{ $imgSrc | safeURL }}" alt="{{ $item.alt }}" loading="lazy" decoding="async" draggable="false" />
+      <button type="button" class="image-zoom-label hl-collage-zoom" popovertarget="{{ $zoomId }}" aria-label="放大图片：{{ $item.alt }}">
+        <img id="{{ $thumbId }}" src="{{ $imgSrc | safeURL }}" alt="{{ $item.alt }}" loading="lazy" decoding="async" draggable="false" class="zoomable-image" />
+      </button>
       {{- end }}
       <span class="hl-collage-grain" aria-hidden="true"></span>
     </span>
@@ -83,6 +113,24 @@
 </figure>
   {{- end }}
 </section>
+<div class="hl-collage-bar">
+  <span class="hl-collage-hint">拖动摆放 · 点击放大</span>
+  <button type="button" class="hl-collage-sound" data-collage-sound aria-pressed="true" aria-label="关闭相册音效">
+    <svg viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M4 9v6h4l5 4V5L8 9H4z" fill="currentColor" />
+      <path class="hl-collage-sound-wave" d="M16 8.6a4.6 4.6 0 0 1 0 6.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+      <path class="hl-collage-sound-slash" d="M4 4l16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" />
+    </svg>
+    <span class="hl-collage-sound-label">音效 开</span>
+  </button>
+</div>
+{{- /* 放大层放在旋转 figure 外面，fixed 才以视口为包含块。 */ -}}
+{{- range $overlays }}
+<div popover id="{{ .id }}" class="image-zoom-overlay image-zoom-container" data-collage-zoom data-zoom-thumb="{{ .thumb }}" style="{{ printf "--zoom-src:url('%s')" .src | safeCSS }}">
+  <button type="button" class="image-zoom-close" popovertarget="{{ .id }}" popovertargetaction="hide" aria-label="关闭放大图片" autofocus><span class="image-zoom-pic"></span>{{ with .alt }}<span class="hl-zoom-caption">{{ . }}</span>{{ end }}</button>
+</div>
+{{- end }}
+</div>
 {{- else -}}
 {{- warnf "photo-collage：data/photo-collage.yaml 里没有 items" -}}
 {{- end -}}

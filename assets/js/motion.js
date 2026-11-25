@@ -7,8 +7,8 @@
         必须在渲染前注册，所以写在 custom_head.html 的内联引导脚本里（第 67 段）。
      5. 图片放大：从原图位置「长」到全屏、关闭时缩回原位（同文档 View Transition，第 68 段）。
         放大本身是原生 Popover，这一段只是增强；不支持或减少动态效果时什么都不做。
-     6. 关于页相册拼贴：拖动照片、视频悬停播放（custom.css 第 72 段）。
-        视频悬停前不发请求；照片位置写百分比，窗口缩放不会错位。
+     6. 关于页相册拼贴：拖动、点击放大、音效、视频悬停播放（custom.css 第 72 段）。
+        视频悬停前不发请求；放大层走原生 Popover；音效用 Web Audio 合成、不加载音频文件。
    ⚠️ 所有「先藏起来、再显示」的类都由这里自己加：这个文件没加载成功时，什么都不会被藏住。 */
 (function () {
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -158,10 +158,18 @@
       if (!btn) return;
       var pop = document.getElementById(btn.getAttribute('popovertarget'));
       if (!pop || !pop.classList.contains('image-zoom-overlay') || typeof pop.showPopover !== 'function') return;
+      /* 放大层若在 figure 外面，可用 data-zoom-thumb 指回缩略图；
+         正文图片仍走 closest('figure')。 */
       var fig = pop.closest('figure');
-      var thumb = fig && fig.querySelector('.zoomable-image');
+      var thumb = (pop.dataset.zoomThumb && document.getElementById(pop.dataset.zoomThumb)) ||
+        (fig && fig.querySelector('.zoomable-image'));
       var pic = pop.querySelector('.image-zoom-pic');
       if (!thumb || !pic) return;
+      /* 拼贴放大层按缩略图的原始比例定尺寸，形变才能从 thumb 长到正确比例。 */
+      if (pop.hasAttribute('data-collage-zoom') && thumb.naturalWidth) {
+        pop.style.setProperty('--zw', thumb.naturalWidth);
+        pop.style.setProperty('--zh', thumb.naturalHeight);
+      }
       var opening = !pop.matches(':popover-open');
       /* 关闭时缩略图不在屏幕里（打开后窗口大小变了）就不做形变，退回普通淡出。
          ⚠️ source: btn 让浏览器记住是谁打开的，关闭后焦点才会回到这张图（旧浏览器忽略这个参数）。 */
@@ -197,22 +205,95 @@
     });
   }
 
-  /* ── 6. 关于页相册拼贴：拖动 + 视频悬停播放 ─────────────────────
+  /* ── 6. 关于页相册拼贴：拖动 + 视频悬停 + 放大音效 ───────────────
      拖动：pointerdown 记下起始 offsetLeft/Top，pointermove 限制在画布内，
            写回 left/top 的百分比（不是 px），窗口缩放后照片还在一起。
      视频：preload="none"，poster 常显；鼠标移进卡片才按 canPlayType 选一种格式、
            设 src 并 play()，移出就 pause() 并回到 0 秒。悬停前不发任何视频请求。
-           只有 hover:hover / pointer:fine 且没开减少动态效果时才挂播放；
-           触屏只留封面；没有 JS 时也是封面。
-     ⚠️ 不拦 click：照片没有点击行为，拖动结束后的 click 不会误触发放大层。 */
+     音效：Web Audio 合成，不加载任何音频文件。拖动 pick/drop、放大 zoom、
+           关闭 close；画布下方按钮可关掉，选择存 localStorage。
+     放大：短代码里的按钮走原生 Popover（第 5 段负责形变），
+           拖动超过 4px 的那次 click 在捕获阶段拦掉，避免拖完误开。
+     ⚠️ 照片没有其它点击行为；click 只在拖动结束后的那一次被拦。 */
   var collage = document.querySelector('.hl-collage[data-collage]');
   if (collage) {
     var hoverPlay = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
     var collageItems = collage.querySelectorAll('.hl-collage-item[data-grab]');
     var topZ = 400;
 
+    /* 音效：第一次拖动/点击时才创建 AudioContext，页面加载不建。 */
+    var soundBtn = document.querySelector('[data-collage-sound]');
+    var soundLabel = soundBtn && soundBtn.querySelector('.hl-collage-sound-label');
+    var soundOn = true;
+    var audioCtx = null;
+    try { soundOn = localStorage.getItem('hl-collage-sound') !== 'off'; } catch (e) {}
+
+    function ensureAudio() {
+      if (!soundOn) return null;
+      var AC = window.AudioContext || window.webkitAudioContext;
+      if (!AC) return null;
+      if (!audioCtx) audioCtx = new AC();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      return audioCtx;
+    }
+
+    function tone(from, to, dur, type, vol) {
+      var ctx = ensureAudio();
+      if (!ctx) return;
+      var t = ctx.currentTime;
+      var osc = ctx.createOscillator();
+      var gain = ctx.createGain();
+      osc.type = type || 'sine';
+      osc.frequency.setValueAtTime(from, t);
+      osc.frequency.exponentialRampToValueAtTime(Math.max(1, to), t + dur);
+      gain.gain.setValueAtTime(0.0001, t);
+      gain.gain.exponentialRampToValueAtTime(vol, t + 0.008);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + dur);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(t);
+      osc.stop(t + dur + 0.02);
+    }
+
+    function sound(kind) {
+      if (!soundOn) return;
+      if (kind === 'pick') tone(620, 900, 0.06, 'triangle', 0.03);
+      else if (kind === 'drop') tone(260, 150, 0.10, 'sine', 0.04);
+      else if (kind === 'zoom') { tone(420, 880, 0.12, 'sine', 0.04); tone(880, 1320, 0.08, 'triangle', 0.018); }
+      else if (kind === 'close') tone(520, 260, 0.09, 'sine', 0.028);
+      else if (kind === 'tick') tone(880, 880, 0.04, 'triangle', 0.02);
+    }
+
+    function renderSound() {
+      if (!soundBtn) return;
+      soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+      soundBtn.setAttribute('aria-label', soundOn ? '关闭相册音效' : '开启相册音效');
+      if (soundLabel) soundLabel.textContent = soundOn ? '音效 开' : '音效 关';
+    }
+
+    renderSound();
+
+    if (soundBtn) {
+      soundBtn.addEventListener('click', function () {
+        if (soundOn) sound('close');
+        soundOn = !soundOn;
+        try { localStorage.setItem('hl-collage-sound', soundOn ? 'on' : 'off'); } catch (e) {}
+        renderSound();
+        if (soundOn) sound('tick');
+      });
+    }
+
+    /* 放大弹层：打开 / 关闭各响一声。toggle 在 showPopover / hidePopover 后触发。 */
+    each(document.querySelectorAll('.image-zoom-overlay[data-collage-zoom]'), function (pop) {
+      pop.addEventListener('toggle', function (e) {
+        if (e.newState === 'open') sound('zoom');
+        else if (e.newState === 'closed') sound('close');
+      });
+    });
+
     each(collageItems, function (el) {
       var drag = null;
+      var suppressClick = false;
       var video = el.querySelector('video[data-collage-video]');
       var videoLoaded = false;
 
@@ -240,9 +321,19 @@
       el.addEventListener('pointerenter', startVideo);
       el.addEventListener('pointerleave', stopVideo);
 
+      /* 拖动后浏览器还会补一次 click；在捕获阶段拦掉，避免打开放大层。 */
+      el.addEventListener('click', function (e) {
+        if (!suppressClick) return;
+        suppressClick = false;
+        e.preventDefault();
+        e.stopPropagation();
+      }, true);
+
       el.addEventListener('pointerdown', function (e) {
         if (e.pointerType === 'mouse' && e.button !== 0) return;
         if (drag) return;
+        suppressClick = false;
+        sound('pick');
         drag = {
           id: e.pointerId,
           x: e.clientX,
@@ -250,19 +341,25 @@
           left: el.offsetLeft,
           top: el.offsetTop,
           w: el.offsetWidth,
-          h: el.offsetHeight
+          h: el.offsetHeight,
+          moved: false,
+          captured: false
         };
         el.style.zIndex = ++topZ;
         el.classList.add('is-dragging');
         collage.classList.add('is-dragging');
-        if (el.setPointerCapture) {
-          try { el.setPointerCapture(e.pointerId); } catch (err) {}
-        }
-        e.preventDefault();
+        /* 先不 setPointerCapture：一旦捕获，pointerup / click 会被改派给 figure，
+           按钮的原生 Popover 就打不开了。等移动超过阈值再捕获。 */
       });
 
       el.addEventListener('pointermove', function (e) {
         if (!drag || e.pointerId !== drag.id) return;
+        if (!drag.moved && (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 4)) {
+          drag.moved = true;
+          if (el.setPointerCapture && !drag.captured) {
+            try { el.setPointerCapture(e.pointerId); drag.captured = true; } catch (err) {}
+          }
+        }
         var cw = collage.clientWidth;
         var ch = collage.clientHeight;
         var x = drag.left + (e.clientX - drag.x);
@@ -276,12 +373,16 @@
       function endDrag(e) {
         if (!drag || (e && e.pointerId !== drag.id)) return;
         var id = drag.id;
+        var moved = drag.moved;
+        var captured = drag.captured;
         drag = null;
         el.classList.remove('is-dragging');
         collage.classList.remove('is-dragging');
-        if (el.releasePointerCapture) {
+        if (captured && el.releasePointerCapture) {
           try { el.releasePointerCapture(id); } catch (err) {}
         }
+        suppressClick = moved;
+        if (moved) sound('drop');
       }
 
       el.addEventListener('pointerup', endDrag);

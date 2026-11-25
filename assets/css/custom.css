@@ -4894,24 +4894,30 @@
      section.hl-collage[data-collage]                ← 宽度随正文、比例 1040:520 的点阵画布
        figure.hl-collage-item[data-grab]             ← 绝对定位，--x/--y/--w/--rot/--z/--ar
          span.hl-collage-card                        ← 拍立得白框（circle / rect）
-           span.hl-collage-media > img / video       ← 媒体，aspect-ratio 由 --ar 控制
+           span.hl-collage-media > button / video     ← 媒体，aspect-ratio 由 --ar 控制
+             button.image-zoom-label.hl-collage-zoom  ← 点击放大（原生 Popover）
            span.hl-collage-grain                     ← 胶片噪点
        邮票是另一套结构：paper 上挂 SVG 齿孔 mask，城市名绝对定位在右上。
-  交互：拖动 / 视频悬停播放都在 assets/js/motion.js 第 6 段。
+     .hl-collage-bar                                ← 画布下方提示 + 音效开关
+     div.image-zoom-overlay[data-collage-zoom]      ← 放大层，必须放在旋转 figure 外面
+  交互：拖动 / 点击放大 / 音效 / 视频悬停播放（motion.js 第 5、6 段）。
   2026-11-25 精简：素材按 720 画布重出（图 240 / 邮票 160、q78；视频 300px / 5s），
   视频改为悬停才加载播放，彩虹光晕整段删除（DOM 少 18 个 mix-blend 层）。
+  同日加点击放大（1200px 放大源，点击才下载；白框 + 毛玻璃 + 说明，VT 从缩略图长出来）
+  与 Web Audio 合成的拖动 / 放大音效。
   ⚠️ 位置全用百分比；拖动时 JS 也写回百分比，窗口缩放不会错位。
   ⚠️ 画布宽度跟正文一致（width: 100%），内部仍按 1040×520 的坐标换算；
      靠 aspect-ratio 整体缩放，不要再加 left / translate 把它顶出正文。
+  ⚠️ 不要给 .hl-collage 加 container-type：实测它和顶层 Popover 一起会把页面卡死；
+     邮票字号直接给固定 px（720 画布下 7 / 4px）。
   ⚠️ stamp 的齿孔用 data URI mask，不依赖图片，缩放不糊。
   */
   .hl-collage {
-    container-type: inline-size;
     position: relative;
     box-sizing: border-box;
     width: 100%;
     aspect-ratio: 1040 / 520;
-    margin: 2.25rem 0 3rem;
+    margin: 2.25rem 0 0;
     border: 1px solid var(--hl-hair);
     border-radius: 16px;
     background-color: var(--hl-bg-subtle);
@@ -4922,6 +4928,87 @@
     -webkit-user-select: none;
     user-select: none;
     --hl-stamp-mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 150%27%3E%3Cmask id=%27m%27%3E%3Crect width=%27100%27 height=%27150%27 fill=%27white%27/%3E%3Cg fill=%27black%27%3E%3Ccircle cx=%275%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%275%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2715%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2715%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2725%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2725%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2735%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2735%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2745%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2745%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2755%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2755%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2765%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2765%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2775%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2775%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2785%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2785%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2795%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2795%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%275%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%275%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2715%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2715%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2725%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2725%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2735%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2735%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2745%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2745%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2755%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2755%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2765%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2765%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2775%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2775%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2785%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2785%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2795%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2795%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27105%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27105%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27115%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27115%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27125%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27125%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27135%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27135%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27145%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27145%27 r=%273.2%27/%3E%3C/g%3E%3C/mask%3E%3Crect width=%27100%27 height=%27150%27 fill=%27white%27 mask=%27url%28%23m%29%27/%3E%3C/svg%3E");
+  }
+
+  /* 画布下面的小工具条：拖动/放大提示 + 音效开关。 */
+  .hl-collage-wrap {
+    width: 100%;
+  }
+
+  .hl-collage-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin: 8px 0 3rem;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--hl-mute);
+  }
+
+  .hl-collage-hint {
+    letter-spacing: 0.02em;
+  }
+
+  .hl-collage-sound {
+    -webkit-appearance: none;
+    appearance: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex-shrink: 0;
+    padding: 2px 8px;
+    border: 1px solid var(--hl-hair);
+    border-radius: 999px;
+    background: var(--hl-bg);
+    color: var(--hl-mute);
+    font: inherit;
+    font-size: 12px;
+    line-height: 1.4;
+    cursor: pointer;
+    touch-action: manipulation;
+    transition: color 0.15s ease, border-color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .hl-collage-sound:hover {
+    border-color: var(--hl-mute);
+    background: var(--hl-bg-subtle);
+    color: var(--hl-ink);
+  }
+
+  .hl-collage-sound[aria-pressed="true"] {
+    color: var(--hl-ink);
+  }
+
+  .hl-collage-sound svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .hl-collage-sound-slash {
+    display: none;
+  }
+
+  .hl-collage-sound[aria-pressed="false"] .hl-collage-sound-wave {
+    display: none;
+  }
+
+  .hl-collage-sound[aria-pressed="false"] .hl-collage-sound-slash {
+    display: block;
+  }
+
+  /* 触屏把音效开关的命中区撑到约 45px，外观不变。 */
+  @media (pointer: coarse) {
+    .hl-collage-sound {
+      position: relative;
+    }
+
+    .hl-collage-sound::after {
+      content: "";
+      position: absolute;
+      inset: -11px;
+      border-radius: inherit;
+    }
   }
 
   /* 木纹纸的暗角，压在照片下面。 */
@@ -5004,8 +5091,8 @@
     border-radius: 50%;
   }
 
-  .hl-collage-media > img,
-  .hl-collage-media > video {
+  .hl-collage-media img,
+  .hl-collage-media video {
     position: absolute;
     inset: 0;
     display: block;
@@ -5017,6 +5104,66 @@
     border: 0;
     border-radius: inherit;
     object-fit: cover;
+  }
+
+  /* 点击放大的按钮：铺满媒体盒；拖动时仍是 grab（提示条里写了「点击放大」）。 */
+  button.hl-collage-zoom {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    cursor: grab;
+  }
+
+  button.hl-collage-zoom:focus-visible {
+    outline: 2px solid var(--hl-accent);
+    outline-offset: -2px;
+    border-radius: 6px;
+  }
+
+  /* 拼贴放大层：白色相框 + 毛玻璃 + 照片说明；形变走 motion.js 第 5 段。
+     只作用于 [data-collage-zoom]；正文放大仍按第 68 段不加边框。
+     ⚠️ 拼贴的 pic 把高度收到 82vh，给下方说明留位置；正文放大仍是 90vh。 */
+  .image-zoom-overlay[data-collage-zoom] {
+    background: rgba(14, 14, 16, 0.78);
+    -webkit-backdrop-filter: blur(14px) saturate(0.9);
+    backdrop-filter: blur(14px) saturate(0.9);
+  }
+
+  .image-zoom-overlay[data-collage-zoom] .image-zoom-close {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .image-zoom-overlay[data-collage-zoom] .image-zoom-pic {
+    box-sizing: border-box;
+    width: min(100%, calc(82vh * var(--zw, 3) / var(--zh, 4)));
+    border: 8px solid #fff;
+    border-radius: 6px;
+    background-color: #fff;
+    box-shadow: 0 30px 90px -24px rgba(0, 0, 0, 0.75), 0 2px 10px rgba(0, 0, 0, 0.35);
+  }
+
+  .hl-zoom-caption {
+    display: block;
+    max-width: min(80vw, 40rem);
+    color: rgba(255, 255, 255, 0.72);
+    font-size: 13px;
+    line-height: 1.5;
+    letter-spacing: 0.01em;
+    text-align: center;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .image-zoom-overlay[data-collage-zoom] .image-zoom-pic {
+      scale: 0.92;
+      transition: scale 0.18s var(--hl-ease-in);
+    }
+
+    .image-zoom-overlay[data-collage-zoom]:popover-open .image-zoom-pic {
+      scale: 1;
+      transition: scale 0.34s var(--hl-ease-out);
+    }
   }
 
   /* 胶片噪点：和原站一样用 SVG fractalNoise，叠在照片上。 */
@@ -5091,24 +5238,16 @@
     pointer-events: none;
   }
 
+  /* 画布固定跟着正文（720 / 680），邮票字号直接给 px：
+     ⚠️ 别再用 container-type + cqw —— 实测它和顶层 Popover 一起会把页面卡死。 */
   .hl-collage-stamp-city {
-    font-size: 8.5px;
+    font-size: 7px;
     letter-spacing: 0.14em;
   }
 
   .hl-collage-stamp-sub {
-    font-size: 5px;
+    font-size: 4px;
     letter-spacing: 0.14em;
-  }
-
-  @container (min-width: 1px) {
-    .hl-collage-stamp-city {
-      font-size: clamp(5.5px, 0.95cqw, 8.5px);
-    }
-
-    .hl-collage-stamp-sub {
-      font-size: clamp(3.8px, 0.58cqw, 5px);
-    }
   }
 
   /* 悬停：只抬起当前这一张，不压暗其它照片。 */
@@ -5137,9 +5276,9 @@
     box-shadow: 0 4px 8px rgba(17, 19, 21, 0.1), 0 26px 48px -14px rgba(17, 19, 21, 0.36);
   }
 
-  /* 小屏和原站一样整块隐藏；手机读者不受影响。 */
+  /* 小屏和原站一样整块隐藏（连提示条和放大层一起）；手机读者不受影响。 */
   @media (max-width: 719px) {
-    .hl-collage {
+    .hl-collage-wrap {
       display: none;
     }
   }
@@ -5159,7 +5298,7 @@
   }
 
   @media print {
-    .hl-collage {
+    .hl-collage-wrap {
       display: none;
     }
   }
