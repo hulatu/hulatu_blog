@@ -1293,6 +1293,7 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/shortcodes/home-stats.html` | 首页身份条「文章 N 篇，周刊 N 篇，运行 N 天。」 | ⚠️ 只输出纯内联文本 + 句号，不加 span / class / `<br>`：要和后面的「支持一下」连成一段（用户要求）。天数靠每天的构建前进 |
 | `layouts/shortcodes/writing-stats.html` | 关于页「写作统计」+ 过去 365 天发布热力图，构建期算好输出静态 span | 只统计 posts + weekly；字数算法同 byline（汉字每字 1、英文每词 1）；热力图按发布日期。⚠️ 别把 `.Plain` 换成 `.Content`（会把 HTML 标签算进字数）；样式第 51 段 |
 | `layouts/shortcodes/mail-link.html` | 正文里的邮箱浮层（`about.md`「联系我」、`roll.md`「交友原则」） | 复用 `hello.html`，不另写标记。⚠️ `hello.js` 必须遍历页面上所有 `.hello`；正文里的卡片左对齐（`content .hello-card`），居中会在窄屏溢出 |
+| `layouts/shortcodes/photo-collage.html` | 关于页相册拼贴，读 `data/photo-collage.yaml`，输出 18 个绝对定位元素（照片 / 视频 / 邮票） | 画布宽度跟正文一致，内部坐标全用百分比，拖动后 JS 也写回百分比；图片 240 / 邮票 160（q78）；视频按 `canPlayType` 只选 MP4 或 WebM 之一，悬停才设 `src`；无彩虹光晕；样式第 72 段、脚本 `motion.js` 第 6 段。⚠️ `style` 里有 `3 / 4` 这类带斜杠的 CSS 值，必须整串 `safeCSS`，否则输出 `ZgotmplZ` |
 
 #### 样式、脚本与生成器
 

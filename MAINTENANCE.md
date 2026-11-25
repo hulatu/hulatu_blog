@@ -20,7 +20,7 @@
 | 分类 | 8 个：思考 40 / 周刊 31 / 工具 22 / 记录 19 / 运动 13 / 学习科研 10 / 饮食 5 / 健康 4 |
 | 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
 | 根级独立页 | 15 个（`content/*.md`，不含首页 `_index.md`） |
-| 站点层 | `layouts/` 52 个文件 + `assets/js/` 8 个 + `assets/css/` 3 个 |
+| 站点层 | `layouts/` 53 个文件 + `assets/js/` 8 个 + `assets/css/` 3 个 |
 | 主题副本 | `themes/hugo-bearneo/` 27 个文件 |
 | 脚本 | `scripts/` 16 个；GitHub Actions 2 个 |
 | 301 | `static/_redirects` 17 条 |

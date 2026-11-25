@@ -7,6 +7,8 @@
         必须在渲染前注册，所以写在 custom_head.html 的内联引导脚本里（第 67 段）。
      5. 图片放大：从原图位置「长」到全屏、关闭时缩回原位（同文档 View Transition，第 68 段）。
         放大本身是原生 Popover，这一段只是增强；不支持或减少动态效果时什么都不做。
+     6. 关于页相册拼贴：拖动照片、视频悬停播放（custom.css 第 72 段）。
+        视频悬停前不发请求；照片位置写百分比，窗口缩放不会错位。
    ⚠️ 所有「先藏起来、再显示」的类都由这里自己加：这个文件没加载成功时，什么都不会被藏住。 */
 (function () {
   var reduce = !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -192,6 +194,98 @@
         to.style.viewTransitionName = '';
         root.classList.remove('hl-vt-zoom');
       }).catch(function () {});
+    });
+  }
+
+  /* ── 6. 关于页相册拼贴：拖动 + 视频悬停播放 ─────────────────────
+     拖动：pointerdown 记下起始 offsetLeft/Top，pointermove 限制在画布内，
+           写回 left/top 的百分比（不是 px），窗口缩放后照片还在一起。
+     视频：preload="none"，poster 常显；鼠标移进卡片才按 canPlayType 选一种格式、
+           设 src 并 play()，移出就 pause() 并回到 0 秒。悬停前不发任何视频请求。
+           只有 hover:hover / pointer:fine 且没开减少动态效果时才挂播放；
+           触屏只留封面；没有 JS 时也是封面。
+     ⚠️ 不拦 click：照片没有点击行为，拖动结束后的 click 不会误触发放大层。 */
+  var collage = document.querySelector('.hl-collage[data-collage]');
+  if (collage) {
+    var hoverPlay = window.matchMedia && window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+    var collageItems = collage.querySelectorAll('.hl-collage-item[data-grab]');
+    var topZ = 400;
+
+    each(collageItems, function (el) {
+      var drag = null;
+      var video = el.querySelector('video[data-collage-video]');
+      var videoLoaded = false;
+
+      function startVideo() {
+        if (!video || !hoverPlay || reduce) return;
+        if (!videoLoaded) {
+          var mp4 = video.getAttribute('data-src-mp4');
+          var webm = video.getAttribute('data-src-webm');
+          var canMp4 = video.canPlayType && video.canPlayType('video/mp4; codecs="avc1.42E01E"');
+          video.muted = true;
+          video.playsInline = true;
+          video.src = (canMp4 && mp4) ? mp4 : (webm || mp4);
+          videoLoaded = true;
+        }
+        var p = video.play();
+        if (p && p.catch) p.catch(function () {});
+      }
+
+      function stopVideo() {
+        if (!video || video.paused) return;
+        video.pause();
+        try { video.currentTime = 0; } catch (err) {}
+      }
+
+      el.addEventListener('pointerenter', startVideo);
+      el.addEventListener('pointerleave', stopVideo);
+
+      el.addEventListener('pointerdown', function (e) {
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (drag) return;
+        drag = {
+          id: e.pointerId,
+          x: e.clientX,
+          y: e.clientY,
+          left: el.offsetLeft,
+          top: el.offsetTop,
+          w: el.offsetWidth,
+          h: el.offsetHeight
+        };
+        el.style.zIndex = ++topZ;
+        el.classList.add('is-dragging');
+        collage.classList.add('is-dragging');
+        if (el.setPointerCapture) {
+          try { el.setPointerCapture(e.pointerId); } catch (err) {}
+        }
+        e.preventDefault();
+      });
+
+      el.addEventListener('pointermove', function (e) {
+        if (!drag || e.pointerId !== drag.id) return;
+        var cw = collage.clientWidth;
+        var ch = collage.clientHeight;
+        var x = drag.left + (e.clientX - drag.x);
+        var y = drag.top + (e.clientY - drag.y);
+        x = Math.max(0, Math.min(cw - drag.w, x));
+        y = Math.max(0, Math.min(ch - drag.h, y));
+        el.style.left = (x / cw * 100).toFixed(3) + '%';
+        el.style.top = (y / ch * 100).toFixed(3) + '%';
+      });
+
+      function endDrag(e) {
+        if (!drag || (e && e.pointerId !== drag.id)) return;
+        var id = drag.id;
+        drag = null;
+        el.classList.remove('is-dragging');
+        collage.classList.remove('is-dragging');
+        if (el.releasePointerCapture) {
+          try { el.releasePointerCapture(id); } catch (err) {}
+        }
+      }
+
+      el.addEventListener('pointerup', endDrag);
+      el.addEventListener('pointercancel', endDrag);
     });
   }
 })();

@@ -1,0 +1,88 @@
+{{- /* ============================================================
+       相册拼贴：关于页的散落照片墙（2026-11-25）
+       数据在 data/photo-collage.yaml；样式在 custom.css 第 72 段；
+       拖动 / 视频悬停播放增强在 assets/js/motion.js 第 6 段。
+       ⚠️ 坐标一律用百分比，拖动后写回的也是百分比，窗口缩放不会错位。
+       ⚠️ 图片只给 img.hulatu.com 拼边缘缩放；外站图原样输出。
+       ============================================================ */ -}}
+{{- $data := index hugo.Data "photo-collage" -}}
+{{- with $data.items -}}
+<section class="hl-collage" data-collage aria-label="生活相册">
+  {{- range $i, $item := . -}}
+    {{- $type := default "photo" $item.type -}}
+    {{- $shape := default "rect" $item.shape -}}
+    {{- if eq $type "stamp" }}{{ $shape = "stamp" }}{{ end -}}
+    {{- $ar := default "3 / 4" $item.ar -}}
+    {{- if eq $shape "circle" }}{{ $ar = default "1 / 1" $item.ar }}{{ end -}}
+    {{- if eq $shape "stamp" }}{{ $ar = "2 / 3" }}{{ end -}}
+    {{- $z := int (default 1 $item.z) -}}
+    {{- $rot := default 0 $item.rot -}}
+
+    {{- /* 图片地址：图床图走 240px 边缘缩放（卡片最大 97px，240 够 DPR2.4），
+           quality 78；邮票 160px。本地绝对路径补 baseURL；外站图原样。 */ -}}
+    {{- $imgSrc := $item.src -}}
+    {{- if hasPrefix $imgSrc "https://img.hulatu.com/" -}}
+      {{- $path := strings.TrimPrefix "https://img.hulatu.com/" $imgSrc -}}
+      {{- $w := 240 -}}
+      {{- if eq $shape "stamp" }}{{ $w = 160 }}{{ end -}}
+      {{- $imgSrc = printf "https://img.hulatu.com/cdn-cgi/image/width=%d,format=auto,quality=78/%s" $w $path -}}
+    {{- else if hasPrefix $imgSrc "/" -}}
+      {{- $imgSrc = $imgSrc | relURL -}}
+    {{- end -}}
+
+    {{- $poster := $item.poster -}}
+    {{- if $poster -}}
+      {{- if hasPrefix $poster "https://img.hulatu.com/" -}}
+        {{- $path := strings.TrimPrefix "https://img.hulatu.com/" $poster -}}
+        {{- $poster = printf "https://img.hulatu.com/cdn-cgi/image/width=300,format=auto,quality=78/%s" $path -}}
+      {{- else if hasPrefix $poster "/" -}}
+        {{- $poster = $poster | relURL -}}
+      {{- end -}}
+    {{- end -}}
+
+    {{- /* 视频也允许写本地相对路径（data 里统一写 /media/...）。
+           MP4 / WebM 两条地址都写进 data 属性，motion.js 按 canPlayType 只选一种，
+           悬停前不发请求；没有 JS 时只显示 poster。 */ -}}
+    {{- $videoSrc := $item.src -}}
+    {{- if hasPrefix $videoSrc "/" }}{{ $videoSrc = $videoSrc | relURL }}{{ end -}}
+    {{- $webmSrc := $item.webm -}}
+    {{- if and $webmSrc (hasPrefix $webmSrc "/") }}{{ $webmSrc = $webmSrc | relURL }}{{ end -}}
+
+    {{- /* style 里有 "3 / 4" 这种带斜杠的 CSS 值，普通 html/template 会当成 URL
+           并输出 ZgotmplZ；必须整串过 safeCSS。 */ -}}
+    {{- $itemStyle := printf "--x:%v;--y:%v;--w:%v;--rot:%v;--z:%d;--ar:%s" $item.x $item.y $item.w $rot $z $ar -}}
+
+<figure class="hl-collage-item{{ if eq $shape "stamp" }} hl-collage-item-stamp{{ end }}" data-grab data-shape="{{ $shape }}" style="{{ $itemStyle | safeCSS }}">
+  {{- if eq $shape "stamp" }}
+  <span class="hl-collage-stamp">
+    <span class="hl-collage-stamp-paper">
+      <span class="hl-collage-media">
+        <img src="{{ $imgSrc | safeURL }}" alt="{{ $item.alt }}" loading="lazy" decoding="async" draggable="false" />
+        <span class="hl-collage-grain" aria-hidden="true"></span>
+      </span>
+      {{- with $item.label }}
+      <span class="hl-collage-stamp-label" aria-hidden="true">
+        <span class="hl-collage-stamp-city">{{ . }}</span>
+        {{- with $item.sub }}<span class="hl-collage-stamp-sub">{{ . }}</span>{{ end -}}
+      </span>
+      {{- end }}
+    </span>
+  </span>
+  {{- else }}
+  <span class="hl-collage-card">
+    <span class="hl-collage-media">
+      {{- if eq $type "video" }}
+      <video class="hl-collage-video" data-collage-video data-src-mp4="{{ $videoSrc | safeURL }}"{{ with $webmSrc }} data-src-webm="{{ . | safeURL }}"{{ end }}{{ with $poster }} poster="{{ . | safeURL }}"{{ end }} muted loop playsinline preload="none" draggable="false" aria-label="{{ $item.alt }}"></video>
+      {{- else }}
+      <img src="{{ $imgSrc | safeURL }}" alt="{{ $item.alt }}" loading="lazy" decoding="async" draggable="false" />
+      {{- end }}
+      <span class="hl-collage-grain" aria-hidden="true"></span>
+    </span>
+  </span>
+  {{- end }}
+</figure>
+  {{- end }}
+</section>
+{{- else -}}
+{{- warnf "photo-collage：data/photo-collage.yaml 里没有 items" -}}
+{{- end -}}

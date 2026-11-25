@@ -1,0 +1,231 @@
+# 关于页相册拼贴（2026-11-25）
+#
+# 用法：在 content/about.md 里插入 {{< photo-collage >}}。
+# 这里的位置全部按 1040 × 520 的画布换算成百分比：
+#   x = left / 1040 × 100，y = top / 520 × 100，w = width / 1040 × 100。
+# 拖动后的新位置也会以百分比写回，所以缩放窗口不会错位。
+#
+# 每个元素：
+#   type    photo | video | stamp
+#   shape   rect（拍立得）| circle（圆形）| stamp（邮票，type 写成 stamp 即可）
+#   ar      宽高比，CSS 写法，例如 "3 / 4"；stamp 固定 2 / 3，不用写
+#   src     图片地址；video 时是视频地址（MP4）
+#   webm    video 可选，WebM 备份；motion.js 按 canPlayType 只选一种，不会两种都下
+#   poster  video 的封面图
+#   label   邮票右上角的城市名
+#   sub     邮票城市名下面的小字
+#   x/y/w   百分比；rot 旋转角度；z 层级
+#
+# ⚠️ 现在用的是博客里已有的图片做占位。换成自己的照片时，
+#    直接把 src 换成新地址即可；本地文件放 static/ 下，写成 /images/xxx.jpg。
+
+items:
+  - type: photo
+    src: https://img.hulatu.com/post/0mOILZ.webp
+    alt: 本科毕业照
+    shape: rect
+    ar: "3 / 4"
+    x: 54.52
+    y: 55.00
+    w: 13.46
+    rot: -3
+    z: 10
+
+  - type: video
+    src: /media/collage/cycle.mp4
+    webm: /media/collage/cycle.webm
+    poster: /media/collage/cycle-poster.webp
+    alt: 抓拍的彩虹（循环片段）
+    shape: circle
+    ar: "1 / 1"
+    x: 82.88
+    y: 28.27
+    w: 14.42
+    rot: -2
+    z: 90
+
+  - type: video
+    src: /media/collage/window.mp4
+    webm: /media/collage/window.webm
+    poster: /media/collage/window-poster.webp
+    alt: 回来途中的夕阳（循环片段）
+    shape: rect
+    ar: "4 / 5"
+    x: 43.75
+    y: 9.62
+    w: 14.23
+    rot: 2
+    z: 12
+
+  - type: photo
+    src: https://img.hulatu.com/post/1vAcrt.webp
+    alt: 硕士期间室友拍摄
+    shape: rect
+    ar: "3 / 4"
+    x: 33.56
+    y: 3.65
+    w: 13.46
+    rot: -3
+    z: 13
+
+  - type: photo
+    src: https://img.hulatu.com/post/jpkPzS.webp
+    alt: 我的自行车
+    shape: rect
+    ar: "3 / 4"
+    x: 1.83
+    y: 53.46
+    w: 13.46
+    rot: -4
+    z: 14
+
+  - type: photo
+    src: https://img.hulatu.com/post/pA0Gka.webp
+    alt: 我在图书馆看书
+    shape: rect
+    ar: "3 / 4"
+    x: 16.54
+    y: 35.96
+    w: 13.46
+    rot: 5
+    z: 15
+
+  - type: photo
+    src: https://img.hulatu.com/post/g0o3Yn.webp
+    alt: 长沙旅游照
+    shape: rect
+    ar: "3 / 4"
+    x: 43.08
+    y: 53.46
+    w: 13.46
+    rot: 3
+    z: 16
+
+  - type: stamp
+    src: https://img.hulatu.com/post/6vd51u.webp
+    alt: 开封站
+    shape: stamp
+    label: 开封
+    sub: POSTE · III
+    x: 89.42
+    y: 66.54
+    w: 8.85
+    rot: 4
+    z: 17
+
+  - type: stamp
+    src: https://img.hulatu.com/post/3jctHC.jpeg
+    alt: 南校区
+    shape: stamp
+    label: 郑州
+    sub: POSTE · II
+    x: 83.85
+    y: 65.00
+    w: 8.85
+    rot: -2
+    z: 18
+
+  - type: stamp
+    src: https://img.hulatu.com/post/XxDf2F.jpeg
+    alt: 我的本科学校
+    shape: stamp
+    label: 南昌
+    sub: POSTE · I
+    x: 78.08
+    y: 67.69
+    w: 8.85
+    rot: -9
+    z: 19
+
+  - type: photo
+    src: https://img.hulatu.com/post/3IjIFH.webp
+    alt: 南昌北湖边
+    shape: rect
+    ar: "3 / 4"
+    x: 82.50
+    y: 4.23
+    w: 13.46
+    rot: 4
+    z: 20
+
+  - type: photo
+    src: https://img.hulatu.com/post/jiR84D.webp
+    alt: 皮肤巅峰时刻的自拍
+    shape: rect
+    ar: "3 / 4"
+    x: 3.17
+    y: 7.88
+    w: 13.46
+    rot: -5
+    z: 103
+
+  # 占位：南昌炒粉
+  - type: photo
+    src: https://img.hulatu.com/post/hk9EFx.jpeg
+    alt: 南昌炒粉
+    shape: rect
+    ar: "3 / 4"
+    x: 33.56
+    y: 59.81
+    w: 13.46
+    rot: -2
+    z: 22
+
+  # 占位：双柚柠香冰萃
+  - type: photo
+    src: https://img.hulatu.com/post/4asZq9.jpeg
+    alt: 双柚柠香冰萃
+    shape: rect
+    ar: "3 / 4"
+    x: 12.12
+    y: 58.85
+    w: 13.46
+    rot: 3
+    z: 23
+
+  # 占位：金色麦浪
+  - type: photo
+    src: https://img.hulatu.com/post/fJxe0U.webp
+    alt: 金色麦浪
+    shape: rect
+    ar: "3 / 4"
+    x: 14.04
+    y: 2.50
+    w: 13.46
+    rot: 4
+    z: 101
+
+  # 占位：在 KFC 阅读博客
+  - type: photo
+    src: https://img.hulatu.com/post/ZruVFw.jpeg
+    alt: 在 KFC 阅读博客
+    shape: rect
+    ar: "3 / 4"
+    x: 72.50
+    y: 17.88
+    w: 13.46
+    rot: 6
+    z: 25
+
+  # 占位：抹茶冰激凌
+  - type: photo
+    src: https://img.hulatu.com/post/zCaE4N.jpeg
+    alt: 抹茶冰激凌
+    shape: rect
+    ar: "3 / 4"
+    x: 60.48
+    y: 58.85
+    w: 13.46
+    rot: 4
+    z: 26
+
+  - type: photo
+    src: https://img.hulatu.com/post/YNLtv0.webp
+    alt: 我在地铁被小张偷拍
+    shape: rect
+    ar: "3 / 4"
+    x: 60.58
+    y: 7.12
+    w: 13.46
+    rot: -2
+    z: 27

@@ -29,6 +29,9 @@ draft: false
 
 关于我更完整的自我介绍，可以看这篇 [关于我](/posts/2025/12/05/personal-profile/)。
 
+<!-- 生活相册拼贴：位置 / 素材在 data/photo-collage.yaml，短代码在 layouts/shortcodes/photo-collage.html -->
+{{< photo-collage >}}
+
 ## 这个站
 
 技术栈、排版、评论与隐私、站史，以及全部栏目入口和订阅方式，都收在 [地图](/map/) 里。

@@ -4887,3 +4887,279 @@
       display: none;
     }
   }
+
+/*
+  72 关于页相册拼贴（2026-11-25）
+  短代码 layouts/shortcodes/photo-collage.html → 数据 data/photo-collage.yaml
+     section.hl-collage[data-collage]                ← 宽度随正文、比例 1040:520 的点阵画布
+       figure.hl-collage-item[data-grab]             ← 绝对定位，--x/--y/--w/--rot/--z/--ar
+         span.hl-collage-card                        ← 拍立得白框（circle / rect）
+           span.hl-collage-media > img / video       ← 媒体，aspect-ratio 由 --ar 控制
+           span.hl-collage-grain                     ← 胶片噪点
+       邮票是另一套结构：paper 上挂 SVG 齿孔 mask，城市名绝对定位在右上。
+  交互：拖动 / 视频悬停播放都在 assets/js/motion.js 第 6 段。
+  2026-11-25 精简：素材按 720 画布重出（图 240 / 邮票 160、q78；视频 300px / 5s），
+  视频改为悬停才加载播放，彩虹光晕整段删除（DOM 少 18 个 mix-blend 层）。
+  ⚠️ 位置全用百分比；拖动时 JS 也写回百分比，窗口缩放不会错位。
+  ⚠️ 画布宽度跟正文一致（width: 100%），内部仍按 1040×520 的坐标换算；
+     靠 aspect-ratio 整体缩放，不要再加 left / translate 把它顶出正文。
+  ⚠️ stamp 的齿孔用 data URI mask，不依赖图片，缩放不糊。
+  */
+  .hl-collage {
+    container-type: inline-size;
+    position: relative;
+    box-sizing: border-box;
+    width: 100%;
+    aspect-ratio: 1040 / 520;
+    margin: 2.25rem 0 3rem;
+    border: 1px solid var(--hl-hair);
+    border-radius: 16px;
+    background-color: var(--hl-bg-subtle);
+    background-image: radial-gradient(circle, color-mix(in srgb, var(--hl-mute) 38%, transparent) 1px, transparent 1.4px);
+    background-size: 22px 22px;
+    overflow: hidden;
+    isolation: isolate;
+    -webkit-user-select: none;
+    user-select: none;
+    --hl-stamp-mask: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 150%27%3E%3Cmask id=%27m%27%3E%3Crect width=%27100%27 height=%27150%27 fill=%27white%27/%3E%3Cg fill=%27black%27%3E%3Ccircle cx=%275%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%275%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2715%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2715%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2725%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2725%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2735%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2735%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2745%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2745%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2755%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2755%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2765%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2765%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2775%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2775%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2785%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2785%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%2795%27 cy=%270%27 r=%273.2%27/%3E%3Ccircle cx=%2795%27 cy=%27150%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%275%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%275%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2715%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2715%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2725%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2725%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2735%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2735%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2745%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2745%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2755%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2755%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2765%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2765%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2775%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2775%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2785%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2785%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%2795%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%2795%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27105%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27105%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27115%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27115%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27125%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27125%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27135%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27135%27 r=%273.2%27/%3E%3Ccircle cx=%270%27 cy=%27145%27 r=%273.2%27/%3E%3Ccircle cx=%27100%27 cy=%27145%27 r=%273.2%27/%3E%3C/g%3E%3C/mask%3E%3Crect width=%27100%27 height=%27150%27 fill=%27white%27 mask=%27url%28%23m%29%27/%3E%3C/svg%3E");
+  }
+
+  /* 木纹纸的暗角，压在照片下面。 */
+  .hl-collage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 100% at 50% 40%, transparent 55%, rgba(60, 50, 40, 0.09) 100%);
+  }
+
+  [data-theme="dark"] .hl-collage::after {
+    background: radial-gradient(120% 100% at 50% 40%, transparent 55%, rgba(0, 0, 0, 0.32) 100%);
+  }
+
+  .hl-collage-item {
+    position: absolute;
+    left: calc(var(--x) * 1%);
+    top: calc(var(--y) * 1%);
+    width: calc(var(--w) * 1%);
+    margin: 0;
+    z-index: var(--z, 1);
+    transform: perspective(600px) rotate(calc(var(--rot) * 1deg));
+    transform-origin: 50% 50%;
+    touch-action: none;
+    cursor: grab;
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  .hl-collage-item:focus {
+    outline: none;
+  }
+
+  .hl-collage-item.is-dragging {
+    z-index: 400;
+    cursor: grabbing;
+  }
+
+  .hl-collage.is-dragging {
+    cursor: grabbing;
+  }
+
+  /* 拍立得卡框 */
+  .hl-collage-card {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    padding: 4%;
+    border: 1px solid color-mix(in srgb, var(--hl-mute) 40%, transparent);
+    border-radius: 8px;
+    background: var(--hl-bg);
+    box-shadow: 0 1px 2px rgba(17, 19, 21, 0.06), 0 10px 22px -10px rgba(17, 19, 21, 0.22);
+    transition: transform 0.25s var(--hl-ease-out), box-shadow 0.25s var(--hl-ease-out);
+  }
+
+  [data-theme="dark"] .hl-collage-card {
+    border-color: var(--hl-hair);
+    background: var(--hl-bg-subtle);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.45), 0 16px 30px -12px rgba(0, 0, 0, 0.7);
+  }
+
+  .hl-collage-item[data-shape="circle"] .hl-collage-card {
+    padding: 3.4%;
+    border-radius: 50%;
+  }
+
+  .hl-collage-media {
+    position: relative;
+    display: block;
+    box-sizing: border-box;
+    aspect-ratio: var(--ar, 3 / 4);
+    overflow: hidden;
+    border: 1px solid color-mix(in srgb, var(--hl-mute) 28%, transparent);
+    border-radius: 6px;
+    background: var(--hl-bg-hover);
+  }
+
+  .hl-collage-item[data-shape="circle"] .hl-collage-media {
+    border-radius: 50%;
+  }
+
+  .hl-collage-media > img,
+  .hl-collage-media > video {
+    position: absolute;
+    inset: 0;
+    display: block;
+    box-sizing: border-box;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    margin: 0;
+    border: 0;
+    border-radius: inherit;
+    object-fit: cover;
+  }
+
+  /* 胶片噪点：和原站一样用 SVG fractalNoise，叠在照片上。 */
+  .hl-collage-grain {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 140px 140px;
+    opacity: 0.28;
+    mix-blend-mode: overlay;
+  }
+
+  /* 邮票：外层只负责投影，paper 负责齿孔 mask。 */
+  .hl-collage-item-stamp {
+    aspect-ratio: 2 / 3;
+  }
+
+  .hl-collage-stamp {
+    position: relative;
+    display: block;
+    height: 100%;
+    filter: drop-shadow(0 1px 2px rgba(17, 19, 21, 0.14)) drop-shadow(0 10px 18px rgba(17, 19, 21, 0.16));
+    transition: filter 0.25s var(--hl-ease-out);
+  }
+
+  .hl-collage-stamp-paper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
+    height: 100%;
+    padding: 8.5%;
+    background: #fff;
+    -webkit-mask-image: var(--hl-stamp-mask);
+    mask-image: var(--hl-stamp-mask);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    transition: transform 0.25s var(--hl-ease-out);
+  }
+
+  [data-theme="dark"] .hl-collage-stamp-paper {
+    background: #ece9e2;
+  }
+
+  .hl-collage-item-stamp .hl-collage-media {
+    flex: 1;
+    min-height: 0;
+    aspect-ratio: auto;
+    border-radius: 2px;
+    border-color: rgba(17, 19, 21, 0.25);
+  }
+
+  .hl-collage-item-stamp .hl-collage-grain {
+    opacity: 0.5;
+  }
+
+  .hl-collage-stamp-label {
+    position: absolute;
+    top: 7%;
+    right: 9%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.18em;
+    color: #1d1d20;
+    font-family: Georgia, "Times New Roman", "Songti SC", "Noto Serif SC", serif;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .hl-collage-stamp-city {
+    font-size: 8.5px;
+    letter-spacing: 0.14em;
+  }
+
+  .hl-collage-stamp-sub {
+    font-size: 5px;
+    letter-spacing: 0.14em;
+  }
+
+  @container (min-width: 1px) {
+    .hl-collage-stamp-city {
+      font-size: clamp(5.5px, 0.95cqw, 8.5px);
+    }
+
+    .hl-collage-stamp-sub {
+      font-size: clamp(3.8px, 0.58cqw, 5px);
+    }
+  }
+
+  /* 悬停：只抬起当前这一张，不压暗其它照片。 */
+  @media (hover: hover) and (pointer: fine) {
+    .hl-collage-item:hover {
+      z-index: 300;
+    }
+
+    .hl-collage-item:hover .hl-collage-card {
+      transform: translateY(-3px) scale(1.015);
+      box-shadow: 0 2px 4px rgba(17, 19, 21, 0.08), 0 18px 34px -12px rgba(17, 19, 21, 0.28);
+    }
+
+    .hl-collage-item:hover .hl-collage-stamp-paper {
+      transform: translateY(-2px) scale(1.01);
+    }
+  }
+
+  .hl-collage-item.is-dragging .hl-collage-card,
+  .hl-collage-item.is-dragging .hl-collage-stamp-paper {
+    transition: none;
+    transform: scale(1.03);
+  }
+
+  .hl-collage-item.is-dragging .hl-collage-card {
+    box-shadow: 0 4px 8px rgba(17, 19, 21, 0.1), 0 26px 48px -14px rgba(17, 19, 21, 0.36);
+  }
+
+  /* 小屏和原站一样整块隐藏；手机读者不受影响。 */
+  @media (max-width: 719px) {
+    .hl-collage {
+      display: none;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .hl-collage-card,
+    .hl-collage-stamp-paper {
+      transition: none;
+    }
+
+    .hl-collage-item:hover .hl-collage-card,
+    .hl-collage-item:hover .hl-collage-stamp-paper,
+    .hl-collage-item.is-dragging .hl-collage-card,
+    .hl-collage-item.is-dragging .hl-collage-stamp-paper {
+      transform: none;
+    }
+  }
+
+  @media print {
+    .hl-collage {
+      display: none;
+    }
+  }
