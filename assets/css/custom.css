@@ -3910,6 +3910,11 @@
   /* <dialog> 的 UA 样式（居中小框、边框、白底、max-width）全部拆掉，
      让它和原来的 div 一样是满屏遮罩；遮罩颜色仍由 upgrade.css 的 .hl-cmd-overlay 给。 */
   dialog.hl-cmd-overlay {
+    /* ⚠️ 必须 border-box：<dialog> 的 `width:100%` + 下面的 `padding: 12vh 16px 24px`
+       在 content-box 下会把遮罩撑成「视口 + 32px」——320px 视口实测 352px，
+       面板右缘 336px，分类标签与 ESC 被裁；桌面端则让面板整体右偏 16px。
+       加上 border-box 后 100% 含 padding：320px 下遮罩 320、面板 288，桌面重新居中。 */
+    box-sizing: border-box;
     width: 100%;
     height: 100%;
     max-width: none;

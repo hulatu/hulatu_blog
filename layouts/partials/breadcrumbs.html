@@ -1,5 +1,5 @@
 {{- /* 面包屑：只给文章页（posts / weekly）。一级页面与词条页不挂。
-       文章：首页 / 文章 / 分类；周刊：首页 / 周刊（分类名与栏目名重复，跳过）。
+       文章：首页 / 归档 / 分类；周刊：首页 / 周刊（分类名与栏目名重复，跳过）。
        可见部分只显示祖先，当前页交给紧跟的 h1；JSON-LD 里包含当前页。
        ⚠️ 别给 /about/ /roll/ 等无标题页加，会破坏「正文首行距导航 28px」。
        ⚠️ 分类用 .GetTerms 取词条页对象（有 LinkTitle / RelPermalink）。
@@ -7,7 +7,7 @@
 {{- $isPost := and .IsPage (in (slice "posts" "weekly") .Type) -}}
 {{- if $isPost -}}
 
-  {{- $sectionName := "文章" -}}
+  {{- $sectionName := "归档" -}}
   {{- $sectionURL := "/archive/" -}}
   {{- if eq .Type "weekly" -}}
     {{- $sectionName = "周刊" -}}
