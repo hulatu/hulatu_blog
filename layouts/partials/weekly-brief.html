@@ -1,0 +1,27 @@
+{{- /* 周刊导读卡片（2026-11-26 数据化改造）。
+       数据来自 frontmatter 的 brief 字段，写作时只改那几行文本：
+         brief:
+           observe: "🧠 本周观察的一句话"
+           use:     "🛠 本周在用的一句话"
+           read:    "🔗 值得一读的一句话"
+           idea:    "💭 一句话想法（可省略）"
+       四个 key 固定、顺序固定；空值整行不输出。阅读时间由 single.html
+       按汉字 400 字/分、英文 200 词/分自动算出传进来，不用手填。
+       ⚠️ 样式在 custom.css 的 .weekly-brief 系列，别在正文里手写 HTML。 */ -}}
+{{- $brief := .brief -}}
+{{- $items := slice -}}
+{{- with $brief.observe }}{{ $items = $items | append (dict "emoji" "🧠" "label" "本周观察" "text" .) }}{{ end -}}
+{{- with $brief.use }}{{ $items = $items | append (dict "emoji" "🛠" "label" "本周在用" "text" .) }}{{ end -}}
+{{- with $brief.read }}{{ $items = $items | append (dict "emoji" "🔗" "label" "值得一读" "text" .) }}{{ end -}}
+{{- with $brief.idea }}{{ $items = $items | append (dict "emoji" "💭" "label" "一句话想法" "text" .) }}{{ end -}}
+{{- if $items }}
+<div class="weekly-brief">
+  <p class="weekly-brief-title">本期内容</p>
+  <ul class="weekly-brief-list">
+  {{- range $items }}
+    <li><span class="weekly-brief-label">{{ .emoji }} {{ .label }}</span><span class="weekly-brief-text">{{ .text }}</span></li>
+  {{- end }}
+  </ul>
+  <p class="weekly-brief-meta">⏱ 阅读时间：约 {{ .minutes }} 分钟</p>
+</div>
+{{- end }}

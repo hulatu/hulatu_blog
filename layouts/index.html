@@ -35,8 +35,9 @@
 {{- $weeklies := where site.RegularPages "Section" "weekly" }}
 {{- with $weeklies.ByDate.Reverse }}
 {{- with index . 0 }}
+{{- /* 期号从新标题 `#N 胡拉图说 | ...` 解析，解析不到退回完整标题。 */ -}}
 {{- $issueLabel := .Title }}
-{{- range findRESubmatch `第\s*([0-9]+)\s*期` .Title 1 }}
+{{- range findRESubmatch `^#([0-9]+)\s` .Title 1 }}
   {{- $issueLabel = printf "第 %s 期" (index . 1) }}
 {{- end }}
 <section class="latest-weekly" aria-labelledby="latest-weekly-head">

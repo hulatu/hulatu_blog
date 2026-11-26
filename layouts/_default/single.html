@@ -67,6 +67,12 @@
   {{- end -}}
 {{- end }}
 
+{{- /* 周刊导读卡片：frontmatter.brief 里改文本，这里统一渲染。
+       ⚠️ 放在 <content> 外，避免吃正文行高；阅读时间复用 byline 的 $readMins。 */ -}}
+{{- if and $longForm (eq .Type "weekly") .Params.brief -}}
+  {{- partial "weekly-brief.html" (dict "brief" .Params.brief "minutes" $readMins) -}}
+{{- end -}}
+
 {{- /* 表格包一层 .table-wrap，让窄屏只横滚表格。
        ⚠️ replaceRE 会把 template.HTML 降级成 string，末尾必须 safeHTML。
        ⚠️ 不要为这一层 div 重写 render-table 钩子，字符串替换更简单。

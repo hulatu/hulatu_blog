@@ -189,10 +189,11 @@ Blog/
 ## 📝 写与发
 
 ```bash
-hugo new content/posts/文章名.md           # 周刊：hugo new content/weekly/周刊-第N期.md
+new posts/文章名                     # 周刊：new weekly/周刊-第N期
+hugo new content/posts/文章名.md      # 同效，建完也会自动打开
 ```
 
-按 `archetypes/posts.md` 的清单填 front matter，把 `draft` 改成 `false` 就发布。
+两种写法都会套 `archetypes/` 模板，建完立刻用**系统默认的 Markdown 应用**打开（同名文件不会被覆盖，只会被打开）。按 `archetypes/posts.md` 的清单填 front matter，把 `draft` 改成 `false` 就发布。
 
 | 字段 | 作用 |
 | --- | --- |

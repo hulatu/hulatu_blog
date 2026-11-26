@@ -395,11 +395,11 @@ hulatu.com（本站：上游主题 + 29 个站点层覆盖文件）
 它不以 `http(s)` 开头，所以 `externalLinksNewTab` 那套不会给它加 `target="_blank"`
 （与页脚那个 RSS 链接行为一致：原地打开）。
 ✅ **有「当前页高亮」**：`nav.html` 输出 `aria-current="page"`，
-样式在第 00b 段 —— 当前项转**主文字色**，**不加下划线**（普通项是蓝字无下划线、
-悬停是蓝字带下划线，三态都不改变宽度）。`RSS` 指向 `/index.xml`、不是页面，
+样式在第 00b 段 —— 当前项转**链接色并加一档字重（500）**，**不加下划线**
+（普通项是主文字色无下划线、悬停带下划线）。`RSS` 指向 `/index.xml`、不是页面，
 所以它永远不会被点亮。
-⚠️ 当前页**不加下划线**，只改颜色 —— 下划线会让导航看起来像一排被点亮的链接。
-代价是色觉障碍用户可能分不清，但 `aria-current` 对屏幕阅读器是完整的。
+⚠️ 当前页**不加下划线**，靠颜色 + 字重两层区分；不要再提到 600 / 700，
+否则会改变导航项宽度和折行位置。
 ⚠️ 当前页悬停时**仍然会出现下划线**（主题的 `a:hover`），刻意不压。
 ⚠️ 判断必须**精确相等** `$.RelPermalink`。写成前缀匹配的话，`Posts`（指向 `/archive/`）
 会把每一篇 `/posts/…` 都点亮 —— 而本站 143 个内容页全在那条路径下。
@@ -1110,7 +1110,9 @@ md 里**不要**再手写 `{#pin-yin}`。
 ```
 
 `.hello-card` 里只有一颗按钮：邮箱文字在左、复制图标在右；
-悬停浮出浅灰底，复制后图标换勾、文字与描边变链接蓝。
+悬停浮出浅灰底，复制后图标换勾、文字与描边变链接蓝；复制失败时
+按钮改为「复制失败，请手动选中」，并通过全站 `.hl-toast` 的
+`role="status"` 播报。
 
 - **为什么往上弹**：页脚贴着页面底部，往下会顶出视口，还会临时撑出一条竖向滚动条。
 - **为什么不用 `role="tooltip"`**：卡片里有可点的复制按钮，tooltip 语义要求
@@ -1120,9 +1122,10 @@ md 里**不要**再手写 `{#pin-yin}`。
   为假（纯触屏）才改成「点一下开合胶囊」—— 触屏上以复制为主，卡片里不再另放 mailto。
 - **胶囊与触发词之间必须留一块透明桥**（`.hello-card::before`）：没有它，鼠标从词
   移向胶囊的 8px 空隙里会丢掉 `:hover`，胶囊在指针到达前就收了。
-- **邮箱 / 已复制两个 span 叠在同一个网格格里**：换字时胶囊宽度不跳。
+- **邮箱 / 已复制两个 span 叠在同一个网格格里**：换字时胶囊宽度不跳；
+  失败态复用 `.hello-done` 显示操作建议，不显示勾选图标。
 - 三处契约，改名要同改：`partials/hello.html`（标记）、
-  `partials/hello-script.html`（内联脚本，类 `.hello-copy` / `.is-copied` / `.is-open`）、
+  `assets/js/hello.js`（类 `.hello-copy` / `.is-copied` / `.is-failed` / `.is-open`）、
   `assets/css/custom.css` 第 48 段（样式）。
   正文也能用：`layouts/shortcodes/mail-link.html` 调同一个 partial，
   当前挂在 `/about/` 的「写信」。脚本已从「只取第一个 `.hello`」改成遍历所有实例，
@@ -1230,7 +1233,7 @@ CSS 拿不到 location，只能由模板给。
 | `layouts/404.html` | 一级标题 + 「回首页 / 随便看一篇 / 看全部文章」三个出路 | 上游只有 `<h1>404</h1>` + 一行颜文字，没有任何出路。⚠️ 别加回「搜索」按钮：页面上没有搜索输入框了，全站搜索走 `⌘K` / `/` |
 | `layouts/_default/_markup/render-link.html` | `</a>` 后**不留换行**；外链按 `externalLinksNewTab` 开新窗口；指向 `.md` 文件的站内链接换成正式网址（2026-11-24），找不到时报 WARN | 上游末尾多一个换行，链接后紧跟中文标点时被折叠成空格（「花墨 ：点评」）。见下面「`render-link.html` 那个换行」 |
 | `layouts/_default/_markup/render-image.html` | 正文图片：`width` / `height`（读 `data/image-dims.json`）+ 加载前占位色 `--ph`（读 `data/image-colors.json`）+ `srcset` / `sizes`（400/720/1080，走 Cloudflare Image Resizing `/cdn-cgi/image/…`）+ 首图 `fetchpriority="high"`；放大用原生 Popover，放大图是 `--zoom-src` 背景；图注取标题（没写取 alt，都空不输出） | 上游只输出 `src` / `alt`，图片晚到时页面跳动（CLS）。srcset 实测省 47–71%（见 8.5）。⚠️ 必须配第 21 段 `img { height: auto }`，否则图被竖向拉伸；⚠️ 首图不能同时写 `loading="lazy"`；⚠️ 每张图 DOM 里只有一个 `<img>`，放大层别再重复渲染一个 |
-| `layouts/partials/nav.html` | 完全由 `[[menu.main]]` 驱动；当前页 `aria-current="page"`；右侧静态输出「搜索 /」与深浅色按钮（事件在 `palette.js`） | 上游把 `Home` / `Blog` 写死，和 `[menu]` 打架。⚠️ 当前页判断必须**精确相等** `$.RelPermalink`：按前缀会让每篇文章都点亮「文章」（它指向 `/archive/`，文章在 `/posts/…`）。⚠️ 当前项**只改颜色**，不加下划线（用户否掉）、不改字重（会改变导航折行位置） |
+| `layouts/partials/nav.html` | 完全由 `[[menu.main]]` 驱动；当前页 `aria-current="page"`；右侧静态输出「搜索 /」与深浅色按钮（事件在 `palette.js`） | 上游把 `Home` / `Blog` 写死，和 `[menu]` 打架。⚠️ 当前页判断必须**精确相等** `$.RelPermalink`：按前缀会让每篇文章都点亮「文章」（它指向 `/archive/`，文章在 `/posts/…`）。⚠️ 当前项用颜色 + `font-weight: 500` 区分，不加下划线 |
 | `layouts/partials/header.html` | 站名从 `<h1>` 降级成 `<p class="title">`，外观由 `custom.css` 第 00c 段补回 | 上游站名是 h1，文章标题也是 h1 → 每篇文章页两个 h1；现在全站 0 页有两个 h1（2026-11-23 实测）。⚠️ `<p>` 与 `<h1>` 默认样式差四处（color / font-size / font-weight / margin），少补哪条都看不出来但页面会变；验收是改前改后各截一张首页跑 `magick compare -metric AE` = 0 |
 | `layouts/partials/favicon.html` | 一条 `shortcut icon` 扩成五条（SVG / 512 / 192 / apple-touch / ico）+ `rel="manifest"`，href 一律 `relURL` | 上游只输出 `params.favicon` 一条（本站是 SVG），RSS 阅读器和图标聚合服务基本不吃 SVG，`/favicon.ico` 又不存在 → 订阅端退回字母头像，而站内一切正常、构建 0 警告（见 8.6）。manifest 让安卓「添加到主屏幕」有正确的图标和名字。⚠️ 别改回 `absURL`：镜像域名下会把请求拽回 hulatu.com |
 | `layouts/partials/footer.html` | 两行：第一行订阅 / 问候 / 隐私 / 开往 / 虫洞 / 地图，第二行制作署名、版权与授权；「问候」走 `partials/hello.html` | 上游版权和 Sitemap 挤一行、配置不出来。⚠️ 页脚不放随机入口和搜索入口（用户要求，见第 4 节「页脚」）；开往 / 虫洞只放页脚（官方要求的位置） |

@@ -1,0 +1,17 @@
+{{- /* 周刊标题渲染：把 `#N 胡拉图说 | 钩子` 拆成三段，编号用等宽 span，
+       让列表页所有标题的 `|` 垂直对齐（N 为 1 位或 2 位数都一样）。
+
+       用法：{{ partial "weekly-title.html" .Title }}，参数是纯文本标题。
+       ⚠️ 非周刊标题原样走 orphan-safe，行为不变。
+       ⚠️ 编号宽度的 CSS 在 custom.css 的 .wk-no 里，两处要一起改。
+       ⚠️ 不改 .Title 本身，所以 RSS / <title> / 结构化数据拿到的仍是干净文本。 */ -}}
+{{- $t := . -}}
+{{- $m := findRESubmatch `^#([0-9]+)\s+胡拉图说\s+\|\s+(.+)$` $t 1 -}}
+{{- if $m -}}
+  {{- $parts := index $m 0 -}}
+  {{- $no := printf "#%s" (index $parts 1) -}}
+  {{- $hook := index $parts 2 -}}
+  <span class="wk-no">{{ $no }}</span><span class="wk-brand">胡拉图说</span><span class="wk-sep">|</span><span class="wk-hook">{{ partial "orphan-safe.html" $hook }}</span>
+{{- else -}}
+  {{- partial "orphan-safe.html" $t -}}
+{{- end -}}

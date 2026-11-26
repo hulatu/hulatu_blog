@@ -40,7 +40,7 @@
     {{- range $items }}
     <li>
       <p class="feed-view-date"><time datetime="{{ .Date.Format "2006-01-02" }}">{{ .Date.Format (default "2006-01-02" site.Params.dateFormat) }}</time></p>
-      <p class="feed-view-title"><a href="{{ .RelPermalink }}">{{ partial "orphan-safe.html" .Title }}</a></p>
+      <p class="feed-view-title"><a href="{{ .RelPermalink }}">{{ partial "weekly-title.html" .Title }}</a></p>
       <p class="feed-view-summary">{{ .Summary | plainify | htmlUnescape }}</p>
     </li>
     {{- end }}

@@ -39,7 +39,7 @@
         {{- end -}}
       </time></i>
     </span>
-    <a href="{{ .RelPermalink }}">{{ partial "orphan-safe.html" .Title }}{{- if $desc }}{{ with .Description }}<span class="hl-post-desc">{{ . }}</span>{{ end }}{{- end }}</a>
+    <a href="{{ .RelPermalink }}">{{ partial "weekly-title.html" .Title }}{{- if $desc }}{{ with .Description }}<span class="hl-post-desc">{{ . }}</span>{{ end }}{{- end }}</a>
   </li>
   {{- else -}}
   <li>{{ $empty }}</li>

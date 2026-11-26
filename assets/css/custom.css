@@ -55,9 +55,12 @@
   「语义（aria-current）」和「样式」共用同一个钩子，少一处可能漂移的约定。
   ⚠️ **当前页悬停时仍然会出现下划线** —— 那是主题 `a:hover` 的规则，
   刻意不压：鼠标移上去没有任何反馈反而像坏了。
+  ⚠️ 2026-11-26：当前项字重从 400 提到 500，给颜色之外再加一层静态区分；
+  不要提到 600 / 700，导航项宽度和折行位置会明显变化。
   */
   header nav a[aria-current="page"] {
     color: var(--link-color);
+    font-weight: 500;
   }
 
   /*
@@ -1331,6 +1334,13 @@
   /* 复制成功那一瞬：文字变链接蓝。1.6 秒后 JS 把类名和文字一起撤回。 */
   .code-copy.is-done {
     color: var(--link-color);
+  }
+
+  /* 复制失败：保留在当前按钮内，不伪装成成功。错误状态会一直保留到下
+     一次复制点击；同时由全站 `.hl-toast` 的 role=status 播报。 */
+  .code-copy.is-failed {
+    color: var(--text-color-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
   }
 
   /* 触屏没有 hover —— **常显**，否则按钮永远不可见，而这个功能在手机上确实有用
@@ -2979,6 +2989,25 @@
   .hello-copy.is-copied .hello-done,
   .hello-copy.is-copied .hello-icon-check {
     opacity: 1;
+  }
+
+  /*
+  复制失败：复用叠加网格里的 `.hello-done`，把文案换成操作建议。
+  不显示勾选图标，避免把失败误画成成功；状态一直保留到下一次点击。
+  */
+  .hello-copy.is-failed {
+    background: var(--bg-color-primary);
+    box-shadow: inset 0 0 0 1px var(--border-color);
+    color: var(--text-color-primary);
+  }
+
+  .hello-copy.is-failed .hello-addr {
+    opacity: 0;
+  }
+
+  .hello-copy.is-failed .hello-done {
+    opacity: 1;
+    white-space: nowrap;
   }
 
   
@@ -5301,4 +5330,118 @@
     .hl-collage-wrap {
       display: none;
     }
+  }
+
+  /*
+  周刊导读卡片：31 期统一放在 frontmatter 之后、正文之前。
+  用站点变量取色，浅色 / 深色主题都能跟随；左侧强调线用链接色。
+  ⚠️ 注释只写在规则上方，不要插进选择器列表中间。
+  */
+  .weekly-brief {
+    margin: 1.6rem 0 2rem;
+    padding: 1rem 1.25rem;
+    border: 1px solid var(--border-color);
+    border-left: 3px solid var(--link-color);
+    border-radius: 8px;
+    background: var(--bg-color-secondary);
+  }
+
+  .weekly-brief-title {
+    margin: 0 0 0.6rem;
+    color: var(--text-color-primary);
+    font-size: 1.05rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+
+  .weekly-brief-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .weekly-brief-list li {
+    display: flex;
+    gap: 0.65rem;
+    padding: 0.25rem 0;
+    color: var(--text-color-primary);
+    font-size: 0.95rem;
+    line-height: 1.7;
+  }
+
+  .weekly-brief-label {
+    flex: 0 0 auto;
+    color: var(--text-color-secondary);
+    white-space: nowrap;
+  }
+
+  .weekly-brief-text {
+    color: var(--text-color-primary);
+  }
+
+  .weekly-brief-meta {
+    margin: 0.7rem 0 0;
+    color: var(--text-color-tertiary);
+    font-size: 0.86rem;
+  }
+
+  /* 窄屏让标签独占一行，避免标签和正文互相挤压。 */
+  @media (max-width: 480px) {
+    .weekly-brief-list li {
+      display: block;
+      padding: 0.35rem 0;
+    }
+
+    .weekly-brief-label {
+      display: block;
+      margin-bottom: 0.1rem;
+    }
+  }
+
+  /*
+  周刊文末订阅与往期精选：每期统一，正文原有的结尾段落保留在它上方。
+  上边框用虚线，和正文里的分隔线区分开。
+  */
+  .weekly-outro {
+    margin-top: 2rem;
+    padding-top: 1rem;
+    border-top: 1px dashed var(--border-color);
+    color: var(--text-color-secondary);
+    font-size: 0.9rem;
+    line-height: 1.75;
+  }
+
+  .weekly-outro-tip {
+    margin: 0 0 0.45rem;
+  }
+
+  .weekly-outro-more {
+    margin: 0;
+    color: var(--text-color-tertiary);
+    font-size: 0.86rem;
+  }
+
+  .weekly-outro a {
+    color: var(--link-color);
+  }
+
+  /*
+  周刊标题的编号段：列表页按 `|` 对齐。
+  tabular-nums 让数字等宽，min-width 让 #1 与 #31 占同样宽度。
+  ⚠️ 当前覆盖 1~2 位期号（#1~#99）；进入 3 位数时调大 min-width。
+  ⚠️ 类名由 partial weekly-title.html 输出，两处要一起改。
+  */
+  .wk-no {
+    display: inline-block;
+    min-width: 3.2ch;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .wk-brand {
+    margin-right: 0.45em;
+  }
+
+  .wk-sep {
+    margin-right: 0.45em;
+    color: var(--text-color-tertiary);
   }

@@ -20,7 +20,7 @@
 | 分类 | 8 个：思考 40 / 周刊 31 / 工具 22 / 记录 19 / 运动 13 / 学习科研 10 / 饮食 5 / 健康 4 |
 | 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
 | 根级独立页 | 15 个（`content/*.md`，不含首页 `_index.md`） |
-| 站点层 | `layouts/` 53 个文件 + `assets/js/` 8 个 + `assets/css/` 3 个 |
+| 站点层 | `layouts/` 55 个文件 + `assets/js/` 8 个 + `assets/css/` 3 个 |
 | 主题副本 | `themes/hugo-bearneo/` 27 个文件 |
 | 脚本 | `scripts/` 16 个；GitHub Actions 2 个 |
 | 301 | `static/_redirects` 17 条 |
@@ -266,10 +266,13 @@ gen-og.js                全量重画分享卡 → static/images/og/       ← 2
 ```bash
 new posts/我的新文章       # = bash scripts/new-post.sh posts/我的新文章
 new weekly/周刊-27
+hugo new content/posts/我的新文章.md   # 同效，建完也会自动打开
 ```
 
 `scripts/new-post.sh` 会套 `archetypes/` 模板（`draft: true`）、同名文件**不覆盖只打开**、然后用 `open` 走系统默认应用。
-⚠️ 命令 `new` 是 `~/.config/zsh/.zshrc` 里的一个函数（不在仓库里）—— 换机器要重新加一次；脚本本体在仓库里，可以直接 `bash scripts/new-post.sh …`。
+`hugo new …` 能自动打开，是因为 `~/.config/zsh/.zshrc` 里有一个同名 `hugo()` 包装函数：只拦截 `new` 子命令，建完解析出
+`Content "<路径>" created` 里的文件再 `open`；其余子命令（`hugo server`、`hugo --minify`）原样透传，`hugo new site` / `new theme` 不打开。
+⚠️ 命令 `new` 和 `hugo` 包装函数都在 `~/.config/zsh/.zshrc`（不在仓库里）—— 换机器要重新加一次；脚本本体在仓库里，可以直接 `bash scripts/new-post.sh …`。
 
 ### 边缘函数（Cloudflare Pages Functions）
 
@@ -427,7 +430,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | `check-links.sh` | ✅ 在用：构建后检查站内路径和页内锚点；`deploy.sh` 会调用，CI 也跑同一套 lychee 参数。未安装 lychee 时本地脚本提示并跳过 |
 | `check-html.sh` | ✅ 在用（2026-11-15 新增，**CI 已接入**）：查八类问题 —— 同页重复 id、同名 landmark、`<img>` 缺 alt、标题跳级、锚点 `aria-label` 全同、产物含 livereload/localhost、打印字号被屏幕 px 覆盖、文字/背景对比度低于 4.5。只依赖 python3，不需要 lychee。用法 `bash scripts/check-html.sh public`；不给目录就临时构建一份。⚠️ 本机若开着 `hugo server`，它会往 `public/` 注入 livereload 与 localhost，脚本会（正确地）报「产物污染」—— 验收请用 `./deploy.sh` 或临时目录构建。退出码 0=干净 / 1=有问题 / 2=环境问题。⚠️ 与 `check-links.sh` 分工不同：那个查「指向的东西存不存在」，这个查「结构本身对不对」，**别合并**（依赖面不一样） |
 | `gen-og.js` | ✅ 在用（2026-10-17 重写，2026-10-18 接入 `publish.sh`）：每篇文章一张 1200×630 分享卡 → `static/images/og/`。⚠️ 依赖 sharp，`publish.sh` 会自己找 `node` 与 `NODE_PATH`。**增量**：按每张卡的 SVG 原文算 sha1，记在 `resources/og-cache.json`（本机缓存，已 gitignore），标题 / 日期 / 版式都没变就跳过；改了版式会自动全部重画；`--force` 强制全量 |
-| `new-post.sh` | ✅ 在用：`new posts/xxx` 建文件 + 用系统默认应用打开。配套的 `new()` 函数在 `~/.config/zsh/.zshrc`，不在仓库里 |
+| `new-post.sh` | ✅ 在用：`new posts/xxx` 建文件 + 用系统默认应用打开；`hugo new …` 由 `.zshrc` 里的 `hugo()` 包装函数做到同样效果。两个函数都在 `~/.config/zsh/.zshrc`，不在仓库里 |
 | `backup-blog.sh` / `cleanup-junk.sh` / `_frontmatter.py` | ✅ 工具 |
 | `sync-status.py` | ✅ 2026-11-22 新增：把篇数 / 文件数 / sitemap / 体积写进本文第 0 节和 README「站点现状」的自动区块，并更新 README 徽章。`publish.sh` 发布前自动跑；`--check` 只检查，`--print` 只打印。构建统计读**上一次** `./deploy.sh` 的 `public/`，`hugo server` 的开发版产物会被识别并跳过 |
 | `sync-image-colors.py` | ✅ 2026-11-23 新增，`publish.sh` 在 `sync-image-dims.py` 之后自动跑：图床把每张图缩成 24×24 JPEG → macOS 自带 `sips` 转 BMP → 取平均色，写 `data/image-colors.json`。`render-image.html` 把它输出成 `--ph`，图片加载前的占位块就是这张图的主色（第 64 段）。只补缺的；`--all` 全部重算；不是 macOS 或断网就跳过 |
@@ -805,7 +808,7 @@ PY
 - 页脚两行：`通过 RSS 订阅，或直接 ✉️ 问候， 🔒 隐私. 🚇 开往. 🌀 虫洞. 🗺️ 网站地图.` / `基于 … 制作，版权所有 …，本站内容采用 CC BY-NC-SA 4.0 协议。`（2026-11-21 晚已去掉「🔍 搜索」入口）
   ⚠️ **RSS 前面不要图标**；其余入口保留 emoji。顺序固定为 隐私 → 搜索 → 开往 → 虫洞 → 网站地图。分隔符统一 `.`，`·` 为 0 个。
   哨兵：`<footer>` 里 `<br>` 恰好 **1 个**、`go.html` 恰好 **2 次**（开往 + 虫洞）、`·` **0 次**
-  ⚠️「打个招呼」是悬停胶囊：**触发词仍是 `mailto:` 链接**（`.hello-link`），悬停 / 键盘聚焦浮出 `.hello-card`，点 `.hello-copy` 复制并显示「已复制」，1.6 秒复原；触屏（`hover: none`）改为点触发词开合胶囊。**卡片里只有邮箱 + 复制图标** —— 没有「邮箱」标签、提示行、mailto 入口或小三角（用户同日明确要求），别再加回去。三件套：`partials/hello.html` + `assets/js/hello.js` + `custom.css` 第 48 段，改名要三处同改（`.is-copied` / `.is-open` 也是契约）。⚠️ `/about/` 的「写信」也用它（`shortcodes/mail-link.html`）；脚本遍历页面上所有 `.hello`，正文卡片用第 52 段左对齐，避免窄屏溢出
+  ⚠️「打个招呼」是悬停胶囊：**触发词仍是 `mailto:` 链接**（`.hello-link`），悬停 / 键盘聚焦浮出 `.hello-card`，点 `.hello-copy` 复制并显示「已复制」，1.6 秒复原；失败时显示「复制失败，请手动选中」并通过 `.hl-toast` 的 `role=status` 播报；触屏（`hover: none`）改为点触发词开合胶囊。**卡片里只有邮箱 + 复制图标** —— 没有「邮箱」标签、提示行、mailto 入口或小三角（用户同日明确要求），别再加回去。三件套：`partials/hello.html` + `assets/js/hello.js` + `custom.css` 第 48 段，改名要三处同改（`.is-copied` / `.is-failed` / `.is-open` 也是契约）。⚠️ `/about/` 的「写信」也用它（`shortcodes/mail-link.html`）；脚本遍历页面上所有 `.hello`，正文卡片用第 52 段左对齐，避免窄屏溢出
 - 文章页：`<h1>`、日期行、标签行、**文末三选一：系列坐标带（23 篇连载）→ 相关文章 → 上一篇/下一篇（兜底，目前 0 篇）**、TOC、评论区
   ⚠️ **「上一篇」= 更早、「下一篇」= 更晚**；两段相邻时只画一条发丝线；最新一篇没有「下一篇」、最早一篇没有「上一篇」（留不可见空槽，正常）
   ⚠️ 含代码的文章代码块必须「浅灰底 + 深字」（浅色）—— 大片文字发白就是 `noClasses` 被改回 `true`，跑第 5 条 f) 哨兵

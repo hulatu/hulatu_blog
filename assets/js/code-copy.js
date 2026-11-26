@@ -19,19 +19,19 @@
  *    但若有人从 file:// 打开或用了 http 域名，clipboard 就是 undefined）。
  */
 (function () {
-  function copyText(text, onDone) {
+  function copyText(text, onDone, onFail) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(onDone, function () {
-        legacy(text, onDone);
+        legacy(text, onDone, onFail);
       });
       return;
     }
-    legacy(text, onDone);
+    legacy(text, onDone, onFail);
   }
 
   /* 老办法：临时 textarea + execCommand。已废弃但在所有浏览器里还能用，
      是 clipboard API 失败时唯一的选择。 */
-  function legacy(text, onDone) {
+  function legacy(text, onDone, onFail) {
     var ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
@@ -40,13 +40,22 @@
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
+    var copied = false;
     try {
-      document.execCommand('copy');
-      onDone();
-    } catch (e) {
-      /* 静默失败：不弹 alert。按钮文字不变，用户自然知道没成功。 */
-    }
+      copied = document.execCommand('copy') === true;
+    } catch (e) {}
     document.body.removeChild(ta);
+    if (copied) onDone();
+    else onFail();
+  }
+
+  function announce(text) {
+    if (typeof window.hlAnnounce === 'function') {
+      window.hlAnnounce(text);
+      return;
+    }
+    var status = document.getElementById('hlCmdStatus');
+    if (status) status.textContent = text;
   }
 
   /* 代码块开了行号（```js {linenos=true}）时，改成逐行取 `.cl`，跳过行号 `.ln`。
@@ -99,6 +108,11 @@
 
       var timer = null;
       btn.addEventListener('click', function () {
+        if (timer) clearTimeout(timer);
+        timer = null;
+        btn.classList.remove('is-done', 'is-failed');
+        btn.textContent = '复制';
+        btn.setAttribute('aria-label', '复制这段代码');
         copyText(codeText(pre), function () {
           btn.textContent = '已复制';
           /* aria-label 必须跟着文字一起换。
@@ -110,10 +124,16 @@
           btn.classList.add('is-done');
           if (timer) clearTimeout(timer);
           timer = setTimeout(function () {
+            timer = null;
             btn.textContent = '复制';
             btn.setAttribute('aria-label', '复制这段代码');
             btn.classList.remove('is-done');
           }, 1600);
+        }, function () {
+          btn.textContent = '复制失败，请手动选中';
+          btn.setAttribute('aria-label', '复制失败，请手动选中代码');
+          btn.classList.add('is-failed');
+          announce('复制失败，请手动选中代码');
         });
       });
 

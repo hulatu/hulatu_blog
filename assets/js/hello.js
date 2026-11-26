@@ -15,18 +15,18 @@
 
   var canHover = !window.matchMedia || window.matchMedia('(hover: hover)').matches;
 
-  function copyText(text, onDone) {
+  function copyText(text, onDone, onFail) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(onDone, function () {
-        legacy(text, onDone);
+        legacy(text, onDone, onFail);
       });
       return;
     }
-    legacy(text, onDone);
+    legacy(text, onDone, onFail);
   }
 
   /* 老办法：临时 textarea + execCommand。clipboard API 不可用时的唯一退路。 */
-  function legacy(text, onDone) {
+  function legacy(text, onDone, onFail) {
     var ta = document.createElement('textarea');
     ta.value = text;
     ta.setAttribute('readonly', '');
@@ -35,13 +35,22 @@
     ta.style.opacity = '0';
     document.body.appendChild(ta);
     ta.select();
+    var copied = false;
     try {
-      document.execCommand('copy');
-      onDone();
-    } catch (e) {
-      /* 静默失败：卡片保持原样，用户自然知道没复制上。 */
-    }
+      copied = document.execCommand('copy') === true;
+    } catch (e) {}
     document.body.removeChild(ta);
+    if (copied) onDone();
+    else onFail();
+  }
+
+  function announce(text) {
+    if (typeof window.hlAnnounce === 'function') {
+      window.hlAnnounce(text);
+      return;
+    }
+    var status = document.getElementById('hlCmdStatus');
+    if (status) status.textContent = text;
   }
 
   Array.prototype.forEach.call(nodes, function (wrap) {
@@ -51,20 +60,41 @@
 
     var email = chip.getAttribute('data-email') || '';
     var timer = null;
+    var done = chip.querySelector('.hello-done');
+
+    function resetChip() {
+      chip.classList.remove('is-copied', 'is-failed');
+      chip.setAttribute('aria-label', '复制邮箱地址 ' + email);
+      if (done) done.textContent = '已复制';
+    }
 
     function showDone() {
+      if (timer) clearTimeout(timer);
+      chip.classList.remove('is-failed');
       chip.classList.add('is-copied');
       chip.setAttribute('aria-label', '已复制');
-      if (timer) clearTimeout(timer);
       timer = setTimeout(function () {
-        chip.classList.remove('is-copied');
-        chip.setAttribute('aria-label', '复制邮箱地址 ' + email);
+        timer = null;
+        resetChip();
       }, 1600);
+    }
+
+    function showFailed() {
+      if (timer) clearTimeout(timer);
+      timer = null;
+      chip.classList.remove('is-copied');
+      chip.classList.add('is-failed');
+      chip.setAttribute('aria-label', '复制失败，请手动选中邮箱地址');
+      if (done) done.textContent = '复制失败，请手动选中';
+      announce('复制失败，请手动选中邮箱地址');
     }
 
     chip.addEventListener('click', function (e) {
       e.preventDefault();
-      copyText(email, showDone);
+      if (timer) clearTimeout(timer);
+      timer = null;
+      chip.classList.remove('is-copied', 'is-failed');
+      copyText(email, showDone, showFailed);
     });
 
     if (!canHover) {

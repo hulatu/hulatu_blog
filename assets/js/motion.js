@@ -63,6 +63,10 @@
     toastTimer = setTimeout(function () { toast.classList.remove('is-on'); }, 1600);
   }
 
+  /* 其他复制脚本复用同一个 role=status 区域；不能只改按钮文字，
+     否则读屏不一定重新播报失败结果。 */
+  window.hlAnnounce = showToast;
+
   function copyText(text) {
     if (navigator.clipboard && navigator.clipboard.writeText) {
       return navigator.clipboard.writeText(text);
@@ -267,7 +271,7 @@
     function renderSound() {
       if (!soundBtn) return;
       soundBtn.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
-      soundBtn.setAttribute('aria-label', soundOn ? '关闭相册音效' : '开启相册音效');
+      soundBtn.setAttribute('aria-label', '相册音效');
       if (soundLabel) soundLabel.textContent = soundOn ? '音效 开' : '音效 关';
     }
 
