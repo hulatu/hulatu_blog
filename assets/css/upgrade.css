@@ -188,6 +188,9 @@ blockquote {
 
 .hl-cmd-results {
   max-height: 320px;
+  /* 只纵向滚动：结果项 width:100% + 左右 padding 曾把列表撑宽 12px（320px 实测
+     298 vs 286），手机上会出现左右滚动。横向直接关掉，标题靠下面的规则换行。 */
+  overflow-x: hidden;
   overflow-y: auto;
   list-style: none;
   padding: 8px;
@@ -202,6 +205,9 @@ blockquote {
   justify-content: space-between;
   gap: 12px;
   width: 100%;
+  /* 主题没有全局 border-box：width:100% + 左右 padding 会让每一项比列表宽 20px。 */
+  box-sizing: border-box;
+  min-width: 0;
   padding: 9px 10px;
   border-radius: 6px;
   border: none;
@@ -211,6 +217,12 @@ blockquote {
   font-size: 14px;
   cursor: pointer;
   text-decoration: none;
+}
+
+/* 标题在右侧分类徽章之前换行；长英文/URL 也不能把列表撑出横向滚动。 */
+.hl-cmd-item > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* 去掉 :hover —— 悬停由 palette.js 的 pointermove 同步成 .selected，
