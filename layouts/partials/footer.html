@@ -6,7 +6,8 @@
      写成 &copy; 会原样显示成六个字符。CC 那段走 copyrightNote / licenseName /
      licenseURL 三个参数，Markdown 链接不生效。
   ⚠️ 隐私链接挂在 hideSitemap 开关里；关掉 Sitemap 会连它一起关。
-  ⚠️ 分隔符一律用 `.`，不用 `·`；每块自带结尾 <br />，搬动时别丢。
+  ⚠️ 第一行是一条用「 · 」分隔的列表（2026-11-26）；分隔符前的 &nbsp; 把点绑在上一项，
+     换行只发生在点后，行首不会出现间隔号；每块自带结尾 <br />，搬动时别丢。
   ⚠️ 开往 / 虫洞只放页脚，别挪进导航或正文。
   ⚠️ 2026-11-23：第一行的 emoji 一律包 `<span aria-hidden="true">`，读屏不会念成「锁」「地铁」；
      新加图标照这个写法。
@@ -24,15 +25,22 @@
 {{ $showMade := ne .Site.Params.Footer.hideMadeWithLine true }}
 {{ $showCopyright := ne .Site.Params.Footer.hideCopyright true }}
 {{ if or $showRSS $showHello $showMeta }}
-  {{- if and $showRSS $showHello -}}
-通过 <a href="/index.xml">RSS</a> 订阅，或直接 <span aria-hidden="true">✉️</span> {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
-  {{- else if $showRSS -}}
-通过 <a href="/index.xml">RSS</a> 订阅。
-  {{- else if $showHello -}}
-直接 <span aria-hidden="true">✉️</span> {{ partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email) }}，
-  {{- end }}
-  {{- if $showMeta }} <span aria-hidden="true">🔒</span> <a href="/privacy/">隐私</a>.{{ end }} <span aria-hidden="true">🚇</span> <a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>. <span aria-hidden="true">🌀</span> <a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>.
-  {{- if $showMeta }} <span aria-hidden="true">🗺️</span> <a href="{{ "map/" | relURL }}">地图</a>.{{ end }}
+  {{- $items := slice -}}
+  {{- if $showRSS -}}
+    {{- $items = $items | append (printf `通过 <a href="%s">RSS</a> 订阅` ("index.xml" | relURL)) -}}
+  {{- end -}}
+  {{- if $showHello -}}
+    {{- $items = $items | append (printf `<span aria-hidden="true">✉️</span>&nbsp;%s` (partial "hello.html" (dict "text" "问候" "email" .Site.Params.Author.email))) -}}
+  {{- end -}}
+  {{- if $showMeta -}}
+    {{- $items = $items | append `<span aria-hidden="true">🔒</span>&nbsp;<a href="/privacy/">隐私</a>` -}}
+  {{- end -}}
+  {{- $items = $items | append `<span aria-hidden="true">🚇</span>&nbsp;<a href="https://www.travellings.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机进入一个博客">开往</a>` -}}
+  {{- $items = $items | append `<span aria-hidden="true">🌀</span>&nbsp;<a href="https://www.foreverblog.cn/go.html" target="_blank" rel="noopener noreferrer" title="随机访问十年之约成员博客">虫洞</a>` -}}
+  {{- if $showMeta -}}
+    {{- $items = $items | append (printf `<span aria-hidden="true">🗺️</span>&nbsp;<a href="%s">地图</a>` ("map/" | relURL)) -}}
+  {{- end -}}
+  {{- delimit $items `&nbsp;<span aria-hidden="true">·</span> ` | safeHTML -}}
 <br />
 {{ end }}
 
