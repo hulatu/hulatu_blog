@@ -27,11 +27,11 @@
 | 产出 HTML | 408 个 |
 | sitemap | 164 条 |
 | 标签词条页 | 235 个（`noindex`） |
-| CSS | `/css/main.min.*.css` 64.3 KB，gzip 13.3 KB |
-| 全站 JS | `/js/site.min.*.js` 18.3 KB，gzip 6.4 KB |
-| 搜索索引 | `/index.json` 139.6 KB，gzip 61.8 KB |
-| 文章页 HTML | 中位数 24.8 KB，gzip 9.2 KB |
-| 首页 HTML | 11.3 KB，gzip 4.7 KB |
+| CSS | `/css/main.min.*.css` 75.1 KB，gzip 15.4 KB |
+| 全站 JS | `/js/site.min.*.js` 22.4 KB，gzip 7.8 KB |
+| 搜索索引 | `/index.json` 141.7 KB，gzip 62.4 KB |
+| 文章页 HTML | 中位数 25.2 KB，gzip 9.4 KB |
+| 首页 HTML | 11.5 KB，gzip 4.7 KB |
 <!-- status:end -->
 
 | 项 | 值 |

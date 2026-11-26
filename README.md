@@ -276,7 +276,7 @@ feed 本身是**纯 XML**（顶部没有 `<?xml-stylesheet?>`）。浏览器直�
 | 系列 | 3 组 23 篇：跑步 14 / 综述写作 5 / 居家流水账 4 |
 | 产出 HTML | 408 个 |
 | sitemap | 164 条 |
-| 文章页 HTML | 中位数 24.8 KB，gzip 9.2 KB |
+| 文章页 HTML | 中位数 25.2 KB，gzip 9.4 KB |
 <!-- status:end -->
 
 - 每页都有 JSON-LD（首页 `WebSite` / 文章页 `BlogPosting` / 独立页与 404 `WebPage` /
