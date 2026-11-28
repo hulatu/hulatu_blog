@@ -97,10 +97,9 @@
   ⚠️ 按钮仍跟在导航链接后面（partials/nav.html）。同日试过「站名 + 按钮一行、导航一行」
      的两行页头，用户要求恢复原布局 —— 别再把按钮挪到站名行。
   */
-  /* 2026-11-28：页头工具按钮去掉外层边框；搜索是「⌘K /」键位在左 + 放大镜在右，
-     触屏与 ≤480px 隐藏键位、只留放大镜；深浅色是图标。
+  /* 2026-11-28：页头工具按钮改为无边框图标；搜索是单个放大镜，深浅色是月亮 / 太阳。
      下面的触控命中区规则仍然适用。
-     ≤480px 工具栏常折到第二行，用 margin-left:auto 靠右，避免按钮孤零零挂在左边。 */
+     ≤480px 工具栏常折到第二行，用 margin-left:auto 靠右，避免两个图标孤零零挂在左边。 */
   @media (max-width: 480px) {
     header .hl-toolbar {
       margin-left: auto;
@@ -5445,7 +5444,8 @@
 
   .weekly-brief-list li {
     display: flex;
-    gap: 0.65rem;
+    /* 2026-11-28：标签已以全角冒号收尾，冒号后不再留 flex 间距。 */
+    gap: 0;
     padding: 0.25rem 0;
     color: var(--text-color-primary);
     font-size: 0.95rem;
@@ -5460,18 +5460,6 @@
 
   .weekly-brief-text {
     color: var(--text-color-primary);
-  }
-
-  /* 2026-11-27：周刊文末来信引导（从导读卡移到文末）。 */
-  .weekly-letter {
-    margin: 2rem 0 0;
-    color: var(--text-color-tertiary);
-    font-size: 0.9rem;
-    line-height: 1.7;
-  }
-
-  .weekly-letter a {
-    color: var(--link-color);
   }
 
   /* 窄屏让标签独占一行，避免标签和正文互相挤压。 */

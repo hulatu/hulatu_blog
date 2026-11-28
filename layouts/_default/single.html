@@ -219,11 +219,8 @@
 {{- /* 不要再加作者卡片或文末「本文信息」块。 */ -}}
 {{- end }}
 
-{{- /* 周刊来信引导（2026-11-27 从导读卡移到文末）：只挂周刊。
-       复用 partials/hello.html 的邮箱浮层；mailto 主题固定「周刊来信」。 */ -}}
-{{- if and $longForm (eq .Type "weekly") }}
-<p class="weekly-letter">欢迎来信聊聊你最近思考的东西和小发现。 {{ partial "hello.html" (dict "text" "写信给我" "email" site.Params.Author.email "subject" "周刊来信") }}</p>
-{{- end }}
+{{- /* 周刊来信引导已在各期正文末尾的 .weekly-outro 里（2026-11-28 合并），
+       不再由模板单独输出。 */ -}}
 
 {{- /* 评论区只给长文页，尊重单篇 comments: false。 */ -}}
 {{- if and site.Params.giscus.repo $longForm (ne .Params.comments false) }}

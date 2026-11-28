@@ -125,37 +125,6 @@ blockquote {
   background: var(--hl-bg-subtle);
 }
 
-/* 2026-11-28：搜索按钮 = 键位提示（⌘K / /）在左 + 放大镜在右，只去掉外层边框。
-   桌面显示键位，触屏与 ≤480px 隐藏键位，只留放大镜，保证手机页头一行。 */
-.hl-search-btn {
-  width: auto;
-  gap: 6px;
-  padding: 0 7px;
-}
-
-.hl-search-keys {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-}
-
-.hl-search-btn .hl-kbd {
-  background: var(--hl-bg);
-  color: var(--hl-mute);
-  line-height: 1.5;
-}
-
-@media (hover: none) and (pointer: coarse), (max-width: 480px) {
-  .hl-search-btn {
-    width: 28px;
-    padding: 0;
-  }
-
-  .hl-search-keys {
-    display: none;
-  }
-}
-
 .hl-kbd {
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
   font-size: 11px;
