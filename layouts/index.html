@@ -1,10 +1,10 @@
 {{- /* 首页：正文（不包 <content>）→ 最近更新 → 最新一期周刊。
        文案在 content/_index.md；条数由 params.homeRecentCount 控制。
-       ⚠️ 不要包 <content>：否则首页简介会吃正文行高 1.5，且「嗨！」贴住导航。
+       ⚠️ 不要包 <content>：否则首页简介会吃正文行高 1.8，且「嗨！」贴住导航。
        ⚠️ 标题用中文「最近更新：」；列表后不加「查看全部」尾巴。 */ -}}
 {{ define "title" }}{{ .Site.Title }}{{ end }}
 {{ define "main" }}
-{{- /* ⚠️ 首页正文不包 <content>：走 body 的 1.5 行高，且保留「嗨！」的上间距。 */ -}}
+{{- /* ⚠️ 首页正文不包 <content>：走 body 的 1.5 行高（正文是 1.8），且保留「嗨！」的上间距。 */ -}}
 {{ .Content }}
 {{- $n := .Site.Params.homeRecentCount | default 5 }}
 {{- if gt $n 0 }}
@@ -13,8 +13,8 @@
 <hr>
 {{- /* ⚠️ 标题必须是 h2（与正文 h1 连续），且必须带 .recent-posts-head；
        字号由 custom.css 第 33 段钉回 1.17em。删类名会大一号。 */ -}}
-{{- /* 精选入口：与「最近更新」同一行右侧。数据源只有 data/featured.yaml，
-       首页不再依赖 featured 参数。 */ -}}
+{{- /* 2026-11-28：精选入口加回，与「最近更新」同一行右侧。
+       数据源仍只有 data/featured.yaml，首页不依赖 featured 参数。 */ -}}
 <div class="recent-posts-head-row">
   <h2 class="recent-posts-head">最近更新：</h2>
   <p class="featured-entry"><a href="{{ "featured/" | relURL }}">精选文章</a></p>

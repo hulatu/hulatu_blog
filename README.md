@@ -50,7 +50,7 @@
 | --- | --- |
 | 🌐 **线上地址** | <https://hulatu.com/> |
 | 🧱 **框架** | [Hugo](https://gohugo.io/) `0.170.0`（0.170 起无 extended 版） |
-| 🎨 **主题** | 上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo) 的副本（只有 `style.html` 四处登记改动：正文行高 1.5、visited 与 link 同色、删掉未启用的 upvote CSS、深色改用 `[data-theme]`；其余逐字节未改。生效副本是 `assets/css/theme.css`） |
+| 🎨 **主题** | 上游 [hugo-bearneo](https://github.com/rokcso/hugo-bearneo) 的副本（只有 `style.html` 六处登记改动：正文行高 1.8、列宽 680、代码块圆角 12、visited 与 link 同色、删掉未启用的 upvote CSS、深色改用 `[data-theme]`；其余逐字节未改。生效副本是 `assets/css/theme.css`） |
 | ☁️ **托管** | Cloudflare Pages（Git 集成，push 即自动构建） |
 | 💬 **评论** | giscus（GitHub Discussions，只挂长文页） |
 | 📊 **统计** | GoatCounter（无 Cookie） |
@@ -78,7 +78,7 @@
 
 | | 做法 | 为什么 |
 | --- | --- | --- |
-| 🌗 深浅色 | 默认跟随系统，右上角 `☾/☀` 可手动切换（点击处圆形绽开、图标转一圈），选择存 LocalStorage | 2026-11-21 升级包要求；只记一个键 `hl-theme`。动效 2026-11-22 加，参考 directoryyy.com，Firefox / 关闭动效时退回 0.3s 颜色过渡 |
+| 🌗 深浅色 | 默认跟随系统，右上角月亮 / 太阳图标可手动切换（点击处圆形绽开、图标转一圈），选择存 LocalStorage | 2026-11-21 升级包要求；只记一个键 `hl-theme`。动效 2026-11-22 加，参考 directoryyy.com，Firefox / 关闭动效时退回 0.3s 颜色过渡 |
 | 🔍 搜索 | 全站 `⌘K` / `/` 命令面板；`/archive/` 顶部搜索框 2026-11-21 已彻底删除 | 面板读 `/index.json`（标题 / 章节 / 关键词 / 引用）；归档只留计数与随机入口 |
 | 📖 目录 | **>1200px** 右侧悬浮（平时隐形、悬停显形）；**≤1200px** 正文顶部折叠（原生 `<details>`） | 手机端折叠目录 2026-11-02 删过，2026-11-15 恢复 |
 | 🖼 图片放大 | **原生 Popover**（`button[popovertarget]`）+ `--zoom-src` 背景图，零 JS | 每张图在 DOM 里只占 1 个节点，Esc / 顶层显示由浏览器原生负责；有 View Transitions 时从原图位置长出来 |
@@ -167,7 +167,7 @@ Blog/
 | 👤 | 关于页 | `content/about.md`（纯 Markdown，**没有头像**） |
 | 🎨 | **颜色 / 字体 / 宽度 / 圆角** | `themes/hugo-bearneo/layouts/partials/style.html` 的 `:root`（改上游，改完在 DESIGN.md 第 5 节登记） |
 | 📝 | 正文排版（标题间距 / 中文字体） | `assets/css/custom.css` 第 02 段 |
-| 🍞 | 面包屑 | `layouts/partials/breadcrumbs.html` + `custom.css` 第 13 段 |
+| 🍞 | 文末分类 / 标签行 | `_default/single.html` + `custom.css` 第 13 段（面包屑已移除，只保留 BreadcrumbList JSON-LD） |
 | 👁 | 独立页是否显示标题 | front matter 的 `hideTitle: true`（仅联系页开着；`/roll/` `/about/` 已恢复标题） |
 | 📚 | 文末推荐（系列 / 相关文章 / 上一篇下一篇，三选一只显示一块） | `_default/single.html` + `custom.css` 第 09 / 10 段 |
 | 🗂 | 「系列」入口 / 总览页 | 入口 `_default/archive.html`；总览页 `_default/series.html` + `content/series.md` |
@@ -200,8 +200,8 @@ hugo new content/posts/文章名.md      # 同效，建完也会自动打开
 | `date` | 决定 URL（`/posts/年/月/日/slug/`） |
 | `slug` | 决定 URL 最后一段 |
 | `series` | **在用**：文章页「系列坐标带」+ `/archive/` 入口 + `/series/` 总览都读它（一篇只能属于一个系列） |
-| `tags` | 标签行 + 归档页标签云 |
-| `categories` | 文章面包屑的第三段 + `/categories/<词>/` 词条页。周刊也写 `["周刊"]`（词条页要用），只是面包屑模板对周刊跳过这一段（分类名与栏目名重复） |
+| `tags` | 分类 / 标签行 + 归档页标签云 |
+| `categories` | 文末分类行（「分类：」前缀）+ `/categories/<词>/` 词条页。周刊也写 `["周刊"]`（词条页要用），只是文末分类行对周刊跳过（分类名与栏目名重复） |
 
 **提示框**：引用块第一行写 `[!NOTE]` / `[!TIP]` / `[!IMPORTANT]` / `[!WARNING]` / `[!CAUTION]`，类型后面可以跟自定义标题（`> [!WARNING] 先看这里`）。不写就是普通引用。样例见 `/style/`。
 

@@ -55,8 +55,8 @@
       {{- range $cands -}}
         {{- $parts = $parts | append (printf "%s %dw" (printf $fmtW . $path) .) -}}
       {{- end -}}
-      {{- $srcsetAttr = printf ` srcset="%s" sizes="(max-width: 760px) calc(100vw - 40px), 680px"` (delimit $parts ", ") | safeHTMLAttr -}}
-      {{- /* src 取最大可用档；内容区 680px，DPR2 由浏览器选 1080。 */ -}}
+      {{- $srcsetAttr = printf ` srcset="%s" sizes="(max-width: 720px) calc(100vw - 40px), 680px"` (delimit $parts ", ") | safeHTMLAttr -}}
+      {{- /* src 取最大可用档；内容区 680px（2026-11-27 由 720 收到 680），DPR2 由浏览器选 1080。 */ -}}
       {{- $src = printf $fmtW (index $cands (sub (len $cands) 1)) $path -}}
     {{- else if eq (len $cands) 1 -}}
       {{- /* 防御分支：候选表只剩一档时兜底。 */ -}}

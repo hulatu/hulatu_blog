@@ -1,7 +1,9 @@
 <style>
     /* light theme */
     :root {
-        --width-max: 720px;
+        /* ⚠️ 本站改过：上游 720px。2026-11-27 按少数派阅读页收到 680px
+           （正文列 680 + body 左右各 20 = 外层 720），17px 下每行约 40 个汉字。 */
+        --width-max: 680px;
         --font-primary: Verdana, sans-serif;
         --font-secondary: monospace;
         --font-size-primary: 1em;
@@ -100,10 +102,10 @@
     }
 
     content {
-        /* ⚠️ 本站改过：上游是 1.6 → 2026-10-14 改成 1.8 → 2026-11-21 收到 1.7 → 同日定在 1.5。
-           中文是方块字、没有 x-height，太紧会挤；但用户实测 1.6 仍偏松，
-           1.5（18px × 1.5 = 27px）在可读性与紧凑度之间。 */
-        line-height: 1.5;
+        /* ⚠️ 本站改过：上游是 1.6 → 2026-10-14 改成 1.8 → 2026-11-21 收到 1.5
+           → 2026-11-27 按少数派阅读页回到 1.8（17px × 1.8 = 30.6px）。
+           用户以 sspai.com 的观感为准；段距同步改成 32px，与行盒接近。 */
+        line-height: 1.8;
     }
 
     content ul,
@@ -192,7 +194,8 @@
     }
 
     div.highlight pre {
-        border-radius: 4px;
+        /* ⚠️ 本站改过：上游 4px。2026-11-27 统一到「代码块 / 引用框 / 大浮层 12px」。 */
+        border-radius: 12px;
     }
 
     div.highlight code {

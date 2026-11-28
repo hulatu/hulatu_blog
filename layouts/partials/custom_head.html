@@ -74,7 +74,7 @@
        ⚠️ 主题初值仍由上面那段内联脚本设置（必须同步执行，否则深色闪白）。 */ -}}
 {{- $siteJS := slice (resources.Get "js/palette.js") (resources.Get "js/hello.js") (resources.Get "js/toc.js") (resources.Get "js/motion.js") | resources.Concat "js/site.js" | minify | fingerprint -}}
 <script src="{{ $siteJS.RelPermalink }}" integrity="{{ $siteJS.Data.Integrity }}" crossorigin="anonymous" defer></script>
-{{- /* 没有 JS 时，页头的「搜索 / 深浅色」按钮点了没反应，直接藏掉。 */ -}}
+{{- /* 没有 JS 时，页头的搜索 / 深浅色图标按钮点了没反应，直接藏掉。 */ -}}
 <noscript><style>.hl-toolbar{display:none}</style></noscript>
 
 {{- /* GoatCounter：空闲 / 首次滚动 / 首次指针按下才加载，并跳过预渲染页面。 */ -}}

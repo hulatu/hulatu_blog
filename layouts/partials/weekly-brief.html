@@ -5,8 +5,8 @@
            use:     "🛠 本周在用的一句话"
            read:    "🔗 值得一读的一句话"
            idea:    "💭 一句话想法（可省略）"
-       四个 key 固定、顺序固定；空值整行不输出。阅读时间由 single.html
-       按汉字 400 字/分、英文 200 词/分自动算出传进来，不用手填。
+       四个 key 固定、顺序固定；空值整行不输出。阅读时间只在 byline 显示，
+       不再放进卡片；来信引导在周刊文末（single.html）。
        ⚠️ 样式在 custom.css 的 .weekly-brief 系列，别在正文里手写 HTML。 */ -}}
 {{- $brief := .brief -}}
 {{- $items := slice -}}
@@ -22,6 +22,5 @@
     <li><span class="weekly-brief-label">{{ .emoji }} {{ .label }}</span><span class="weekly-brief-text">{{ .text }}</span></li>
   {{- end }}
   </ul>
-  <p class="weekly-brief-meta">⏱ 阅读时间：约 {{ .minutes }} 分钟</p>
 </div>
 {{- end }}

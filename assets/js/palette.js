@@ -253,7 +253,7 @@
     });
   }
 
-  /* 「搜索 /」与「深浅色」按钮：2026-11-22 起由 layouts/partials/nav.html 直接输出。
+  /* 搜索与深浅色按钮：2026-11-22 起由 layouts/partials/nav.html 直接输出。
      本文件改成外链 defer 之后，首访要等它下载完才执行；如果还由这里动态插入，
      读者会先看到没有按钮的页头，再看着它被撑宽一截。现在这里只绑定事件，
      找不到静态按钮时（比如 nav.html 被换掉）才退回原来的动态插入。 */
@@ -265,8 +265,8 @@
        图标 HTML 与 nav.html 保持一致，改图标时两处同步。
        CSS 第 59 段按 data-theme 决定显示哪个，这里无需判断 theme。 */
     bar.innerHTML =
-      '<button type="button" class="hl-ctrl-btn" id="hlOpenCmdBtn" aria-label="站内搜索">搜索 <span class="hl-kbd">/</span></button>' +
-      '<button type="button" class="hl-ctrl-btn" id="hlThemeBtn" aria-label="切换深浅色模式"><span id="hlThemeIcon"><svg class="hl-theme-svg hl-i-moon" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="hl-theme-svg hl-i-sun" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></button>';
+      '<button type="button" class="hl-ctrl-btn hl-search-btn" id="hlOpenCmdBtn" aria-label="站内搜索" title="站内搜索（/ 或 ⌘K）" aria-keyshortcuts="Meta+K Control+K /"><span class="hl-search-keys" aria-hidden="true"><span class="hl-kbd">⌘K</span><span class="hl-kbd">/</span></span><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.35-4.35"/></svg></button>' +
+      '<button type="button" class="hl-ctrl-btn" id="hlThemeBtn" aria-label="切换深浅色模式" title="切换深浅色模式"><span id="hlThemeIcon"><svg class="hl-theme-svg hl-i-moon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg><svg class="hl-theme-svg hl-i-sun" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></span></button>';
     nav.appendChild(bar);
   }
   var openCmdBtn = document.getElementById('hlOpenCmdBtn');

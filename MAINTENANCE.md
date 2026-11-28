@@ -37,7 +37,7 @@
 | 项 | 值 |
 | --- | --- |
 | Hugo | `0.170.0`（本机 / GitHub Actions / Cloudflare 三边一致；**0.170 起没有 extended 版了**，别再装 `Hugo.Hugo.Extended`） |
-| 主题 | `themes/hugo-bearneo/`；`style.html` 是 `assets/css/theme.css` 的镜像，有 **4 处登记改动**（正文行高 1.5、visited 与 link 同色、删除未启用的 upvote CSS、深色改用 `[data-theme]`），其余逐字节未改（`diff -r` 验过） |
+| 主题 | `themes/hugo-bearneo/`；`style.html` 是 `assets/css/theme.css` 的镜像，有 **6 处登记改动**（正文行高 1.8、列宽 680、代码块圆角 12、visited 与 link 同色、删除未启用的 upvote CSS、深色改用 `[data-theme]`），其余逐字节未改（`diff -r` 验过） |
 | 代码高亮 | `[markup.highlight] noClasses = false`（**必须是 false**）+ 站点层第 12 段配色 |
 | 站点层 | `layouts/` + `assets/js/` + `assets/css/`（个数见上面的自动区块）；另有 `data/` 下的词表与站点数据。逐文件用途见 DESIGN.md 第 5 节 |
 | 页面 | HTML 页 + `/index.json`（搜索索引，不是 HTML）。个数见上面的自动区块，或 `find public -name '*.html' | wc -l` |
@@ -122,7 +122,7 @@ layouts/                  ★ 站点层覆盖（另有 data/ 下的词表与站�
                                     + 底部标签：≥3 篇的常显、其余折叠（个数随标签变化）
   _default/series.html              ★ /series/ 系列总览页
   _default/run.html                 ★ /run/ 跑步数据页（2026-10-12 从子站搬入）
-  shortcodes/home-stats.html        ★ 首页「文章数 / 周刊数 / 运行天数」内联文本
+  shortcodes/home-stats.html        ★ 首页身份条 shortcode（2026-11-27 起首页不再调用，保留）
   shortcodes/writing-stats.html     ★ About 底部的字数统计 + 365 天热力图（纯构建期）
   shortcodes/mail-link.html          ★ 正文邮箱浮层：调 partials/hello.html
                                     （/about/ 的「写信」；页脚「问候」同源）
@@ -173,7 +173,7 @@ layouts/                  ★ 站点层覆盖（另有 data/ 下的词表与站�
   partials/orphan-safe.html         孤行保护（标题末 2 字包 nowrap）
   partials/back-top.html            返回顶部（只长文页，纯 CSS、零 JS）
   partials/code-copy.html           代码块复制按钮的脚本引入（只含代码的页）
-  partials/breadcrumbs.html         ★ 面包屑（+ BreadcrumbList JSON-LD），只给文章页
+  partials/breadcrumbs.html         ★ 只输出 BreadcrumbList JSON-LD（可见面包屑已移除），只给文章页
   partials/seo_tags.html            ★ SEO 头：覆盖上游同名 partial
                                     —— 删 keywords / name=title / 整套微数据，
                                     换按页型分四类的 JSON-LD，补 og:image 宽高
@@ -186,7 +186,7 @@ assets/js/footnote.js     脚注就地预览（只在含脚注的页加载，判
 assets/js/mermaid-init.js Mermaid 图的渲染：浅、深两份 SVG（只在有 mermaid 代码块的页加载）
 assets/js/vendor/mermaid.min.js  Mermaid 11.17.2 本体（3.6 MB，本站自带，不连 CDN；升级见 partials/mermaid.html）
 
-themes/hugo-bearneo/      ★ 上游副本；style.html 有 4 处登记改动（见 DESIGN.md 第 5 节），其余逐字节未改
+themes/hugo-bearneo/      ★ 上游副本；style.html 有 6 处登记改动（见 DESIGN.md 第 5 节），其余逐字节未改
 
 static/
   _headers _redirects     Cloudflare 的响应头 / 301 规则（条数见第 0 节自动区块）
@@ -354,9 +354,9 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 
 | 想做的事 | 去哪儿 |
 | --- | --- |
-| 改导航（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板**（当前 **7 项**：首页 `/` / 关于 `/about/` / 邻居 `/roll/` / **工具 `/tools/`** / 周刊 `/weekly/` / 文章 `/archive/` / 订阅 `/index.xml`）。⚠️ 7 项在 375–390px 下是**零余量**（刚好一行、差 0px），换字体渲染略宽的设备会折成两行 —— 这是可接受的降级，**别再压 gap 或字号** |
+| 改导航（增删项 / 改标签 / 换落点） | `hugo.toml` 的 `[[menu.main]]`，**不用碰模板**（当前 **7 项**：首页 `/` / 关于 `/about/` / 邻居 `/roll/` / **工具 `/tools/`** / 周刊 `/weekly/` / 文章 `/archive/` / 订阅 `/index.xml`）。⚠️ 7 项 + 搜索按钮 / 主题图标在 390px 下刚好一行；≤375px 会折成两行，工具栏靠右 —— 这是可接受的降级，**别再压 gap 或字号** |
 | 改首页文案 | `content/_index.md` |
-| 改首页身份条 | `content/_index.md` 的 `{{< home-stats >}}` + `layouts/shortcodes/home-stats.html`。⚠️ shortcode 只输出**纯文本 + 句号**，必须和「支持一下」同段；**不要加 span/class/`<br>`/样式**（用户 2026-11-20 明确要求正常显示、连起来）。天数靠每天的构建前进（由 `sync-garmin.yml` 每天 00:10 的自动提交触发，过零点就 +1）；文章/周刊数在发布时自然更新 |
+| 恢复首页身份条（已移除） | 2026-11-27 起首页不再显示「文章 N 篇，周刊 N 篇，运行 N 天」。shortcode 仍在 `layouts/shortcodes/home-stats.html`；在 `content/_index.md` 的简介段后加回 `{{< home-stats >}}` 即可，支持句仍可紧跟。⚠️ 只输出纯内联文本 + 句号，不加 span/class/`<br>`；数字口径与 `/archive/` 一致，天数按最早一篇到 `now` 的整天数算 |
 | 改首页列表条数 | `hugo.toml` 的 `homeRecentCount`（设 0 退回上游原样） |
 | 改**首页最新周刊块** | `layouts/index.html` 的 `.latest-weekly`。取 weekly section 最新一篇，期号从标题「第N期」解析，导语取 front matter 的 `summary`；样式在 `custom.css` 第 53 段。⚠️ 最近更新列表**只取 posts**，周刊只在这个块出现，别把周刊加回列表（同一期会重复两次） |
 | 改**精选导读页** | `data/featured.yaml`（唯一数据源：intro / groups / items.file + note）+ `layouts/_default/featured.html`（样式第 53 段）。⚠️ `file` 是相对 `content/` 的路径，不是 slug/URL —— 改 slug 不会失联；`where ... "File.Path"` 找不到页面时静默跳过，改完数一遍 `.featured-item` 是否等于条目数。⚠️ 只放 5–8 篇，这一页是「先读这几篇」，不再有 `featured: true` 第二套数据 |
@@ -371,9 +371,9 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改**标签（增 / 删 / 合并）** | 标签只来自各篇的 `tags:` 行，模板一处都不用动 —— `/archive/` 底部由 `layouts/_default/archive.html` 从 `site.Taxonomies.tags` 生成：**出现 ≥3 篇的常显（按篇数降序）**，其余收进「其余标签（N）」折叠（按名称）。⚠️ **删/合并标签必须同时处理 `static/_redirects`**：被删掉的 `/tags/<词>/` 会变成 404，得补 301；删 / 合并时记得同步补 301、删旧词条页。⚠️ 改完数一遍 `/archive/` 的 `class=tag-index` 里 `<a>` **总数**（常显 + 折叠），应等于 `tags/` 目录数（2026-11-23 为 **235**） |
 | 改颜色 / 字体 / 宽度 / 圆角 | 升级包配色在 `assets/css/upgrade.css` 的 `--hl-*`（大部分颜色在这里改）；主题基础令牌在 `assets/css/theme.css` 的 `:root`（生效副本，`themes/…/style.html` 是镜像，两处同步，改完在 DESIGN.md 第 5 节登记） |
 | 改正文标题的上下间距 / **标题后的 `#`** | `custom.css` 第 02 段。⚠️ h2/h3 后的 `#` **默认常显**、颜色 `--link-color`、字号 1em；触屏也不隐藏；`aria-label` / `title` 带标题文本。别再加「一、二、三」编号。样式在第 19 段，模板输出在 `_markup/render-heading.html` |
-| 改**正文段落间距** | `custom.css` 第 02 段末尾的 `content > p { margin-bottom: 1.5em }`（与行高一致：所有阅读页 18px × 1.5 = 27px；旧的 1.75em / 2em 已取消）。⚠️ **必须写 `content > p`**：写成 `content p` 会覆盖上游的 `blockquote p { margin: 0 }`（同特异性、本文件后加载），引用块里凭空多出一行段距。⚠️ **段落本身只写 `margin-bottom`**：给所有 `content > p` 写 `margin-top` 会把「标题 → 正文」的默认间距一起改掉，也会让 /roll/ 首段贴住上方。标题后首段的 `margin-top: 0` 由相邻选择器 `content h2 + p` 等单独处理 |
+| 改**正文段落间距** | `custom.css` 第 02 段末尾的 `content > p { margin-bottom: 32px }`（正文 17px × 1.8 = 30.6px 行盒，段距略大于行盒；2026-11-27 由 1.5em / 27px 改成 32px）。⚠️ **必须写 `content > p`**：写成 `content p` 会覆盖上游的 `blockquote p { margin: 0 }`（同特异性、本文件后加载），引用块里凭空多出一行段距。⚠️ **段落本身只写 `margin-bottom`**：给所有 `content > p` 写 `margin-top` 会把「标题 → 正文」的默认间距一起改掉，也会让 /roll/ 首段贴住上方。标题后首段的 `margin-top: 0` 由相邻选择器 `content h2 + p` 等单独处理 |
 | 改**长文页引用框** | `custom.css` 第 39-b 段（`content.long-form blockquote`）。构图：3px `--link-color` 左线 + 浅蓝底 + 左上大引号；亮色底 `#eef4fd`、深色 `#1a2230`。⚠️ 只作用于 `posts` + `weekly` —— `single.html` 里 `$longForm` 给 `<content>` 加 `long-form` 类，独立页不挂。⚠️ 引号是 `::before` 绝对定位（5em / opacity .3），正文靠 `padding-left: 3.2em` 绕开，框上 `overflow: hidden` 防溢出；移动端 ≤800px 收到 2em / 3.6em。⚠️ 打印已在同段清掉底色与引号，别在 `@media print` 里另写一套 |
-| 改**正文行高 / 字号** | 行高**唯一来源**是 `assets/css/theme.css` 的 `content`（**1.5**）；`themes/.../style.html` 是镜像，两处同步。`custom.css` 第 39 段**不再覆盖行高**。字号：所有阅读页统一 **18px**（`--font-size-primary: 18px`），文章 / 周刊不再单独放大。`body` 那条 1.5 **不要动**（页头 / 导航 / 页脚是外壳，不是阅读面）。改完回读：`content` 应 **18px / 27px**，`content > p` 的 `margin-bottom` 应 **1.5em**，`header nav a` 仍 24px。⚠️ `<content>` 里的**标题也继承这 1.5**；行高改了必须同步复核段间距，否则「段距 = 行距」的约定会破 |
+| 改**正文行高 / 字号** | 行高**唯一来源**是 `assets/css/theme.css` 的 `content`（**1.8**）；`themes/.../style.html` 是镜像，两处同步。`custom.css` 第 39 段**不再覆盖行高**。字号：所有阅读页统一 **17px**（`--font-size-primary: 17px`），文章 / 周刊不再单独放大。`body` 那条 1.5 **不要动**（页头 / 导航 / 页脚是外壳，不是阅读面）。改完回读：`content` 应 **17px / 30.6px**，`content > p` 的 `margin-bottom` 应 **32px**，`header nav a` 行盒约 25.5px。⚠️ `<content>` 里的**标题另有行高**（h1 1.2、h2–h6 1.4，第 38 段），不继承正文 1.8；行高改了必须同步复核段间距 |
 | 改文末「系列坐标带」/「上一篇 / 下一篇」 | 模板 `layouts/_default/single.html`，样式 `custom_head.html` 第 09 / 10 段（**改类名要两边一起改**） |
 | 改「系列」入口 / 总览页 | 入口：`layouts/_default/archive.html`，样式 `custom_head.html` 第 09 段；总览页：`layouts/_default/series.html` + `content/series.md`，样式第 09b 段（「点进去才看」） |
 | 改归档页底部的标签 | 模板 `layouts/_default/archive.html`（`</ul>` 后那段）+ 样式第 09 段的 `.tag-index*`<br>⚠️ 结构：`<section class="tag-index">` → `<h2>标签</h2>` → `.tag-index-top`（≥3 篇，32 个，`sort ... "count" "desc"`）→ `.tag-index-more`（其余 187 个，默认关闭的 `<details>`，按 `name` 排）<br>⚠️ 显示名用 `$pages.Page.Title`（Hugo 会把 `ai` 标题化成 `AI`），别改成 map 的 key，否则会变回小写<br>⚠️ 别写成 `{{ with .Site.Taxonomies.tags }}` 再 `range .Site.…` —— `with` 重绑 `.`，静默 0 迭代、只留一个空块，**构建 0 警告**<br>⚠️ 链接落 `/tags/<slug>/` 词条页；`/tags/` 索引页是关掉的，别改过去（会 404） |
@@ -381,7 +381,7 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | ⚠️ 在 `custom_head.html` 写元素选择器前先数标签 | `grep -c '<nav' public/…/index.html`。2026-10-11 栽过：裸 `nav{display:flex}` 命中一页 5 个 `<nav>`，把 `.post-series` 挤成左右两栏（右边空 208px）、TOC 的 `<ul>` 撑出容器 92.8px。**必须写 `header nav`** |
 | 改代码块配色 | `custom_head.html` 第 12 段（浅 / 深两套 `--code-*`）。⚠️ 前提是 `[markup.highlight] noClasses = false` —— 改回 `true` 代码块立刻变回「看不见」 |
 | 改**样式样本页** `/style/` | `content/style.md`。它把所有 Markdown 元素排一遍，改字号 / 行高 / 段距 / 引用框后先打开它对照。⚠️ front matter 必须留 `longForm: true`：否则 `<content>` 没有 `long-form` 类，引用框会显示成独立页的旧样式。⚠️ 它不挂目录（`toc: false`），也不是长文页，别加进 `$longForm` 判断 |
-| 改**写作统计 / 365 天热力图** | `layouts/shortcodes/writing-stats.html` + `custom.css` 第 51 段，调用点在 `content/about.md` 的「写作统计」。⚠️ 统计口径：posts + weekly、按 `.Date`（不是 lastmod）计数、字数用「汉字每字 + 英文每词」，与 byline 同一套。⚠️ 热力图在构建期生成 365 个 `<span>`，没有 JS；格子尺寸只改 `.writing-stats` 的 `--heat-cell` / `--heat-gap`，不要再去分别改 `.heatmap` 和 `.heat-cell` |
+| 改**写作统计 / 365 天热力图** | `layouts/shortcodes/writing-stats.html` + `custom.css` 第 51 段，调用点在 `content/about.md` 的「写作统计」。⚠️ 统计口径：posts + weekly、按 `.Date`（不是 lastmod）计数、字数用「汉字每字 + 英文每词」（byline 已不显示字数，这套算法仍在这里使用）。⚠️ 热力图在构建期生成 365 个 `<span>`，没有 JS；格子尺寸只改 `.writing-stats` 的 `--heat-cell` / `--heat-gap`，不要再去分别改 `.heatmap` 和 `.heat-cell` |
 | 改**地图页** | `content/map.md`：上半是全部入口与订阅，下半是本站说明（技术栈、排版、评论与隐私、历史）。`hideDate` + `toc: false`；页脚「地图」指向它。⚠️ 新增栏目或页面时回来更新；`/style/` 与 `/about/` 的链接都在这页。⚠️ 原 `/colophon/` 已并入，`static/_redirects` 里有 301，别再单独建本站页 |
 | 改独立页是否显示标题 | front matter `hideTitle: true`。`/roll/` `/about/` 都显示标题；目前只有联系页开着 |
 | 改 `/roll/` 两组之间的分组标签 | `content/roll.md` 里的 `<p class="roll-group">朋友</p>` / `<p class="roll-group">组织</p>`，样式在 `custom.css` 第 49 段（小字 + 右侧发丝线）。⚠️ **别改成 `##` 标题**：会进右侧目录、把平铺页切成章节 |
@@ -409,12 +409,12 @@ curl -s -H 'Sec-Fetch-Dest: document' -H 'Accept: text/html' \
 | 改引用框 / 提示框 | 普通引用：`custom.css` 第 39-b 段；提示框：`layouts/_default/_markup/render-blockquote.html`（类型 → 默认中文标题）+ `custom.css` 第 61 段（颜色变量 `--callout-*`）。⚠️ 提示框必须仍输出 `<blockquote>`（搜索索引按它收「引用」）；标题用 `<b>` 不用 `<strong>`（否则进关键词）。样例页 `/style/`。⚠️ 自定义标题后面紧跟中文正文时，Hugo 会把正文并进标题（中文换行设置导致），钩子里有补救；嵌在别的引用里的提示框补救不到，在标题下面空一行 `>` 即可 |
 | 改站内搜索（索引内容 / 匹配规则 / 触发时机） | 索引 `layouts/index.json`（字段 `t/u/g/h/k/d`，`hugo.toml` 的 `[outputs] home` 含 `"JSON"`），前端只有命令面板（脚本 `assets/js/palette.js`，对话框 HTML 在 `layouts/partials/custom_body.html`）。⚠️ 索引 **约 137 KB / gzip 约 61 KB**（只收标题、章节、关键词、引用，不再收正文），命令面板只在呼出时 fetch（鼠标悬停在「搜索」按钮上也会预取，只认鼠标、只一次）；**别改成进页面或聚焦就拉**；⚠️ 拿不到索引时要让面板有可见反馈，不能静默变成「搜不出东西」；⚠️ 面板匹配顺序是标题 > 章节 > 关键词 > 引用，改规则要同步 DESIGN 8.7 |
 | 改分享卡上的日期 / 作者 / 标签（`article:*`） | `layouts/_partials/opengraph.html`。⚠️ 只对 `posts` / `weekly` 输出，首页与列表页的 `og:type` 是 `website`，挂 `article:*` 非法；⚠️ `article:author` 按协议是**作者主页 URL**（本站指 `/about/`），不是名字 |
-| 改「更新于」的显示条件 / 日期行排版 | `layouts/_default/single.html` 日期行（`$showUpdated`）。⚠️ 判据是「`lastmod` 晚于 `date` **且** 日历日不同」，不是「差 24 小时」——当天发当天改的两个日期长得一样，显示出来是噪音；⚠️ 日期行是 flex 一行（`.byline`，`custom.css` 第 39 段），日期、更新、时长、字数之间用间距分开，不用中点串 |
+| 改「更新于」的显示条件 / 日期行排版 | `layouts/_default/single.html` 日期行（`$showUpdated`）。⚠️ 判据是「`lastmod` 晚于 `date` **且** 日历日不同」，不是「差 24 小时」——当天发当天改的两个日期长得一样，显示出来是噪音；⚠️ 日期行是 flex 一行（`.byline`，`custom.css` 第 39 段），日期、更新、阅读时长之间用间距分开，不用中点串；2026-11-27 起不再显示字数 |
 | 改 Web App Manifest（名称 / 图标 / 主题色） | `static/manifest.webmanifest`。⚠️ 它是**手写 JSON、不能写注释**（加了整份解析失败且静默），所有取舍理由写在 `layouts/partials/favicon.html` 那段注释里；⚠️ `purpose` 别加 `maskable`（图标笔画贴边会被裁）；⚠️ `id` 一旦发布别再改 |
 | 改正文内链（加 / 删锚点词） | **`data/inline-links.json`**（`{a: 锚点, u: 目标URL}`）+ 逻辑在 `layouts/partials/inline-links.html`（挂在 `single.html` 的 `$content` 管线末尾）。⚠️ 加词条前先确认 ① 锚点逐字出现在**其他**文章正文里、② 锚点之间**不互为子串**（否则嵌套 `<a>`）、③ 目标 URL 拿产物目录当真值核对 —— 三条都栽过（见 DESIGN.md 8.10）。⚠️ 数据键带连字符，模板里必须 `index hugo.Data "inline-links"`，写成 `hugo.Data.inlineLinks` 会**静默 nil、0 警告**；⚠️ Hugo 0.168 没有 `strings.ReplaceAll`，用 `strings.Replace … -1` |
 | 改图片放大（放大方式 / 键盘可达性） | 结构在 `layouts/_default/_markup/render-image.html`（`--zoom-src` 挂在 figure 上），样式在第 26 段 ④⑤。⚠️ overlay 是**空壳**（只有 `class`，没有 `<img>`）；`.image-zoom-toggle` 那条**必须带 `display`**，只写定位会让上游的 `display:none` 留下、checkbox 又变回不可聚焦 |
 | 改文末「相关文章」 | 模板 `single.html` 的 ② 段 + 第 09 段的 `.post-related*` 规则 + **`hugo.toml` 的 `[related]`**（权重 / 阈值都在那）。⚠️ 文末三块**互斥**：系列带 → 相关文章 → 上一篇/下一篇，只渲染第一块成立的；相关文章不再显示推荐理由，右侧恢复日期。⚠️ 改阈值前先数产物里 `.post-related` 有几个 —— 2026-10-05 那次就是吃默认 `threshold = 80` 导致**一条都推不出来**、构建 0 警告。现在 20，非系列长文 120/120 篇有相关文章 |
-| 改图片加载（srcset / 边缘转换 / 首图优先） | `layouts/_default/_markup/render-image.html`（一个文件搞定四件事，见 DESIGN.md 8.5）+ `custom_head.html` 顶部的 `preconnect`。⚠️ `quality=82` 是目视比过的，别往 70 以下调（截图类图片会出色带）；⚠️ 首图 `fetchpriority="high"` **不能同时带 `loading="lazy"`**，同时写 high 会被忽略；⚠️ `sizes` 里的 `680px` = `body` 的 720 减左右各 20 padding，改布局宽度要回来改它 |
+| 改图片加载（srcset / 边缘转换 / 首图优先） | `layouts/_default/_markup/render-image.html`（一个文件搞定四件事，见 DESIGN.md 8.5）+ `custom_head.html` 顶部的 `preconnect`。⚠️ `quality=82` 是目视比过的，别往 70 以下调（截图类图片会出色带）；⚠️ 首图 `fetchpriority="high"` **不能同时带 `loading="lazy"`**，同时写 high 会被忽略；⚠️ `sizes` 的 `680px` 是正文内容盒宽度（body 是 content-box），媒体阈值 `720px` 对应 `calc(100vw - 40px)`；改 `--width-max` 要回来同步这两个数 |
 | 改订阅源（feed 字段 / 浏览器打开 feed 时那一页） | ① feed 本身：`layouts/_default/rss.xml`；② 浏览器视图：`layouts/partials/feed-view.html` + `content/feed/`（只有 front matter）+ `custom_head.html` 第 28 段；③ 谁分派：`functions/_middleware.js`。⚠️ ①② 的**页面集合口径必须逐字一致**（`site` / `weekly` 两套），不一致就是「网页比订阅少一篇」且**构建 0 警告**；③ 改完按第 2 节「边缘函数」跑一遍线上核对 —— 它是**静默失效**的 |
 | 改周刊页的计数行 / RSS 订阅入口 | `layouts/_default/list.html`（`$isWeekly` = Kind section + Section weekly；`#post-count` 是 `<span>`、订阅链接在它**外面**）。⚠️ 订阅入口是**普通文字链接，不要加样式**（2026-10-14 用户看过带边框 + 图标的徽章后要求简化）；⚠️ 归档页搜索框已删除，没有脚本再改写 `#post-count`，但**仍别把链接塞进 span** —— 与归档页保持同一套结构口径 |
 
@@ -666,27 +666,29 @@ PY
 ```
 
 ```bash
-# 6) 面包屑：可见段数 与 JSON-LD 段数必须自洽（JSON-LD = 可见段 + 当前文章）
-#    ⚠️⚠️ 2026-10-14 起文章页有**两个** ld+json 块：seo_tags.html 的 BlogPosting 在前、
+# 6) 文章层级 JSON-LD：每个文章页应有 BreadcrumbList，文章 4 段 / 周刊 3 段
+#    ⚠️ 2026-10-14 起文章页有**两个** ld+json 块：seo_tags.html 的 BlogPosting 在前、
 #    breadcrumbs.html 的 BreadcrumbList 在后。所以**必须按 @type 挑** BreadcrumbList 那一个，
 #    不能用 re.search 拿「第一个」—— 拿到 BlogPosting 会全判不合格（构建 0 警告，静默）。
+#    ⚠️ 2026-11-27 起可见面包屑已移除，不再按 <nav class=breadcrumbs> 验收；只看 JSON-LD。
 python3 - <<'PY'
 import json, glob, re
 from collections import Counter
 n_ok=n_bad=0; shapes=Counter()
 for f in glob.glob('/tmp/hb-check/posts/**/index.html',recursive=True):
+    if f.endswith('/posts/index.html'): continue
     x=open(f,encoding='utf-8',errors='replace').read()
-    nav=re.search(r'<nav class=breadcrumbs.*?</nav>',x,re.S)
-    if not nav: continue
-    seg=len(re.findall(r'<li>',nav.group(0))); shapes[seg]+=1
     blocks=[json.loads(b) for b in re.findall(r'<script type=application/ld\+json>(.*?)</script>',x,re.S)]
     ld=next((b for b in blocks if b.get('@type')=='BreadcrumbList'),None)
-    ok=(ld is not None and len(ld['itemListElement'])==seg+1
-        and [i['position'] for i in ld['itemListElement']]==list(range(1,seg+2))
-        and ld['itemListElement'][0]['name']=='首页')
+    n=len(ld['itemListElement']) if ld else 0
+    shapes[n]+=1
+    ok=bool(ld is not None and n in (3,4)
+        and [i['position'] for i in ld['itemListElement']]==list(range(1,n+1))
+        and ld['itemListElement'][0]['name']=='首页'
+        and ld['itemListElement'][-1]['name'])
     n_ok+=ok; n_bad+=(not ok)
-print('面包屑页面 (应 = 内容页数):',n_ok+n_bad,'| JSON-LD 合格/不合格 (应 全部/0):',n_ok,'/',n_bad)
-print('可见段数分布 (应 {3: 文章数, 2: 周刊数}；2026-11-23 为 {3:113, 2:31}):',dict(shapes))
+print('JSON-LD 页面 (应 = 内容页数):',n_ok+n_bad,'| 合格/不合格 (应 全部/0):',n_ok,'/',n_bad)
+print('段数分布 (应 {4: 文章数, 3: 周刊数}):',dict(shapes))
 PY
 ```
 
@@ -800,19 +802,19 @@ PY
 
 改完模板还要手工扫一眼这几处（回归面）：
 
-- 首页：`h1#hai` → 引用 → 段落 → **身份条 + 含「支持」链接的同一段**（两者直接相连，**没有 `<br>` / 额外 `<p>` / 特殊样式**）→ 四个平台链接行 → 虚线 `<hr>` → `<h2 class=recent-posts-head>最近更新：</h2>` → 5 条（只取 posts）；标题行右侧是「精选文章」入口 → `.latest-weekly`（最新一期周刊）
-  ⚠️ 身份条由 `layouts/shortcodes/home-stats.html` 在构建期算（文章数 / 周刊数 / 最早一篇到今天的整天数），数字每天可能变 —— 回归时看**格式**，别把某一组数字写死。它现在就是普通正文（18px / 主文字色），不要再加 `.home-stats` 之类的类或小字灰字。
-  ⚠️ 简介正文外面不该有 `<content>`（照 yinji 去掉的，行高走 body 的 1.5 —— 2026-11-21 正文是 1.5，留着简介会比正文还松）；列表左边界要和 `Recent Posts:` 标题对齐（实测都 x≈140），缩进 40px 就是 `.recent-posts{padding-left:0}` 被吞了 → 去跑第 4 条哨兵
+- 首页：`h1#hai` → 引用 → 段落 → 含「支持」链接的段落（**不再有身份条数字**）→ 平台链接行 → 虚线 `<hr>` → `<h2 class=recent-posts-head>最近更新：</h2>`（右侧是「精选文章」入口，2026-11-28 加回）→ 5 条（只取 posts）→ `.latest-weekly`（最新一期周刊）
+  ⚠️ 如看到「文章 N 篇…运行 N 天」说明 `content/_index.md` 又把 `{{< home-stats >}}` 加回来了；shortcode 文件仍在，但首页默认不调用。
+  ⚠️ 简介正文外面不该有 `<content>`（照 yinji 去掉的，行高走 body 的 1.5；正文是 1.8，简介保持紧凑，别包 `content`）；列表左边界要和 `Recent Posts:` 标题对齐（实测左边界相同），缩进 40px 就是 `.recent-posts{padding-left:0}` 被吞了 → 去跑第 4 条哨兵
 - `/archive/`：「共 **N** 篇，随机阅读一篇。」（`<span id=post-count>` 动态算，别写死）+ **分类 / 系列**一行入口（类数与篇数动态）+ 年份分组（年份标题后带「N 篇」）+ 底部标签（常显/折叠数量随标签增删变化）。顶部搜索框已删除，见「站内搜索」
 - 导航 **7 项**；⚠️ 靠第 00 段 `header nav{flex-wrap:wrap;column-gap:8px}` 保证只在项与项之间折
 - 页脚两行：`通过 RSS 订阅，或直接 ✉️ 问候， 🔒 隐私. 🚇 开往. 🌀 虫洞. 🗺️ 网站地图.` / `基于 … 制作，版权所有 …，本站内容采用 CC BY-NC-SA 4.0 协议。`（2026-11-21 晚已去掉「🔍 搜索」入口）
   ⚠️ **RSS 前面不要图标**；其余入口保留 emoji。顺序固定为 隐私 → 搜索 → 开往 → 虫洞 → 网站地图。分隔符统一 `.`，`·` 为 0 个。
   哨兵：`<footer>` 里 `<br>` 恰好 **1 个**、`go.html` 恰好 **2 次**（开往 + 虫洞）、`·` **0 次**
   ⚠️「打个招呼」是悬停胶囊：**触发词仍是 `mailto:` 链接**（`.hello-link`），悬停 / 键盘聚焦浮出 `.hello-card`，点 `.hello-copy` 复制并显示「已复制」，1.6 秒复原；失败时显示「复制失败，请手动选中」并通过 `.hl-toast` 的 `role=status` 播报；触屏（`hover: none`）改为点触发词开合胶囊。**卡片里只有邮箱 + 复制图标** —— 没有「邮箱」标签、提示行、mailto 入口或小三角（用户同日明确要求），别再加回去。三件套：`partials/hello.html` + `assets/js/hello.js` + `custom.css` 第 48 段，改名要三处同改（`.is-copied` / `.is-failed` / `.is-open` 也是契约）。⚠️ `/about/` 的「写信」也用它（`shortcodes/mail-link.html`）；脚本遍历页面上所有 `.hello`，正文卡片用第 52 段左对齐，避免窄屏溢出
-- 文章页：`<h1>`、日期行、标签行、**文末三选一：系列坐标带（23 篇连载）→ 相关文章 → 上一篇/下一篇（兜底，目前 0 篇）**、TOC、评论区
+- 文章页：`<h1>`、日期行、分类 / 标签行、**文末三选一：系列坐标带（23 篇连载）→ 相关文章 → 上一篇/下一篇（兜底，目前 0 篇）**、周刊来信（仅周刊）、TOC、评论区
   ⚠️ **「上一篇」= 更早、「下一篇」= 更晚**；两段相邻时只画一条发丝线；最新一篇没有「下一篇」、最早一篇没有「上一篇」（留不可见空槽，正常）
   ⚠️ 含代码的文章代码块必须「浅灰底 + 深字」（浅色）—— 大片文字发白就是 `noClasses` 被改回 `true`，跑第 5 条 f) 哨兵
-- 文章页顶部面包屑：`首页 / 文章 / 分类`（周刊是 `首页 / 周刊`，**两段** —— 周刊的 `categories` 就是 `["周刊"]`，加了会变「首页 / 周刊 / 周刊」）；⚠️ 面包屑**不该**出现在 `/about/` `/roll/` 或词条页上
+- 文章页顶部**没有面包屑**；分类与标签在文末一行（`.post-taxonomy`，分类用「分类：」+ 三级灰，周刊跳过「周刊」）；⚠️ 不要给 `/about/` `/roll/` 或词条页加这一行
 - `/roll/`：页面标题「收藏」，两个 `<ul>`：3 条朋友 + 10 条组织/聚合站，用 `.roll-group` 轻量标签分组（不是 `##`）；结尾「…更新中」，其后是「交友原则」（有序列表）与「我的友链信息」（小列表）；无日期行 / 评论区 / TOC；正文首行到导航文字下沿约 **28 CSS px**（~12.5px 就是 `content > :first-child` 被加回来了）
 - `/about/`：介绍块纯 Markdown，**没有头像**（全站一张头像都没有）；页面标题「关于」；章节顺序是「这个站 → 联系我 → 写作统计」，「联系我」的 QQ / WeChat 指向 `/contact/qq/` / `/contact/wechat/`
 - `/contact/qq/` 与 `/contact/wechat/`：**一页一张二维码**。每页一个 `.oa-wrap`（256px 居中）+ `.oa-tip` + `.oa-profile`（头像 H / 胡拉图 / 扫码加我好友），与 `/wechat/` 共用第 38 段样式；**没有**标题 / 日期 / TOC / 评论区；码 256×256、信息条**必须同宽 256**。⚠️ `/contact/` 本身是 404 —— 两个 md 在 content 根目录、靠 `url:` 落到子路径，别再建 `content/contact/` 章节页

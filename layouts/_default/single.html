@@ -5,11 +5,10 @@
 {{- /* 长文阅读进度条：3px 固定顶栏，纯 CSS 滚动驱动（custom.css 16-b）。
        只给长文页输出；不支持 animation-timeline 的浏览器整条隐藏。 */ -}}
 {{- if $longForm }}<div class="reading-progress" aria-hidden="true"></div>{{ end }}
-{{- /* byline 用的字数 / 阅读时长 / 更新判据，只算一次。
+{{- /* byline 用的阅读时长 / 更新判据，只算一次。
        汉字 400 字/分、英文 200 词/分，向上取整、最少 1 分钟。 */ -}}
 {{- $hanChars := len (findRE "\\p{Han}" .Plain) -}}
 {{- $engWords := len (findRE "[A-Za-z]+" .Plain) -}}
-{{- $totalWords := add $hanChars $engWords -}}
 {{- $readMins := int (math.Ceil (add (div (float $hanChars) 400.0) (div (float $engWords) 200.0))) -}}
 {{- if lt $readMins 1 }}{{ $readMins = 1 }}{{ end -}}
 {{- $showUpdated := and .Lastmod (.Lastmod.After .Date) (ne (.Lastmod.Format "2006-01-02") (.Date.Format "2006-01-02")) -}}
@@ -17,7 +16,7 @@
        共用 $tocEnabled；媒体查询在 custom.css 第 20 / 46 段。
        ⚠️ 锚点由 render-heading 生成，与目录显隐无关。 */ -}}
 {{- $tocEnabled := default .Site.Params.toc .Params.toc -}}
-{{- /* 面包屑必须在 h1 之前。 */ -}}
+{{- /* 文章层级 JSON-LD（BreadcrumbList）在 h1 之前输出；可见面包屑已移除。 */ -}}
 {{- partial "breadcrumbs.html" . -}}
 {{ if not .Params.menu }}
 {{- /* hideTitle 只藏视觉标题，仍输出 .sr-only h1（clip 方案）。
@@ -40,7 +39,6 @@
   {{- end }}
   {{- if $longForm }}
   <span class="byline-read">阅读约 {{ $readMins }} 分钟</span>
-  <span class="byline-words">全文约 {{ $totalWords }} 字</span>
   {{- end }}
 </p>
 {{ end }}
@@ -68,9 +66,9 @@
 {{- end }}
 
 {{- /* 周刊导读卡片：frontmatter.brief 里改文本，这里统一渲染。
-       ⚠️ 放在 <content> 外，避免吃正文行高；阅读时间复用 byline 的 $readMins。 */ -}}
+       ⚠️ 放在 <content> 外，避免吃正文行高；阅读时间已只在 byline 显示一次。 */ -}}
 {{- if and $longForm (eq .Type "weekly") .Params.brief -}}
-  {{- partial "weekly-brief.html" (dict "brief" .Params.brief "minutes" $readMins) -}}
+  {{- partial "weekly-brief.html" (dict "brief" .Params.brief) -}}
 {{- end -}}
 
 {{- /* 表格包一层 .table-wrap，让窄屏只横滚表格。
@@ -86,13 +84,17 @@
 {{- $bodyClass := or $longForm .Params.longForm -}}
 <content{{ if $bodyClass }} class="long-form"{{ end }}> {{ $content | safeHTML }} </content>
 
-{{- /* 文末只放标签，不放分类（分类入口在面包屑）。
-       ⚠️ 用 .GetTerms 取词条页对象，不要用 .Params.tags。 */ -}}
-{{- with .GetTerms "tags" }}
-<p>
-  {{- range . }}
-  <a href="{{ .RelPermalink }}">#{{ .LinkTitle }}</a>
-  {{- end }}
+{{- /* 文末分类 / 标签行（2026-11-27）：分类入口从面包屑移到这里。
+       ⚠️ 周刊的分类就是「周刊」，与栏目名重复，跳过。
+       ⚠️ 用 .GetTerms 取词条页对象，不要用 .Params.tags / .Params.categories。 */ -}}
+{{- $cats := .GetTerms "categories" -}}
+{{- $cat := false -}}
+{{- if and (ne .Type "weekly") $cats -}}{{- $cat = index $cats 0 -}}{{- end -}}
+{{- $tags := .GetTerms "tags" -}}
+{{- if or $cat $tags }}
+<p class="post-taxonomy">
+  {{- with $cat }}<span class="post-category">分类：<a href="{{ .RelPermalink }}">{{ .LinkTitle }}</a></span>{{ end }}
+  {{- range $tags }}<a href="{{ .RelPermalink }}">#{{ .LinkTitle }}</a>{{ end }}
 </p>
 {{- end }}
 
@@ -216,6 +218,13 @@
   {{- end -}}
 {{- /* 不要再加作者卡片或文末「本文信息」块。 */ -}}
 {{- end }}
+
+{{- /* 周刊来信引导（2026-11-27 从导读卡移到文末）：只挂周刊。
+       复用 partials/hello.html 的邮箱浮层；mailto 主题固定「周刊来信」。 */ -}}
+{{- if and $longForm (eq .Type "weekly") }}
+<p class="weekly-letter">欢迎来信聊聊你最近思考的东西和小发现。 {{ partial "hello.html" (dict "text" "写信给我" "email" site.Params.Author.email "subject" "周刊来信") }}</p>
+{{- end }}
+
 {{- /* 评论区只给长文页，尊重单篇 comments: false。 */ -}}
 {{- if and site.Params.giscus.repo $longForm (ne .Params.comments false) }}
 <section class="giscus-wrap" id="comments">

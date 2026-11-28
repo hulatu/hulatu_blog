@@ -137,7 +137,7 @@ disableKinds = ["taxonomy"]
 
 # 2026-11-23：单独一行的图片不再包进 <p>。图片渲染钩子输出的是 <figure>，而 <figure> 不能放在
 # <p> 里 —— 浏览器会把 <p><figure>…</figure></p> 拆成「空 <p> + figure + 空 <p>」，
-# 全站约 700 个空段落。空段落的外边距（18 / 27px）都不大于 figure 自己的 27px，
+# 全站约 700 个空段落。空段落的外边距（17 / 32px）都不大于 figure 自己的 32px，
 # 合并后间距一像素不变，所以关掉它纯粹是让 HTML 合法。
 # ⚠️ 图片和文字写在同一段里（不是单独一行）时仍会在 <p> 里，那是 Markdown 写法决定的。
 [markup.goldmark.parser]

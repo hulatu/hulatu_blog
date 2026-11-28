@@ -97,11 +97,13 @@
   ⚠️ 按钮仍跟在导航链接后面（partials/nav.html）。同日试过「站名 + 按钮一行、导航一行」
      的两行页头，用户要求恢复原布局 —— 别再把按钮挪到站名行。
   */
-  /* 手机没有键盘，「搜索 /」里的 `/` 提示没有意义，按钮也能窄一点。
-     ⚠️ 只限页头按钮里的 .hl-kbd —— 命令面板里的「ESC」也是这个类，别一起藏。 */
-  @media (hover: none) and (pointer: coarse) {
-    .hl-ctrl-btn .hl-kbd {
-      display: none;
+  /* 2026-11-28：页头工具按钮去掉外层边框；搜索是「⌘K /」键位在左 + 放大镜在右，
+     触屏与 ≤480px 隐藏键位、只留放大镜；深浅色是图标。
+     下面的触控命中区规则仍然适用。
+     ≤480px 工具栏常折到第二行，用 margin-left:auto 靠右，避免按钮孤零零挂在左边。 */
+  @media (max-width: 480px) {
+    header .hl-toolbar {
+      margin-left: auto;
     }
   }
 
@@ -144,30 +146,32 @@
   （原来这里还留着半截 2026-10-11 关于 text-autospace 的注释，说「正确写法是 ideograph-alpha」——
     那是错的：Chrome 只认 normal / no-autospace，ideograph-alpha 在 Chrome 里是无效值、整条被丢掉。
     2026-11-24 起中英文间距在第 43 段，来龙去脉也写在那里。）
-  ⚠️ 行高改在**上游** `style.html:111`（当前 1.5），这一段只做记录，
+  ⚠️ 行高改在**上游** `style.html` 的 `content` 规则（当前 1.8），这一段只做记录，
   不重复声明（第 39 段会再显式写一遍）。
-  所有阅读页统一 18px，行盒 27px；用户连续两次反馈偏松后定在这里，
-  用字号与行距的固定关系保证可读性。
+  所有阅读页统一 17px，行盒 30.6px；2026-11-27 按少数派阅读页重定，
+  正文 17 / 1.8、段距 32px。
   */
 
   content h2 {
-    /* 2026-11-21：用户两次说「标题与段落之间间距依旧很大」。
-       上边距压到 1.6em（24px × 1.6 = 38.4px），下边距 0.5em = 12px；
-       正文 18px 行高 1.5（27px），标题下与首段的呼吸 = 12px，
-       仍能看出层级，但不再像一段空行。 */
-    margin: 1.6em 0 0.5em;
+    /* 2026-11-27：按少数派阅读页的 h2（32px），上间距 = 前段 32 + 标题自身 24，
+       下间距与段距一致 32px。margin-top 会与上一段的 32px 折叠，取大值 56px。 */
+    margin: 56px 0 32px;
   }
 
-  
+
 
   content h3 {
-    margin: 1.3em 0 0.45em;
+    /* sspai 的 h3 是 16px 上内边距 + 前段 32px → 48px。 */
+    margin: 48px 0 32px;
   }
 
-  content h4,
+  content h4 {
+    margin: 32px 0 24px;
+  }
+
   content h5,
   content h6 {
-    margin: 1.1em 0 0.35em;
+    margin: 28px 0 16px;
   }
 
   /*
@@ -175,14 +179,15 @@
   ⚠️ 不能给所有 `content > p` 写 margin-top: 0 —— 正文首段（/roll/、
   /about/ 这类标题行之前没有别的块）会贴住上方元素，
   已经踩过一次这个坑，见下面「正文第一个元素」那段。
-  段与段仍由上一段的 mb 27px 决定，节奏不变。
+  段与段仍由上一段的 mb 32px 决定，节奏不变。
   ⚠️⚠️ 必须写 `content > p`，不能写 `content p`
   上游有一条 `blockquote p { margin: 0 }`（style.html:217），
   用来消除引用块内部段落的空行。它与 `content p` **特异性相同**
   */
   content > p {
-    /* 2026-11-21：段距 1.5em，与行高一致（所有阅读页 18px → 27px）。 */
-    margin-bottom: 1.5em;
+    /* 2026-11-27：段距 32px，对齐 sspai（17px × 1.8 = 30.6px 行盒，段距略大于行盒）。
+       不再用 1.5em —— 字号变了，em 会跟着漂。 */
+    margin-bottom: 32px;
   }
 
   /* 标题后的第一段不再额外累加默认的 1em 上边距（只归零，不碰负值）。
@@ -195,27 +200,24 @@
     margin-top: 0;
   }
 
-  /* 2026-11-21：把块级元素的上下距也拉回同一条节奏。
-     之前段距 1.75/2em、列表 1em、引用 0、图片 0，长文里会出现
-     32 → 20 → 0 的跳变。现在统一为 1.5em（= 行盒 27px）：
-       · 列表只给**直接子级**，嵌套列表保持紧凑；
-       · 引用块主题写的是 `margin: 0`，这里只补上下距，内部 `p` 仍是 0；
-       · 图片的 `.image-caption` 主题写的是 `margin: auto`，纵向为 0。 */
+  /* 2026-11-27：块级元素与段落用同一条 32px 节奏（对齐 sspai）。
+     列表只给**直接子级**，嵌套列表保持紧凑；引用块内部 `p` 仍是 0；
+     `.image-caption` 的纵向 margin 由主题的 `auto` 改由这里接管。 */
   content > ul,
   content > ol,
   content > blockquote,
   content > .image-caption {
-    margin-top: 1.5em;
-    margin-bottom: 1.5em;
+    margin-top: 32px;
+    margin-bottom: 32px;
   }
 
-  /* 2026-11-22：列表项之间留 0.3em 缝（全站 240 个列表项，原来完全贴在一起）。
+  /* 2026-11-27：列表项之间 0.3em → 8px（sspai 实测 8px；字号变了之后 em 会漂）。
      ⚠️ 只给直接子级、且只给**没有 class 的** Markdown 列表：
         `ul.blog-posts`（归档/周刊 143 行）有自己的行距，不能被这条拉松。
         嵌套列表也保持紧凑，否则层级会被拉散。 */
   content > ul:not([class]) > li + li,
   content > ol:not([class]) > li + li {
-    margin-top: 0.3em;
+    margin-top: 8px;
   }
 
   /*
@@ -324,7 +326,13 @@
   的默认格式 `"02 Jan."`（7 个字符）定的。换成 ISO 的 `2006-01-02`
   （10 个字符）后 80px 装不下 → 101 行列表每行日期都折成两行。
   改成按内容定宽 + 不换行，就不依赖具体日期格式了。
+  ⚠️ 2026-11-27：正文行高改 1.8 后，列表页也跟着变松；这里钉回 1.5 ——
+  归档 / 周刊是索引，不是阅读面。
   */
+  ul.blog-posts {
+    line-height: 1.5;
+  }
+
   ul.blog-posts li {
     gap: 10px;
   }
@@ -774,6 +782,8 @@
     padding: 0;
     display: grid;
     gap: 0.25rem;
+    /* 2026-11-27：索引列表钉回 1.5，与归档 / 周刊一致（正文 1.8）。 */
+    line-height: 1.5;
   }
 
   .series-article-list a {
@@ -846,7 +856,24 @@
     color: var(--code-fg);
     background-color: var(--bg-color-secondary);
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 12px;
+  }
+
+  /* 2026-11-27：正文行高 1.8 对代码块太松（15.3px 的字 × 1.8 ≈ 27.5px）。
+     代码块单独收到 1.6；pre.mermaid 在第 70 段另有 1.5。
+     上下距对齐正文的 32px：浏览器默认给 pre 的 1em（17px）会破坏节奏，
+     由外层 .highlight 接管，pre 归零。 */
+  content pre,
+  content pre code {
+    line-height: 1.6;
+  }
+
+  content .highlight {
+    margin: 32px 0;
+  }
+
+  content .highlight pre {
+    margin: 0;
   }
 
   /* 让 pre 的底透过来（主题给 code 铺的底和上面同色，设成 transparent
@@ -941,38 +968,30 @@
   }
 
   /*
-  13 面包屑：只给文章页输出。
-  ⚠️ 分隔符用 `/`，别改成箭头；默认三级灰，悬停才变链接蓝。
-  ⚠️ 这里的 `$longForm` 判据要与模板一致。
+  13 文末分类 / 标签行（2026-11-27）
+  可见面包屑已移除，分类入口并到这里；周刊跳过与栏目名重复的「周刊」。
+  ⚠️ 分类用「分类：」+ 三级灰链接（悬停变蓝），标签保持链接蓝。
+  ⚠️ 间距用 flex + gap，不靠 HTML 空白；窄屏自然折行。
   */
-  .breadcrumbs {
-    margin: 1rem 0 0;
-    font-size: 0.85rem;
-    color: var(--text-color-tertiary);
-  }
-
-  .breadcrumbs ol {
+  .post-taxonomy {
     display: flex;
     flex-wrap: wrap;
-    gap: 0.4rem;
-    margin: 0;
-    padding: 0;
-    list-style: none;
+    align-items: baseline;
+    gap: 0.35rem 0.9rem;
+    margin: 1.2rem 0 0;
+    font-size: 0.92rem;
+    line-height: 1.6;
   }
 
-  /* 分隔符画在前一项的右边，而不是后一项的左边 ——
-     这样「首页 / 文章」折行时不会以一个孤零零的「/」开头。 */
-  .breadcrumbs li + li::before {
-    content: "/";
-    margin-right: 0.4rem;
+  .post-taxonomy .post-category {
     color: var(--text-color-tertiary);
   }
 
-  .breadcrumbs a {
+  .post-taxonomy .post-category a {
     color: var(--text-color-tertiary);
   }
 
-  .breadcrumbs a:hover {
+  .post-taxonomy .post-category a:hover {
     color: var(--link-color);
   }
 
@@ -991,7 +1010,7 @@
 
   .table-wrap {
     overflow-x: auto;
-    margin: 1.2rem 0;
+    margin: 32px 0;
   }
 
   /*
@@ -1020,6 +1039,9 @@
 
   content table {
     font-variant-numeric: tabular-nums;
+    /* 2026-11-27：正文行高 1.8 会把表格行拉得很高；表格单独收到 1.5
+       （sspai 表格约 1.4，这里留一点中文余量）。 */
+    line-height: 1.5;
   }
 
   /*
@@ -1744,7 +1766,7 @@
     top: 0;
     z-index: 100;
     padding: 8px 14px;
-    border-radius: 4px;
+    border-radius: 8px;
     background: var(--text-color-primary);
     color: var(--bg-color-primary);
     font-size: 0.9em;
@@ -1777,7 +1799,6 @@
     header,
     footer,
     .skip-link,
-    .breadcrumbs,
     div.toc,
     .back-top,
     .giscus-wrap,
@@ -1787,8 +1808,8 @@
       display: none;
     }
 
-    /* ⚠️ 这里**不覆盖 max-width**。主题的 720px 在 A4 上本来就装不满
-       （210mm − 16mm×2 边距 ≈ 178mm ≈ 673px），所以纸宽自己会成为约束；
+    /* ⚠️ 这里**不覆盖 max-width**。主题的 680px 在 A4 上本来就不宽
+       （210mm − 14mm×2 边距 ≈ 182mm ≈ 688px），纸宽自己会成为约束；
        反而写 `max-width: none` 会让 A3 / 横向打印时行宽拉到不可读。
        `padding: 0` 是必须的 —— 纸边距由上面的 `@page` 给，
        再留 20px padding 会让正文缩进两遍。 */
@@ -1799,7 +1820,7 @@
       background: #fff;
     }
 
-    /* 屏幕行高也是 1.5；这里保留声明，避免将来屏幕行高变化时纸上跟着变 */
+    /* 屏幕行高是 1.8；纸上保留 1.5 —— 纸面行宽更窄，1.8 会显得太散 */
     content {
       line-height: 1.5;
     }
@@ -1958,7 +1979,7 @@
     font-size: 1.17em;
   }
 
-  /* 2026-11-21：精选入口移到「最近更新」同一行右侧。
+  /* 2026-11-28：精选入口加回，与「最近更新」同一行右侧。
      标题与链接共用一个 flex 行，baseline 对齐；链接比标题小一号，
      不加边框/底色 —— 它仍然是一个文字入口，不是首页上的按钮。
      小屏不换行（两者都短），真放不下时 nowrap 会撑出一点，但 375px 下
@@ -1982,44 +2003,102 @@
   */
 
   /*
-  38 正文字阶：h1 30 / h2 24 / h3 20 / h4 19 / h5 18 / h6 16。
+  38 正文字阶（2026-11-27 对齐 sspai）：h1 38 / h2 32 / h3 24 / h4 20 / h5 18 / h6 16。
+  标题字重 600（sspai 用 SemiBold），行高 h1 1.2、h2–h6 1.4。
   ⚠️ h1 必须写 `main h1`，不能写 `content h1`：文章标题在 `<content>` 外面。
   ⚠️ 不碰页头站名（`header .title p`），它由 00c 段单独扮成 h1。
   */
   main h1 {
-    font-size: 30px;
+    font-size: 38px;
+    font-weight: 600;
+    line-height: 1.2;
   }
 
   content h2 {
-    font-size: 24px;
+    font-size: 32px;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   content h3 {
-    font-size: 20px;
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   /* h4–h6 也要显式定档：浏览器默认 h4 = 1em（与正文同大）、
      h5 = 0.83em（反而比正文小），长文里层级会乱。
-     2026-11-21 起：h4 19px / h5 18px / h6 16px，全部加粗，靠字号 + 间距区分。 */
+     2026-11-27 起：h4 20px / h5 18px / h6 16px，600，靠字号 + 间距区分。 */
   content h4 {
-    font-size: 19px;
+    font-size: 20px;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   content h5 {
     font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   content h6 {
     font-size: 16px;
+    font-weight: 600;
+    line-height: 1.4;
   }
 
   /*
-  39 正文：18px / 行高 1.5（行盒 27px），行高只在 `theme.css` 声明一次。
-  ⚠️ 想动行高，先同时算行盒和段距；当前约定两者都是 27px。
+  38-m 移动端字阶（≤480）
+  sspai 在 390px 实测 15px / 1.8 / 段距 24 / h1 28 / h2 24。这里比它略大：
+  正文 16px、h1 32、h2 26、h3 22，段距 28px —— 中文手机阅读不必压到 15px。
+  ⚠️ 只改 `content` 的字号，页头 / 导航 / 页脚仍走 body 的 17px。
+  */
+  @media (max-width: 480px) {
+    content {
+      font-size: 16px;
+    }
+
+    main h1 {
+      font-size: 32px;
+    }
+
+    content h2 {
+      font-size: 26px;
+      margin-top: 40px;
+      margin-bottom: 24px;
+    }
+
+    content h3 {
+      font-size: 22px;
+      margin-top: 32px;
+      margin-bottom: 24px;
+    }
+
+    content h4 {
+      margin-top: 28px;
+      margin-bottom: 20px;
+    }
+
+    content > p {
+      margin-bottom: 28px;
+    }
+
+    content > ul,
+    content > ol,
+    content > blockquote,
+    content > .image-caption {
+      margin-top: 28px;
+      margin-bottom: 28px;
+    }
+  }
+
+  /*
+  39 正文：17px / 行高 1.8（行盒 30.6px），行高只在 `theme.css` 声明一次。
+  段距 32px 在第 02 段。⚠️ 想动行高，先同时算行盒和段距。
   ⚠️ 引用框的蓝色竖线和大引号只挂在 `content.long-form` 上。
   */
   :root {
-    --font-size-primary: 18px;
+    --font-size-primary: 17px;
   }
 
   /* 2026-11-22：正文改用升级包最深的 ink（浅色 #111315 / 深色 #F3F4F6）。
@@ -2059,10 +2138,10 @@
     text-decoration: underline solid currentColor;
   }
 
-  /* content 的行高**只在 `assets/css/theme.css` 的 `content` 声明一次**（1.5）。
+  /* content 的行高**只在 `assets/css/theme.css` 的 `content` 声明一次**（1.8）。
      这里不再重复写 —— 之前 style.html / theme.css / 本文件三处各写一份，
      改一处不会报错、只会静默漂移。打印行高由 @media print 单独声明。
-     文章 / 周刊也不再单独放大字号：所有阅读页统一 18px。 */
+     文章 / 周刊也不再单独放大字号：所有阅读页统一 17px。 */
 
   .byline {
     display: flex;
@@ -2098,10 +2177,11 @@
   content.long-form blockquote {
     position: relative;
     overflow: hidden;
-    /* 2026-11-23：大引号 5em → 2em，左内边距 3.2em → 2.4em 跟着收。 */
+    /* 2026-11-23：大引号 5em → 2em，左内边距 3.2em → 2.4em 跟着收。
+       2026-11-27：右侧圆角跟着代码块 / 浮层统一到 12px。 */
     padding: 1.05em 1.2em 1.05em 2.4em;
     border-left: 3px solid var(--link-color);
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 12px 12px 0;
     background: #eef4fd;
     color: var(--text-color-secondary);
   }
@@ -2265,7 +2345,7 @@
   否则面板离正文的间距会漂。
   */
     width: max-content;
-    max-width: min(280px, calc((100vw - 720px) / 2 - 22px));
+    max-width: min(280px, calc((100vw - var(--width-max)) / 2 - 22px));
     overflow-y: auto;
   }
 
@@ -2334,7 +2414,7 @@
   }
 
   /*
-  37 首页精选入口：与「最近更新」同一行，间距由 `.recent-posts-head-row` 管。
+  37 首页精选入口：与「最近更新」同一行，样式在 33-d 段。
   ⚠️ 只作用于首页这一行；别把 `.featured-entry` 做成全站链接样式。
   */
 
@@ -2342,8 +2422,8 @@
   38 公众号页（/wechat/）—— 二维码 + 公众号信息条
   ⚠️ `.oa-tip` / `.oa-name` / `.oa-desc` 都是 `<p>`，且都写在
   `.oa-wrap` / `.oa-profile` 里 —— 不是 `content` 的**直接**子元素，
-  所以吃不到 01 段那条 `content > p { margin-bottom: 1.5em }`。
-  但 `content { line-height: 1.5 }` 会继承下来，行高与正文一致；间距单独控制。
+  所以吃不到 01 段那条 `content > p { margin-bottom: 32px }`。
+  但 `content { line-height: 1.8 }` 会继承下来，行高与正文一致；间距单独控制。
   */
   .oa-wrap {
     /* 与二维码、信息条同宽（见段首「尺寸」）。 */
@@ -2400,7 +2480,7 @@
     gap: 8px;
     padding: 8px;
     background: var(--bg-color-secondary);
-    border-radius: 4px;
+    border-radius: 8px;
     /* .oa-wrap 是居中，这里收回来 —— 头像在左、文字左对齐。 */
     text-align: left;
   }
@@ -2583,7 +2663,7 @@
     有空格的地方浏览器不再加；没空格的地方补上约 2px —— 比手打的空格（约 5px）窄，所以两种写法看得出差别。
     想统一就是继续手打空格；不支持的浏览器（旧版、一些 App 内置浏览器）也只认手打的空格。
     （规范里的 replace —— 把手打的空格换成同样宽的自动间距 —— 目前没有浏览器支持。）
-  · 范围是 <main>：文章标题、列表标题和正文一起；页头导航、页脚、搜索面板不动（导航在 375–390px 是零余量）。
+  · 范围是 <main>：文章标题、列表标题和正文一起；页头导航、页脚、搜索面板不动（导航 ≤375px 会折行）。
   · 代码、按键、公式、Mermaid 图里不加：代码要原样，Mermaid 是先用 JS 量字宽再画框，加了会把字挤出框。
   ⚠️ 2026-10-11 删过一次，理由是「本机实测四种取值截图一模一样」。那次测的浏览器没生效，原因没查清。
      2026-11-24 在本机浏览器里实测已生效（同一份文字 no-autospace / normal 两种宽度对比，「用Hugo写博客」变宽）。
@@ -2678,7 +2758,7 @@
     padding: 0 0.55em 0 0.9em;
     border: 1px solid var(--border-color);
     border-bottom: 0;
-    border-radius: 4px 4px 0 0;
+    border-radius: 12px 12px 0 0;
     background-color: var(--bg-color-primary);
     font-family: var(--font-secondary);
     font-size: 0.75rem;
@@ -2687,7 +2767,7 @@
   }
 
   .code-head + pre.chroma {
-    border-radius: 0 0 4px 4px;
+    border-radius: 0 0 12px 12px;
   }
 
   .code-lang {
@@ -2733,7 +2813,7 @@
       display: block;
       margin: 0 0 2em;
       border: 1px solid var(--border-color);
-      border-radius: 4px;
+      border-radius: 8px;
     }
 
     .toc-mobile > summary {
@@ -2847,9 +2927,9 @@
     max-width: calc(100vw - 28px);
     padding: 5px;
     border: 1px solid var(--border-color);
-    border-radius: 11px;
+    border-radius: 12px;
     background: var(--bg-color-primary);
-    box-shadow: 0 12px 32px rgba(15, 23, 42, 0.13), 0 2px 6px rgba(15, 23, 42, 0.05);
+    box-shadow: var(--hl-shadow);
     font-size: 1rem;
     line-height: 1.4;
     text-align: left;
@@ -2906,7 +2986,7 @@
     margin: 0;
     padding: 8px 10px;
     border: 0;
-    border-radius: 7px;
+    border-radius: 8px;
     background: var(--bg-color-primary);
     box-shadow: inset 0 0 0 1px transparent;
     color: var(--text-color-primary);
@@ -3010,11 +3090,7 @@
     white-space: nowrap;
   }
 
-  
-    [data-theme="dark"] .hello-card {
-      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.4);
-    }
-  
+  /* 2026-11-27：深色下的阴影交给 `--hl-shadow` 令牌，不再单独写一条。 */
 
   @media (prefers-reduced-motion: reduce) {
     .hello-card,
@@ -3069,7 +3145,7 @@
 
   content .image-caption img {
     border: 1px solid rgba(128, 128, 128, 0.15);
-    border-radius: 6px;
+    border-radius: 4px;
   }
 
   content .image-caption figcaption {
@@ -3163,9 +3239,11 @@
   ⚠️ 月份刻度行和格子必须在同一个横向滚动容器里，否则窄屏会错位。
   */
   .writing-stats {
-    /* 格子尺寸与间距统一由这两个变量控制，窄屏只改这里 */
+    /* 格子尺寸与间距统一由这两个变量控制，窄屏只改这里。
+       2026-11-27：列宽 680 后 53 × 10 + 52 × 3 = 686 会横向溢出 6px，
+       间距从 3px 收到 2.5px（53 × 10 + 52 × 2.5 = 660），格子大小不变。 */
     --heat-cell: 10px;
-    --heat-gap: 3px;
+    --heat-gap: 2.5px;
     margin: 1.6rem 0 0;
   }
 
@@ -3426,7 +3504,7 @@
 
   /*
   53 首页「最新一期周刊」+ 精选页「主编导读」
-  ⚠️ 周刊块在「最近更新」之后；精选入口在标题行右侧，顺序别挪。
+  ⚠️ 周刊块在「最近更新」之后；精选入口在标题行右侧（2026-11-28 加回）。
   精选页数据在 data/featured.yaml，模板只负责分组与列表。
   ⚠️ 改 data 里的 file 路径后，数一遍 `.featured-item` 是否等于条目数；
   `where` 找不到页面时是静默跳过，构建不会报错。
@@ -3435,7 +3513,7 @@
     margin: 2.4rem 0 0;
     padding: 0.9rem 1.1rem;
     border-left: 3px solid var(--link-color);
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 8px 8px 0;
     background: #f6f9fd;
   }
 
@@ -3671,7 +3749,7 @@
     margin: 0.45rem 0 0;
     padding: 8px 16px;
     border: 0;
-    border-radius: 12px;
+    border-radius: 8px;
     background: var(--bg-color-secondary);
     font-size: 0.9em;
   }
@@ -3698,8 +3776,8 @@
   */
   .hl-theme-svg {
     display: block;
-    width: 13px;
-    height: 13px;
+    width: 15px;
+    height: 15px;
     pointer-events: none;
   }
 
@@ -4009,7 +4087,7 @@
     overflow: visible;
     padding: 0.8em 1.1em;
     border-left: 3px solid var(--callout);
-    border-radius: 0 4px 4px 0;
+    border-radius: 0 12px 12px 0;
     background: var(--bg-color-secondary);
     background: color-mix(in srgb, var(--callout) 7%, var(--bg-color-primary));
     color: var(--text-color-secondary);
@@ -4115,7 +4193,7 @@
   .hl-cmd-skel {
     height: 12px;
     margin: 12px 10px;
-    border-radius: 4px;
+    border-radius: 8px;
     background: var(--hl-hair);
   }
 
@@ -4225,7 +4303,7 @@
      ⚠️ 选择器前面加 html：upgrade.css 排在管道最后，同优先级会盖掉这里。 */
   @media (hover: none) and (prefers-reduced-motion: no-preference) {
     html .hl-ctrl-btn {
-      transition: border-color 0.15s ease, color 0.15s ease, background-color 0.15s ease, scale 0.18s var(--hl-ease-out);
+      transition: color 0.15s ease, background-color 0.15s ease, scale 0.18s var(--hl-ease-out);
     }
 
     html .code-copy {
@@ -4653,16 +4731,16 @@
   }
 
   .math-block {
-    margin: 0 0 1.5em;
+    margin: 0 0 32px;
     overflow-x: auto;
     overflow-y: hidden;
   }
 
   pre.mermaid {
-    margin: 0 0 1.5em;
+    margin: 0 0 32px;
     padding: 16px;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 12px;
     font-family: var(--font-secondary);
     font-size: 0.85em;
     line-height: 1.5;
@@ -4674,7 +4752,7 @@
   }
 
   .mermaid-box {
-    margin: 0 0 1.5em;
+    margin: 0 0 32px;
     overflow-x: auto;
     text-align: center;
   }
@@ -4750,7 +4828,7 @@
   }
 
   content dl {
-    margin: 0 0 1.5em;
+    margin: 0 0 32px;
   }
 
   content dt {
@@ -4836,7 +4914,7 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     border: 1px solid var(--border-color);
-    border-radius: 4px;
+    border-radius: 12px;
     background-color: var(--hl-bg);
     box-shadow: var(--hl-shadow);
     color: var(--text-color-secondary);
@@ -4953,7 +5031,7 @@
     aspect-ratio: 1040 / 520;
     margin: 2.25rem 0 0;
     border: 1px solid var(--hl-hair);
-    border-radius: 16px;
+    border-radius: 12px;
     background-color: var(--hl-bg-subtle);
     background-image: radial-gradient(circle, color-mix(in srgb, var(--hl-mute) 38%, transparent) 1px, transparent 1.4px);
     background-size: 22px 22px;
@@ -5117,7 +5195,7 @@
     aspect-ratio: var(--ar, 3 / 4);
     overflow: hidden;
     border: 1px solid color-mix(in srgb, var(--hl-mute) 28%, transparent);
-    border-radius: 6px;
+    border-radius: 4px;
     background: var(--hl-bg-hover);
   }
 
@@ -5384,10 +5462,16 @@
     color: var(--text-color-primary);
   }
 
-  .weekly-brief-meta {
-    margin: 0.7rem 0 0;
+  /* 2026-11-27：周刊文末来信引导（从导读卡移到文末）。 */
+  .weekly-letter {
+    margin: 2rem 0 0;
     color: var(--text-color-tertiary);
-    font-size: 0.86rem;
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  .weekly-letter a {
+    color: var(--link-color);
   }
 
   /* 窄屏让标签独占一行，避免标签和正文互相挤压。 */

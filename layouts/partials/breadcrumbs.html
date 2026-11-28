@@ -1,9 +1,10 @@
-{{- /* 面包屑：只给文章页（posts / weekly）。一级页面与词条页不挂。
-       文章：首页 / 归档 / 分类；周刊：首页 / 周刊（分类名与栏目名重复，跳过）。
-       可见部分只显示祖先，当前页交给紧跟的 h1；JSON-LD 里包含当前页。
-       ⚠️ 别给 /about/ /roll/ 等无标题页加，会破坏「正文首行距导航 28px」。
+{{- /* 文章层级结构化数据（BreadcrumbList JSON-LD）。
+       2026-11-27 起**不再输出可见面包屑**：文章页标题上方没有「首页 / 归档 / 分类」，
+       分类入口并进文末标签行（single.html 的 .post-taxonomy）。
+       周刊仍然不加分类：栏目名与分类名都是「周刊」，会重复。
+       ⚠️ 只给文章页（posts / weekly）；/about/ /roll/ 等一级页面不输出。
        ⚠️ 分类用 .GetTerms 取词条页对象（有 LinkTitle / RelPermalink）。
-       ⚠️ 分隔符 `/` 由 CSS 的 li + li::before 画，模板里不写。 */ -}}
+       ⚠️ 视觉上已经没有 nav；不要按 <nav class=breadcrumbs> 做验收。 */ -}}
 {{- $isPost := and .IsPage (in (slice "posts" "weekly") .Type) -}}
 {{- if $isPost -}}
 
@@ -24,17 +25,7 @@
     {{- end -}}
   {{- end -}}
 
-<nav class="breadcrumbs" aria-label="面包屑">
-  <ol>
-    <li><a href="{{ .Site.Home.RelPermalink }}">首页</a></li>
-    <li><a href="{{ $sectionURL | relURL }}">{{ $sectionName }}</a></li>
-    {{- with $catName }}
-    <li><a href="{{ $catURL }}">{{ . }}</a></li>
-    {{- end }}
-  </ol>
-</nav>
-
-  {{- /* JSON-LD 含当前文章，比可见部分多一段。 */ -}}
+  {{- /* JSON-LD 含当前文章。文章 4 段（首页 / 归档 / 分类 / 当前），周刊 3 段。 */ -}}
   {{- $items := slice
     (dict "@type" "ListItem" "position" 1 "name" "首页" "item" .Site.Home.Permalink)
     (dict "@type" "ListItem" "position" 2 "name" $sectionName "item" (absURL $sectionURL)) -}}
